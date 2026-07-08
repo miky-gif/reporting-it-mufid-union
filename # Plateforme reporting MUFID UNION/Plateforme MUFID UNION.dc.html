@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=block" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E9EDEF;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#16262E;-webkit-font-smoothing:antialiased}
+.i{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;line-height:1;display:inline-block;white-space:nowrap;font-feature-settings:'liga';-webkit-font-feature-settings:'liga';font-variation-settings:'FILL' 0;vertical-align:middle;user-select:none}
+a{text-decoration:none}
+</style>
+<template id="__bundler_thumbnail"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="#0B4A61"/><rect x="30" y="30" width="40" height="40" rx="7" fill="#0E5E7C"/><ellipse cx="50" cy="50" rx="11" ry="15" fill="#fff"/><path d="M50 39 L50 61" stroke="#0B4A61" stroke-width="2.4" stroke-dasharray="2.4 2.4"/></svg></template>
+</helmet>
+<div id="doc" style="padding:70px 90px 120px;display:flex;flex-direction:column;align-items:center;gap:78px">
+
+<!-- ============ DESIGN SYSTEM ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">SYSTÈME</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Design system</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— fondations visuelles &amp; composants de base</span>
+  </div>
+
+  <div style="background:#fff;border:1px solid #E2E8EB;border-radius:16px;overflow:hidden;box-shadow:0 20px 50px -28px rgba(9,54,70,.35)">
+    <!-- cover -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:34px 40px;background:linear-gradient(160deg,#0B4A61 0%,#093646 100%);position:relative;overflow:hidden">
+      <img src="uploads/logo-1783035702706.webp" style="position:absolute;right:-40px;top:-30px;width:340px;filter:brightness(0) invert(1);opacity:.06;transform:rotate(-8deg)">
+      <div style="position:relative">
+        <div style="background:#fff;display:inline-flex;padding:12px 16px;border-radius:10px"><img src="uploads/logo-1783035702706.webp" style="height:34px;display:block"></div>
+        <div style="font:600 24px 'IBM Plex Sans';color:#fff;margin-top:18px;letter-spacing:-.01em">Plateforme de reporting d'activités IT</div>
+        <div style="font:400 14px 'IBM Plex Sans';color:#A9C4CE;margin-top:5px">Saisie, suivi et consolidation des activités du service informatique.</div>
+      </div>
+      <div style="position:relative;display:flex;gap:10px">
+        <div style="border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:9px 13px"><div style="font:500 10px 'IBM Plex Mono';color:#7FB0C0;letter-spacing:.06em">VERSION</div><div style="font:600 14px 'IBM Plex Mono';color:#fff;margin-top:3px">1.0</div></div>
+        <div style="border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:9px 13px"><div style="font:500 10px 'IBM Plex Mono';color:#7FB0C0;letter-spacing:.06em">ZONE</div><div style="font:600 14px 'IBM Plex Mono';color:#fff;margin-top:3px">CEMAC · COBAC</div></div>
+      </div>
+    </div>
+
+    <!-- COULEURS -->
+    <div style="padding:30px 40px;border-bottom:1px solid #EEF2F3">
+      <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:18px">01 — Palette de couleurs</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px">
+        <div>
+          <div style="font:600 12px 'IBM Plex Sans';color:#33454F;margin-bottom:10px">Bleu pétrole · marque</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#093646"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#093646</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#0B4A61"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#0B4A61</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#0E5E7C"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#0E5E7C</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#E3EFF3"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#E3EFF3</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font:600 12px 'IBM Plex Sans';color:#33454F;margin-bottom:10px">Sémantique · statuts</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#1B8A4B"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">Terminé</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#14708F"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">En cours</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#D08A21"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">Haute</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#C0392B"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">Critique</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font:600 12px 'IBM Plex Sans';color:#33454F;margin-bottom:10px">Neutres</div>
+          <div style="display:flex;gap:8px">
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#16262E"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#16262E</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#5E717B"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#5E717B</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#E2E8EB"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#E2E8EB</div></div>
+            <div style="flex:1"><div style="height:56px;border-radius:8px 8px 0 0;background:#F4F6F7;border:1px solid #EEF2F3;border-bottom:none"></div><div style="font:500 10px 'IBM Plex Mono';color:#5E717B;padding:5px 6px;border:1px solid #EEF2F3;border-top:none;border-radius:0 0 8px 8px">#F4F6F7</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPO -->
+    <div style="padding:30px 40px;border-bottom:1px solid #EEF2F3;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">02 — Typographie · interface</div>
+        <div style="font:400 13px 'IBM Plex Mono';color:#0E5E7C;margin-bottom:14px">IBM Plex Sans</div>
+        <div style="font:700 30px/1.1 'IBM Plex Sans';color:#16262E">Reporting clair et fiable</div>
+        <div style="font:600 18px 'IBM Plex Sans';color:#33454F;margin-top:12px">Titre de section · Semibold 18</div>
+        <div style="font:400 14px/1.6 'IBM Plex Sans';color:#5E717B;margin-top:10px">Corps de texte · Regular 14 — utilisé pour les descriptions, libellés et contenus de tableaux. Lisibilité prioritaire.</div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">Typographie · données</div>
+        <div style="font:400 13px 'IBM Plex Mono';color:#0E5E7C;margin-bottom:14px">IBM Plex Mono</div>
+        <div style="display:flex;align-items:flex-end;gap:20px">
+          <div><div style="font:600 34px 'IBM Plex Mono';color:#0E5E7C;letter-spacing:-.01em">1 248</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">heures</div></div>
+          <div><div style="font:600 34px 'IBM Plex Mono';color:#1B8A4B;letter-spacing:-.01em">88 %</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">complétion</div></div>
+          <div><div style="font:600 34px 'IBM Plex Mono';color:#16262E;letter-spacing:-.01em">ACT-2041</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">référence</div></div>
+        </div>
+        <div style="font:400 12px/1.6 'IBM Plex Sans';color:#8A99A1;margin-top:16px">Chiffres tabulaires, montants, durées, dates et identifiants — pour un alignement net dans les tableaux et cartes KPI.</div>
+      </div>
+    </div>
+
+    <!-- COMPOSANTS -->
+    <div style="padding:30px 40px;display:grid;grid-template-columns:1fr 1fr;gap:36px 48px">
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">03 — Boutons</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:8px;padding:11px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">add</span>Nouvelle activité</button>
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0E5E7C;border:1px solid #CDD8DC;border-radius:8px;padding:11px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">filter_list</span>Filtrer</button>
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#1B8A4B;color:#fff;border:none;border-radius:8px;padding:11px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">download</span>Exporter</button>
+          <button style="display:inline-flex;align-items:center;gap:7px;background:transparent;color:#C0392B;border:1px solid #EBC7C1;border-radius:8px;padding:11px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">delete</span>Supprimer</button>
+          <button style="background:transparent;color:#5E717B;border:none;padding:8px 6px;font:600 13px 'IBM Plex Sans';cursor:pointer">Annuler</button>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">04 — Badges · statuts &amp; priorités</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font:600 12px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Terminé</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font:600 12px 'IBM Plex Sans';color:#14708F;background:#E1EFF4"><span style="width:7px;height:7px;border-radius:50%;background:#14708F"></span>En cours</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font:600 12px 'IBM Plex Sans';color:#64757D;background:#EDF1F2"><span style="width:7px;height:7px;border-radius:50%;background:#64757D"></span>À faire</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font:600 12px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7"><span style="width:7px;height:7px;border-radius:50%;background:#C0392B"></span>Bloqué</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#1F9D74;background:#E4F4EE">Basse</span>
+          <span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">Moyenne</span>
+          <span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#D08A21;background:#FBF0DC">Haute</span>
+          <span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Critique</span>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">05 — Catégories IT</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0"></span>Développement</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#7E57C2"></span>Cybersécurité</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#0E5E7C"></span>Infrastructure/Réseau</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#1F9D74"></span>Support</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#D08A21"></span>Maintenance</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:8px;height:8px;border-radius:2px;background:#64757D"></span>Reporting</span>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">06 — Champs de formulaire</div>
+        <div style="display:flex;gap:14px;align-items:flex-end">
+          <div style="flex:1">
+            <div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Titre</div>
+            <div style="border:1px solid #CDD8DC;border-radius:8px;padding:10px 12px;font:400 13px 'IBM Plex Sans';color:#16262E;background:#fff">Migration switch agence</div>
+          </div>
+          <div style="width:150px">
+            <div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Catégorie</div>
+            <div style="border:1.5px solid #0E5E7C;border-radius:8px;padding:10px 12px;font:400 13px 'IBM Plex Sans';color:#16262E;background:#fff;display:flex;align-items:center;justify-content:space-between;box-shadow:0 0 0 3px rgba(14,94,124,.12)">Réseau<span class="i" style="font-size:18px;color:#8A99A1">expand_more</span></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">07 — Carte KPI</div>
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:18px 20px;box-shadow:0 1px 2px rgba(9,54,70,.04);width:230px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font:500 12px 'IBM Plex Sans';color:#5E717B">Terminées cette semaine</div>
+            <div style="width:34px;height:34px;border-radius:8px;background:#E4F5EB;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#1B8A4B">task_alt</span></div>
+          </div>
+          <div style="font:600 34px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">12</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:4px"><span class="i" style="font-size:16px;color:#1B8A4B">trending_up</span><span style="font:500 12px 'IBM Plex Sans';color:#1B8A4B">+3</span><span style="font:400 12px 'IBM Plex Sans';color:#8A99A1">vs sem. dernière</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.08em;text-transform:uppercase;color:#5E717B;margin-bottom:16px">08 — Data-visualisation</div>
+        <div style="display:flex;align-items:flex-end;gap:9px;height:76px">
+          <div style="width:26px;height:52%;background:#BFD6DE;border-radius:4px 4px 0 0"></div>
+          <div style="width:26px;height:72%;background:#7FB0C0;border-radius:4px 4px 0 0"></div>
+          <div style="width:26px;height:44%;background:#BFD6DE;border-radius:4px 4px 0 0"></div>
+          <div style="width:26px;height:100%;background:#0E5E7C;border-radius:4px 4px 0 0"></div>
+          <div style="width:26px;height:68%;background:#7FB0C0;border-radius:4px 4px 0 0"></div>
+          <div style="width:56px;height:76px;border-radius:50%;margin-left:14px;background:conic-gradient(#1F9D74 0 25%,#2F6FE0 25% 48%,#0E5E7C 48% 66%,#7E57C2 66% 79%,#D08A21 79% 91%,#64757D 91% 100%);-webkit-mask:radial-gradient(circle 15px at 50% 50%,transparent 98%,#000 100%);mask:radial-gradient(circle 15px at 50% 50%,transparent 98%,#000 100%)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 00 · CONNEXION ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">ÉCRAN 00</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Connexion</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— accès au portail</span>
+  </div>
+  <div style="display:flex;height:720px;border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06)">
+    <!-- brand panel -->
+    <div style="width:52%;background:linear-gradient(155deg,#0B4A61 0%,#072F3F 100%);padding:56px 56px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between">
+      <img src="uploads/logo-1783035702706.webp" style="position:absolute;right:-90px;bottom:-40px;width:460px;filter:brightness(0) invert(1);opacity:.05;transform:rotate(-6deg)">
+      <div style="background:#fff;display:inline-flex;padding:14px 18px;border-radius:12px;align-self:flex-start"><img src="uploads/logo-1783035702706.webp" style="height:40px;display:block"></div>
+      <div style="position:relative">
+        <div style="font:700 34px/1.18 'IBM Plex Sans';color:#fff;letter-spacing:-.02em">Plateforme de reporting<br>d'activités IT</div>
+        <div style="font:400 15px/1.6 'IBM Plex Sans';color:#A9C4CE;margin-top:16px;max-width:400px">Saisissez vos tâches, suivez leur avancement et générez des rapports individuels ou consolidés pour le service informatique.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:28px">
+          <div style="display:flex;align-items:center;gap:11px;font:500 14px 'IBM Plex Sans';color:#DCE9ED"><span class="i" style="font-size:20px;color:#5FBB84">check_circle</span>Saisie et suivi des activités au quotidien</div>
+          <div style="display:flex;align-items:center;gap:11px;font:500 14px 'IBM Plex Sans';color:#DCE9ED"><span class="i" style="font-size:20px;color:#5FBB84">check_circle</span>Tableaux de bord par employé et consolidés</div>
+          <div style="display:flex;align-items:center;gap:11px;font:500 14px 'IBM Plex Sans';color:#DCE9ED"><span class="i" style="font-size:20px;color:#5FBB84">check_circle</span>Export des rapports en PDF et Excel</div>
+        </div>
+      </div>
+      <div style="position:relative;font:500 11px 'IBM Plex Mono';letter-spacing:.05em;color:#6C97A6">RÉSEAU DE MICROFINANCE · ZONE CEMAC · RÉGULÉ COBAC</div>
+    </div>
+    <!-- form panel -->
+    <div style="flex:1;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:56px 64px;position:relative">
+      <div style="max-width:380px;width:100%;margin:0 auto">
+        <div style="font:600 26px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Connexion</div>
+        <div style="font:400 14px 'IBM Plex Sans';color:#5E717B;margin-top:8px;margin-bottom:32px">Accédez à votre espace de reporting.</div>
+
+        <div style="font:500 13px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Adresse e-mail professionnelle</div>
+        <div style="display:flex;align-items:center;gap:10px;border:1px solid #CDD8DC;border-radius:9px;padding:12px 14px;margin-bottom:18px;background:#fff"><span class="i" style="font-size:19px;color:#8A99A1">mail</span><span style="font:400 14px 'IBM Plex Sans';color:#16262E">n.fotso@mufidunion.cm</span></div>
+
+        <div style="font:500 13px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Mot de passe</div>
+        <div style="display:flex;align-items:center;gap:10px;border:1.5px solid #0E5E7C;border-radius:9px;padding:12px 14px;margin-bottom:16px;background:#fff;box-shadow:0 0 0 3px rgba(14,94,124,.12)"><span class="i" style="font-size:19px;color:#0E5E7C">lock</span><span style="font:400 14px 'IBM Plex Sans';color:#16262E;letter-spacing:2px;flex:1">••••••••••</span><span class="i" style="font-size:19px;color:#8A99A1">visibility</span></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:26px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:18px;border-radius:5px;background:#0E5E7C;display:inline-flex;align-items:center;justify-content:center"><span class="i" style="font-size:14px;color:#fff">check</span></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Se souvenir de moi</span></div>
+          <a href="#" style="font:500 13px 'IBM Plex Sans';color:#0E5E7C">Mot de passe oublié ?</a>
+        </div>
+
+        <button style="width:100%;background:#0E5E7C;color:#fff;border:none;border-radius:9px;padding:14px;font:600 14px 'IBM Plex Sans';cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">Se connecter<span class="i" style="font-size:19px">arrow_forward</span></button>
+
+        <div style="display:flex;align-items:center;gap:10px;font:400 12px 'IBM Plex Sans';color:#A9AFB3;margin-top:26px"><span style="flex:1;height:1px;background:#EEF2F3"></span>Accès réservé au personnel<span style="flex:1;height:1px;background:#EEF2F3"></span></div>
+        <div style="font:400 12px/1.6 'IBM Plex Sans';color:#8A99A1;text-align:center;margin-top:16px">Pour toute difficulté de connexion, contactez<br>l'administrateur système : <span style="color:#0E5E7C">support@mufidunion.cm</span></div>
+      </div>
+      <div style="position:absolute;bottom:22px;left:0;right:0;text-align:center;font:400 11px 'IBM Plex Sans';color:#B4BBBF">© 2026 MUFID UNION — Tous droits réservés · v1.0</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 01 · DASHBOARD EMPLOYÉ ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">ÉCRAN 01</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Tableau de bord — employé</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— Espace employé (IT)</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <img src="uploads/logo-1783035702706.webp" style="height:30px;display:block">
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:236px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher une activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">NF</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Nadège Fotso</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Développeuse senior</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#0B4A61;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ESPACE EMPLOYÉ</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">add_task</span>Saisir une activité</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">checklist</span>Mes activités</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">account_circle</span>Mon profil</a>
+        <div style="margin-top:auto;padding:14px 12px 4px">
+          <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px">
+            <div style="font:600 12px 'IBM Plex Sans';color:#fff;margin-bottom:4px">Besoin d'aide ?</div>
+            <div style="font:400 11px/1.5 'IBM Plex Sans';color:#8FB2BF">Guide de saisie des activités IT.</div>
+          </div>
+          <div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div>
+        </div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px">
+          <div>
+            <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Bonjour, Nadège</div>
+            <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px">Vendredi 3 juillet 2026 — voici l'état de vos activités.</div>
+          </div>
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:9px;padding:12px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:19px">add</span>Nouvelle activité</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Tâches du jour</div><div style="width:34px;height:34px;border-radius:8px;background:#E1EFF4;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#14708F">today</span></div></div>
+            <div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">4</div>
+            <div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">dont 1 prioritaire</div>
+          </div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">En cours</div><div style="width:34px;height:34px;border-radius:8px;background:#E1EFF4;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#14708F">pending</span></div></div>
+            <div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">3</div>
+            <div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">1 bloquée</div>
+          </div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Terminées cette semaine</div><div style="width:34px;height:34px;border-radius:8px;background:#E4F5EB;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#1B8A4B">task_alt</span></div></div>
+            <div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">12</div>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="i" style="font-size:15px;color:#1B8A4B">trending_up</span><span style="font:500 12px 'IBM Plex Sans';color:#1B8A4B">+3</span><span style="font:400 12px 'IBM Plex Sans';color:#8A99A1">vs sem. dernière</span></div>
+          </div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Taux de complétion</div><div style="width:34px;height:34px;border-radius:8px;background:#E4F5EB;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#1B8A4B">donut_large</span></div></div>
+            <div style="font:600 33px 'IBM Plex Mono';color:#1B8A4B;margin-top:12px;letter-spacing:-.02em">88 %</div>
+            <div style="height:6px;background:#EEF2F3;border-radius:3px;margin-top:9px;overflow:hidden"><div style="width:88%;height:100%;background:#1B8A4B;border-radius:3px"></div></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div><div style="font:600 15px 'IBM Plex Sans';color:#16262E">Activité de la semaine</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:2px">Activités saisies par jour</div></div>
+              <span style="font:500 11px 'IBM Plex Mono';color:#5E717B;background:#F4F6F7;border:1px solid #E8EDEE;padding:5px 10px;border-radius:6px">41 au total</span>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:14px;height:186px;padding-top:8px">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">6</div><div style="width:100%;max-width:34px;height:67%;background:linear-gradient(180deg,#1B7C9E,#0E5E7C);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Lun</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">8</div><div style="width:100%;max-width:34px;height:89%;background:linear-gradient(180deg,#1B7C9E,#0E5E7C);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Mar</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">5</div><div style="width:100%;max-width:34px;height:56%;background:linear-gradient(180deg,#1B7C9E,#0E5E7C);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Mer</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">9</div><div style="width:100%;max-width:34px;height:100%;background:linear-gradient(180deg,#1B7C9E,#0E5E7C);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Jeu</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">7</div><div style="width:100%;max-width:34px;height:78%;background:linear-gradient(180deg,#1B7C9E,#0E5E7C);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Ven</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">4</div><div style="width:100%;max-width:34px;height:44%;background:linear-gradient(180deg,#5B93A6,#3C7F98);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Sam</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end"><div style="font:600 12px 'IBM Plex Mono';color:#5E717B">2</div><div style="width:100%;max-width:34px;height:22%;background:linear-gradient(180deg,#5B93A6,#3C7F98);border-radius:6px 6px 0 0"></div><div style="font:500 12px 'IBM Plex Sans';color:#8A99A1">Dim</div></div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="font:600 15px 'IBM Plex Sans';color:#16262E;margin-bottom:18px">Mes activités par statut</div>
+            <div style="display:flex;flex-direction:column;gap:15px">
+              <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:#1B8A4B"></span><span style="font:500 13px 'IBM Plex Sans';color:#33454F">Terminé</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">61%</span></div><div style="height:8px;background:#F0F3F4;border-radius:4px;overflow:hidden"><div style="width:61%;height:100%;background:#1B8A4B;border-radius:4px"></div></div></div>
+              <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:#14708F"></span><span style="font:500 13px 'IBM Plex Sans';color:#33454F">En cours</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">22%</span></div><div style="height:8px;background:#F0F3F4;border-radius:4px;overflow:hidden"><div style="width:22%;height:100%;background:#14708F;border-radius:4px"></div></div></div>
+              <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:#64757D"></span><span style="font:500 13px 'IBM Plex Sans';color:#33454F">À faire</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">12%</span></div><div style="height:8px;background:#F0F3F4;border-radius:4px;overflow:hidden"><div style="width:12%;height:100%;background:#64757D;border-radius:4px"></div></div></div>
+              <div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:50%;background:#C0392B"></span><span style="font:500 13px 'IBM Plex Sans';color:#33454F">Bloqué</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">5%</span></div><div style="height:8px;background:#F0F3F4;border-radius:4px;overflow:hidden"><div style="width:5%;height:100%;background:#C0392B;border-radius:4px"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid #EEF2F3">
+            <div style="font:600 15px 'IBM Plex Sans';color:#16262E">Activités récentes</div>
+            <a href="#" style="display:flex;align-items:center;gap:4px;font:500 13px 'IBM Plex Sans';color:#0E5E7C">Voir tout<span class="i" style="font-size:17px">chevron_right</span></a>
+          </div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:10px 22px;border-bottom:1px solid #EEF2F3;font:600 11px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;color:#8A99A1">
+            <div>Réf.</div><div>Activité</div><div>Catégorie</div><div>Statut</div><div style="text-align:right">Durée</div>
+          </div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:13px 22px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2041</div><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:14px">Déploiement du correctif v2.3 — app mobile Épargne</div><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0;flex:none"></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Développement</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span></div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">3,5 h</div></div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:13px 22px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2036</div><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:14px">Intégration passerelle Mobile Money (MTN / Orange)</div><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0;flex:none"></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Développement</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Bloqué</span></div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">5 h</div></div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:13px 22px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2028</div><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:14px">Correction bug rapprochement comptable</div><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0;flex:none"></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Développement</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">3,5 h</div></div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:13px 22px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2019</div><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:14px">Revue de code — module virements internes</div><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0;flex:none"></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Développement</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div></div>
+          <div style="display:grid;grid-template-columns:110px 1fr 170px 120px 90px;padding:13px 22px;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2008</div><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:14px">Documentation de l'API interne de virement</div><div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#64757D;flex:none"></span><span style="font:400 13px 'IBM Plex Sans';color:#33454F">Reporting</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#64757D;background:#EDF1F2">À faire</span></div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div></div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 02 · FORMULAIRE DE SAISIE ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">ÉCRAN 02</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Saisie d'une activité</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— Espace employé (IT)</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <img src="uploads/logo-1783035702706.webp" style="height:30px;display:block">
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:236px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher une activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">NF</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Nadège Fotso</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Développeuse senior</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#0B4A61;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ESPACE EMPLOYÉ</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">add_task</span>Saisir une activité</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">checklist</span>Mes activités</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">account_circle</span>Mon profil</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <a href="#" style="display:inline-flex;align-items:center;gap:5px;font:500 12.5px 'IBM Plex Sans';color:#5E717B;margin-bottom:12px"><span class="i" style="font-size:17px">arrow_back</span>Retour à mes activités</a>
+        <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Nouvelle activité</div>
+        <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px;margin-bottom:22px">Renseignez les informations de la tâche réalisée ou planifiée.</div>
+
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
+          <!-- form -->
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:26px 28px">
+            <div style="margin-bottom:18px">
+              <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Titre de l'activité <span style="color:#C0392B">*</span></div>
+              <div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 13px;font:400 14px 'IBM Plex Sans';color:#16262E;background:#fff">Déploiement du correctif v2.3 — app mobile Épargne</div>
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Description</div>
+              <div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 13px;font:400 13.5px/1.6 'IBM Plex Sans';color:#33454F;background:#fff;min-height:78px">Correction de l'affichage des soldes après opération, tests de non-régression et publication sur l'environnement de préproduction.</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+              <div>
+                <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Catégorie <span style="color:#C0392B">*</span></div>
+                <div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 13px;font:400 14px 'IBM Plex Sans';color:#16262E;background:#fff;display:flex;align-items:center;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0"></span>Développement</span><span class="i" style="font-size:19px;color:#8A99A1">expand_more</span></div>
+              </div>
+              <div>
+                <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:7px">Durée (heures) <span style="color:#C0392B">*</span></div>
+                <div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 13px;font:400 14px 'IBM Plex Mono';color:#16262E;background:#fff;display:flex;align-items:center;justify-content:space-between"><span>3,5</span><span class="i" style="font-size:19px;color:#8A99A1">schedule</span></div>
+              </div>
+            </div>
+            <div style="margin-bottom:18px">
+              <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:8px">Priorité <span style="color:#C0392B">*</span></div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Basse</div>
+                <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Moyenne</div>
+                <div style="flex:1;text-align:center;border:1.5px solid #D08A21;border-radius:8px;padding:9px;font:600 13px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</div>
+                <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Critique</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px">
+              <div>
+                <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:8px">Statut <span style="color:#C0392B">*</span></div>
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px 6px;font:500 12.5px 'IBM Plex Sans';color:#5E717B;background:#fff">À faire</div>
+                  <div style="flex:1;text-align:center;border:1.5px solid #14708F;border-radius:8px;padding:9px 6px;font:600 12.5px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</div>
+                  <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px 6px;font:500 12.5px 'IBM Plex Sans';color:#5E717B;background:#fff">Terminé</div>
+                  <div style="flex:1;text-align:center;border:1px solid #CDD8DC;border-radius:8px;padding:9px 6px;font:500 12.5px 'IBM Plex Sans';color:#5E717B;background:#fff">Bloqué</div>
+                </div>
+              </div>
+              <div>
+                <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:8px">Date <span style="color:#C0392B">*</span></div>
+                <div style="border:1px solid #CDD8DC;border-radius:8px;padding:9px 13px;font:400 14px 'IBM Plex Mono';color:#16262E;background:#fff;display:flex;align-items:center;justify-content:space-between"><span>03/07/2026</span><span class="i" style="font-size:19px;color:#8A99A1">calendar_month</span></div>
+              </div>
+            </div>
+            <div style="margin-bottom:24px">
+              <div style="font:500 12.5px 'IBM Plex Sans';color:#33454F;margin-bottom:8px">Pièce jointe</div>
+              <div style="border:1.5px dashed #C6D2D7;border-radius:10px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:7px;background:#FAFBFB">
+                <span class="i" style="font-size:26px;color:#9AA7AD">cloud_upload</span>
+                <div style="font:500 13px 'IBM Plex Sans';color:#33454F">Glissez un fichier ou <span style="color:#0E5E7C">parcourez</span></div>
+                <div style="font:400 11.5px 'IBM Plex Sans';color:#9AA7AD">PDF, PNG, JPG, XLSX — max. 10 Mo</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;border:1px solid #E2E8EB;border-radius:8px;padding:10px 12px;margin-top:10px;background:#fff">
+                <span class="i" style="font-size:20px;color:#C0392B">picture_as_pdf</span>
+                <div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">rapport-tests-v2.3.pdf</div><div style="font:400 11px 'IBM Plex Mono';color:#9AA7AD">248 Ko</div></div>
+                <span class="i" style="font-size:19px;color:#9AA7AD">close</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;border-top:1px solid #EEF2F3;padding-top:20px">
+              <button style="background:transparent;color:#5E717B;border:none;padding:11px 8px;font:600 13px 'IBM Plex Sans';cursor:pointer">Annuler</button>
+              <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0E5E7C;border:1px solid #CDD8DC;border-radius:8px;padding:11px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer">Enregistrer comme brouillon</button>
+              <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:8px;padding:11px 20px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">check</span>Enregistrer l'activité</button>
+            </div>
+          </div>
+
+          <!-- helper column -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:18px 20px">
+              <div style="font:600 12px 'IBM Plex Sans';letter-spacing:.05em;text-transform:uppercase;color:#8A99A1;margin-bottom:14px">Aperçu</div>
+              <div style="font:600 14.5px/1.4 'IBM Plex Sans';color:#16262E;margin-bottom:12px">Déploiement du correctif v2.3 — app mobile Épargne</div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font:500 12px 'IBM Plex Sans';color:#33454F;background:#F4F6F7;border:1px solid #E8EDEE"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span>Développement</span>
+                <span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid #EEF2F3;padding-top:12px">
+                <span style="font:400 12.5px 'IBM Plex Sans';color:#8A99A1">03/07/2026</span>
+                <span style="font:600 13px 'IBM Plex Mono';color:#0E5E7C">3,5 h</span>
+              </div>
+            </div>
+            <div style="background:#F0F6F8;border:1px solid #DCE9ED;border-radius:12px;padding:18px 20px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="i" style="font-size:19px;color:#0E5E7C">lightbulb</span><span style="font:600 13px 'IBM Plex Sans';color:#0E5E7C">Bonnes pratiques</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;gap:9px;font:400 12.5px/1.5 'IBM Plex Sans';color:#33454F"><span class="i" style="font-size:17px;color:#1B8A4B;flex:none">check_circle</span>Un titre clair et actionnable.</div>
+                <div style="display:flex;gap:9px;font:400 12.5px/1.5 'IBM Plex Sans';color:#33454F"><span class="i" style="font-size:17px;color:#1B8A4B;flex:none">check_circle</span>Renseignez la durée réelle passée.</div>
+                <div style="display:flex;gap:9px;font:400 12.5px/1.5 'IBM Plex Sans';color:#33454F"><span class="i" style="font-size:17px;color:#1B8A4B;flex:none">check_circle</span>Joignez une preuve pour les incidents.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 03 · MES ACTIVITÉS ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">ÉCRAN 03</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Mes activités</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— tableau filtrable, tri, pagination</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <img src="uploads/logo-1783035702706.webp" style="height:30px;display:block">
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:236px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher une activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">NF</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Nadège Fotso</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Développeuse senior</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#0B4A61;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ESPACE EMPLOYÉ</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">add_task</span>Saisir une activité</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">checklist</span>Mes activités</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">account_circle</span>Mon profil</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Mes activités</div>
+            <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px">24 activités enregistrées — 18 terminées, 4 en cours, 2 à faire.</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0E5E7C;border:1px solid #CDD8DC;border-radius:8px;padding:10px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">download</span>Exporter</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">add</span>Nouvelle activité</button>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;overflow:hidden">
+          <!-- toolbar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EEF2F3;gap:14px">
+            <div style="display:flex;align-items:center;gap:9px;flex:1;max-width:320px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:8px;padding:9px 12px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher par titre ou réf…</span></div>
+            <div style="display:flex;align-items:center;gap:9px">
+              <div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#33454F;background:#fff"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span>Développement<span class="i" style="font-size:17px;color:#9AA7AD">close</span></div>
+              <div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Statut<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div>
+              <div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Priorité<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div>
+              <div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff"><span class="i" style="font-size:17px;color:#9AA7AD">calendar_month</span>Juin – Juil. 2026</div>
+            </div>
+          </div>
+          <!-- table head -->
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:11px 18px;background:#FAFBFB;border-bottom:1px solid #EEF2F3;font:600 11px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;color:#8A99A1">
+            <div>Réf.</div><div>Activité</div><div>Priorité</div><div>Statut</div><div style="display:flex;align-items:center;gap:4px;color:#0E5E7C">Date<span class="i" style="font-size:15px">arrow_downward</span></div><div style="text-align:right">Durée</div><div style="text-align:right">Actions</div>
+          </div>
+          <!-- rows -->
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2041</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Déploiement du correctif v2.3 — app mobile Épargne</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">03/07/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">3,5 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2036</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Intégration passerelle Mobile Money (MTN / Orange)</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Critique</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Bloqué</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">01/07/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">5 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2028</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Correction bug rapprochement comptable</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Critique</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">28/06/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">3,5 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2019</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Revue de code — module virements internes</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">Moyenne</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">27/06/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2015</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mise en place des tests automatisés (CI)</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#1F9D74;background:#E4F4EE">Basse</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">26/06/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">3 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2012</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hotfix affichage des soldes — app mobile</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">25/06/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">1,5 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <div style="display:grid;grid-template-columns:96px 1fr 116px 122px 118px 84px 82px;padding:13px 18px;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2008</div><div style="padding-right:14px"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Documentation de l'API interne de virement</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#64757D"></span><span style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Reporting</span></div></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#1F9D74;background:#E4F4EE">Basse</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#64757D;background:#EDF1F2">À faire</span></div><div style="font:400 12.5px 'IBM Plex Mono';color:#5E717B">24/06/2026</div><div style="font:500 13px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div><div style="display:flex;gap:12px;justify-content:flex-end;color:#9AA7AD"><span class="i" style="font-size:19px">edit</span><span class="i" style="font-size:19px">delete</span></div></div>
+          <!-- pagination -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#FAFBFB">
+            <div style="font:400 12.5px 'IBM Plex Sans';color:#8A99A1">Affichage <span style="font-family:'IBM Plex Mono';color:#33454F">1–7</span> sur <span style="font-family:'IBM Plex Mono';color:#33454F">24</span> activités</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;display:flex;align-items:center;justify-content:center;color:#C6D2D7"><span class="i" style="font-size:18px">chevron_left</span></div>
+              <div style="width:32px;height:32px;border-radius:7px;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Mono'">1</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">2</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">3</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">4</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;display:flex;align-items:center;justify-content:center;color:#5E717B"><span class="i" style="font-size:18px">chevron_right</span></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 04 · DASHBOARD ADMIN ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#093646;padding:6px 11px;border-radius:6px">ÉCRAN 04</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Tableau de bord — administrateur</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— Espace administrateur</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="uploads/logo-1783035702706.webp" style="height:30px;display:block"><span style="font:600 10px 'IBM Plex Mono';letter-spacing:.08em;color:#0E5E7C;background:#E3EFF3;border:1px solid #CFE2E9;padding:4px 8px;border-radius:5px">ADMIN</span></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:250px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher employé, activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">AM</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Chef de service IT</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#093646;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ADMINISTRATION</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">dvr</span>Gestion des activités</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">assignment_ind</span>Rapports individuels</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">summarize</span>Rapports consolidés</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">group</span>Utilisateurs</a>
+        <div style="margin-top:auto;padding:14px 12px 4px">
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(31,157,116,.14);border:1px solid rgba(31,157,116,.28);border-radius:9px;padding:10px 12px"><span class="i" style="font-size:18px;color:#5FBB84">verified_user</span><div style="font:500 11px/1.4 'IBM Plex Sans';color:#B7DEC9">Conforme COBAC<br><span style="color:#6E9DAB">Traçabilité activée</span></div></div>
+          <div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div>
+        </div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px">
+          <div>
+            <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Vue d'ensemble du service IT</div>
+            <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px">Activité consolidée du personnel — 30 derniers jours.</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:10px 14px;font:500 13px 'IBM Plex Sans';color:#33454F;background:#fff"><span class="i" style="font-size:18px;color:#8A99A1">calendar_month</span>30 derniers jours<span class="i" style="font-size:18px;color:#8A99A1">expand_more</span></div>
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">download</span>Exporter</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Total activités</div><div style="width:34px;height:34px;border-radius:8px;background:#E3EFF3;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#0E5E7C">dvr</span></div></div><div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">342</div><div style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="i" style="font-size:15px;color:#1B8A4B">trending_up</span><span style="font:500 12px 'IBM Plex Sans';color:#1B8A4B">+12 %</span><span style="font:400 12px 'IBM Plex Sans';color:#8A99A1">vs période préc.</span></div></div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Employés actifs</div><div style="width:34px;height:34px;border-radius:8px;background:#E3EFF3;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#0E5E7C">group</span></div></div><div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">7</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">1 en congé</div></div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Taux de complétion</div><div style="width:34px;height:34px;border-radius:8px;background:#E4F5EB;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#1B8A4B">donut_large</span></div></div><div style="font:600 33px 'IBM Plex Mono';color:#1B8A4B;margin-top:12px;letter-spacing:-.02em">81 %</div><div style="height:6px;background:#EEF2F3;border-radius:3px;margin-top:9px;overflow:hidden"><div style="width:81%;height:100%;background:#1B8A4B;border-radius:3px"></div></div></div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:17px 19px"><div style="display:flex;align-items:center;justify-content:space-between"><div style="font:500 12.5px 'IBM Plex Sans';color:#5E717B">Heures cumulées</div><div style="width:34px;height:34px;border-radius:8px;background:#FBF0DC;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:19px;color:#B4750E">schedule</span></div></div><div style="font:600 33px 'IBM Plex Mono';color:#16262E;margin-top:12px;letter-spacing:-.02em">1 248 <span style="font-size:16px;color:#8A99A1">h</span></div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">≈ 178 h / employé</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:16px;margin-bottom:18px">
+          <!-- trend -->
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div><div style="font:600 15px 'IBM Plex Sans';color:#16262E">Évolution des activités</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:2px">Nombre d'activités enregistrées par mois</div></div>
+              <div style="display:flex;align-items:center;gap:6px"><span class="i" style="font-size:16px;color:#1B8A4B">trending_up</span><span style="font:600 13px 'IBM Plex Mono';color:#1B8A4B">+48 %</span><span style="font:400 12px 'IBM Plex Sans';color:#8A99A1">sur 6 mois</span></div>
+            </div>
+            <svg viewBox="0 0 560 190" style="width:100%;height:180px;display:block" preserveAspectRatio="none" data-om-raster>
+              <line x1="30" y1="20" x2="560" y2="20" stroke="#F0F3F4" stroke-width="1"/>
+              <line x1="30" y1="72" x2="560" y2="72" stroke="#F0F3F4" stroke-width="1"/>
+              <line x1="30" y1="124" x2="560" y2="124" stroke="#F0F3F4" stroke-width="1"/>
+              <line x1="30" y1="175" x2="560" y2="175" stroke="#E2E8EB" stroke-width="1"/>
+              <defs><linearGradient id="area04" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E5E7C" stop-opacity="0.20"/><stop offset="1" stop-color="#0E5E7C" stop-opacity="0"/></linearGradient></defs>
+              <path d="M30,133 L132,109 L234,123 L336,82 L438,72 L540,36 L540,175 L30,175 Z" fill="url(#area04)"/>
+              <polyline points="30,133 132,109 234,123 336,82 438,72 540,36" fill="none" stroke="#0E5E7C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="30" cy="133" r="3.5" fill="#fff" stroke="#0E5E7C" stroke-width="2"/>
+              <circle cx="132" cy="109" r="3.5" fill="#fff" stroke="#0E5E7C" stroke-width="2"/>
+              <circle cx="234" cy="123" r="3.5" fill="#fff" stroke="#0E5E7C" stroke-width="2"/>
+              <circle cx="336" cy="82" r="3.5" fill="#fff" stroke="#0E5E7C" stroke-width="2"/>
+              <circle cx="438" cy="72" r="3.5" fill="#fff" stroke="#0E5E7C" stroke-width="2"/>
+              <circle cx="540" cy="36" r="4.5" fill="#0E5E7C"/>
+            </svg>
+            <div style="display:flex;justify-content:space-between;padding:8px 0 0 26px;font:500 11.5px 'IBM Plex Sans';color:#8A99A1"><span>Janv.</span><span>Févr.</span><span>Mars</span><span>Avr.</span><span>Mai</span><span>Juin</span></div>
+          </div>
+          <!-- donut -->
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="font:600 15px 'IBM Plex Sans';color:#16262E;margin-bottom:16px">Répartition par catégorie</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <div style="position:relative;width:118px;height:118px;flex:none">
+                <div style="width:118px;height:118px;border-radius:50%;background:conic-gradient(#1F9D74 0 25%,#2F6FE0 25% 48%,#0E5E7C 48% 66%,#7E57C2 66% 79%,#D08A21 79% 91%,#64757D 91% 100%);-webkit-mask:radial-gradient(circle 34px at 50% 50%,transparent 98%,#000 100%);mask:radial-gradient(circle 34px at 50% 50%,transparent 98%,#000 100%)"></div>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:600 22px 'IBM Plex Mono';color:#16262E">342</div><div style="font:400 10px 'IBM Plex Sans';color:#8A99A1">activités</div></div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#1F9D74"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Support</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">25%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Développement</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">23%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#0E5E7C"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Infrastructure</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">18%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#7E57C2"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Cybersécurité</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">13%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#D08A21"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Maintenance</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">12%</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:2px;background:#64757D"></span><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F">Reporting</span></div><span style="font:600 12px 'IBM Plex Mono';color:#5E717B">9%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:16px">
+          <!-- charge par employé -->
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="font:600 15px 'IBM Plex Sans';color:#16262E;margin-bottom:18px">Charge par employé <span style="font:400 12px 'IBM Plex Sans';color:#8A99A1">— heures sur la période</span></div>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Serge Nkodo</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:100%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">224 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Nadège Fotso</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:92%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">205 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Yves Talla</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:84%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">188 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Aristide Mbarga</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:75%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">168 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Estelle Ngono</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:72%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">161 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chantal Abena</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:68%;height:100%;background:linear-gradient(90deg,#1B7C9E,#0E5E7C);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">152 h</div></div>
+              <div style="display:flex;align-items:center;gap:12px"><div style="width:120px;font:500 13px 'IBM Plex Sans';color:#33454F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Boris Etoa</div><div style="flex:1;height:14px;background:#F0F3F4;border-radius:7px;overflow:hidden"><div style="width:67%;height:100%;background:linear-gradient(90deg,#8FB2BF,#6E9DAB);border-radius:7px"></div></div><div style="width:48px;text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">150 h</div></div>
+            </div>
+          </div>
+          <!-- top contributeurs -->
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:20px 22px">
+            <div style="font:600 15px 'IBM Plex Sans';color:#16262E;margin-bottom:16px">Top contributeurs</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:22px;font:700 14px 'IBM Plex Mono';color:#B4750E;text-align:center">1</span><div style="width:34px;height:34px;border-radius:50%;background:#D08A21;color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Sans';flex:none">YT</div><div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">Yves Talla</div><div style="height:5px;background:#F0F3F4;border-radius:3px;margin-top:4px;overflow:hidden"><div style="width:100%;height:100%;background:#0E5E7C"></div></div></div><span style="font:600 13px 'IBM Plex Mono';color:#16262E">63</span></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:22px;font:700 14px 'IBM Plex Mono';color:#5E717B;text-align:center">2</span><div style="width:34px;height:34px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Sans';flex:none">NF</div><div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">Nadège Fotso</div><div style="height:5px;background:#F0F3F4;border-radius:3px;margin-top:4px;overflow:hidden"><div style="width:92%;height:100%;background:#0E5E7C"></div></div></div><span style="font:600 13px 'IBM Plex Mono';color:#16262E">58</span></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:22px;font:700 14px 'IBM Plex Mono';color:#B4750E;text-align:center">3</span><div style="width:34px;height:34px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Sans';flex:none">SN</div><div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">Serge Nkodo</div><div style="height:5px;background:#F0F3F4;border-radius:3px;margin-top:4px;overflow:hidden"><div style="width:81%;height:100%;background:#0E5E7C"></div></div></div><span style="font:600 13px 'IBM Plex Mono';color:#16262E">51</span></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:22px;font:600 13px 'IBM Plex Mono';color:#9AA7AD;text-align:center">4</span><div style="width:34px;height:34px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Sans';flex:none">AM</div><div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="height:5px;background:#F0F3F4;border-radius:3px;margin-top:4px;overflow:hidden"><div style="width:73%;height:100%;background:#8FB2BF"></div></div></div><span style="font:600 13px 'IBM Plex Mono';color:#16262E">46</span></div>
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:22px;font:600 13px 'IBM Plex Mono';color:#9AA7AD;text-align:center">5</span><div style="width:34px;height:34px;border-radius:50%;background:#14708F;color:#fff;display:flex;align-items:center;justify-content:center;font:600 12px 'IBM Plex Sans';flex:none">EN</div><div style="flex:1"><div style="font:500 13px 'IBM Plex Sans';color:#16262E">Estelle Ngono</div><div style="height:5px;background:#F0F3F4;border-radius:3px;margin-top:4px;overflow:hidden"><div style="width:70%;height:100%;background:#8FB2BF"></div></div></div><span style="font:600 13px 'IBM Plex Mono';color:#16262E">44</span></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 05 · GESTION DES ACTIVITÉS ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#093646;padding:6px 11px;border-radius:6px">ÉCRAN 05</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Gestion des activités</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— toutes les activités du personnel + filtres avancés</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="uploads/logo-1783035702706.webp" style="height:30px;display:block"><span style="font:600 10px 'IBM Plex Mono';letter-spacing:.08em;color:#0E5E7C;background:#E3EFF3;border:1px solid #CFE2E9;padding:4px 8px;border-radius:5px">ADMIN</span></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:250px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher employé, activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">AM</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Chef de service IT</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#093646;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ADMINISTRATION</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">dvr</span>Gestion des activités</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">assignment_ind</span>Rapports individuels</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">summarize</span>Rapports consolidés</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">group</span>Utilisateurs</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="display:flex;align-items:center;gap:8px;background:rgba(31,157,116,.14);border:1px solid rgba(31,157,116,.28);border-radius:9px;padding:10px 12px"><span class="i" style="font-size:18px;color:#5FBB84">verified_user</span><div style="font:500 11px/1.4 'IBM Plex Sans';color:#B7DEC9">Conforme COBAC<br><span style="color:#6E9DAB">Traçabilité activée</span></div></div><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Gestion des activités</div>
+            <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px">342 activités sur la période — tout le personnel IT.</div>
+          </div>
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#1B8A4B;color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">download</span>Exporter la sélection</button>
+        </div>
+
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;overflow:hidden">
+          <!-- advanced filters -->
+          <div style="padding:16px 18px;border-bottom:1px solid #EEF2F3">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="i" style="font-size:18px;color:#0E5E7C">filter_list</span><span style="font:600 12.5px 'IBM Plex Sans';color:#33454F">Filtres avancés</span><span style="font:500 11px 'IBM Plex Mono';color:#0E5E7C;background:#E3EFF3;padding:2px 8px;border-radius:999px">2 actifs</span></div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid #CDD8DC;border-radius:8px;padding:9px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff"><span class="i" style="font-size:17px;color:#9AA7AD">person</span>Employé<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div>
+              <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #0E5E7C;border-radius:8px;padding:9px 12px;font:600 13px 'IBM Plex Sans';color:#0E5E7C;background:#F0F6F8"><span style="width:7px;height:7px;border-radius:2px;background:#7E57C2"></span>Cybersécurité<span class="i" style="font-size:17px">close</span></div>
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid #CDD8DC;border-radius:8px;padding:9px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Statut<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div>
+              <div style="display:flex;align-items:center;gap:8px;border:1.5px solid #0E5E7C;border-radius:8px;padding:9px 12px;font:600 13px 'IBM Plex Sans';color:#0E5E7C;background:#F0F6F8">Priorité : Haute, Critique<span class="i" style="font-size:17px">close</span></div>
+              <div style="display:flex;align-items:center;gap:8px;border:1px solid #CDD8DC;border-radius:8px;padding:9px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff"><span class="i" style="font-size:17px;color:#9AA7AD">calendar_month</span>Juin – Juil. 2026<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div>
+              <div style="flex:1"></div>
+              <button style="font:500 13px 'IBM Plex Sans';color:#0E5E7C;background:transparent;border:none;cursor:pointer">Réinitialiser</button>
+            </div>
+          </div>
+          <!-- table head -->
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:11px 18px;background:#FAFBFB;border-bottom:1px solid #EEF2F3;font:600 11px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;color:#8A99A1"><div>Réf.</div><div>Activité</div><div>Employé</div><div>Priorité</div><div>Statut</div><div style="display:flex;align-items:center;gap:4px;color:#0E5E7C">Date<span class="i" style="font-size:15px">arrow_downward</span></div><div style="text-align:right">Durée</div></div>
+          <!-- rows -->
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2041</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Déploiement correctif v2.3 — app Épargne</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">NF</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">N. Fotso</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">03/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">3,5 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2040</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Analyse logs pare-feu — accès Douala</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#7E57C2"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Cybersécurité</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#7E57C2;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">CA</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">C. Abena</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Critique</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">03/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2039</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Configuration VPN — agence de Bafoussam</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#0E5E7C"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Infrastructure/Réseau</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">SN</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">S. Nkodo</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">02/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">4 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2038</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Assistance — réinitialisation comptes SIB</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#1F9D74"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Support</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#D08A21;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">YT</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Y. Talla</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">Moyenne</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">02/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">1,5 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2037</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sauvegarde & restauration — base clients</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#D08A21"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Maintenance</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">SN</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">S. Nkodo</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">01/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">2,5 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2036</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Intégration passerelle Mobile Money</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Développement</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">NF</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">N. Fotso</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Critique</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#C0392B;background:#FBEAE7">Bloqué</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">01/07/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">5 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2035</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Rapport mensuel de disponibilité services</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#64757D"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Reporting</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#14708F;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">EN</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">E. Ngono</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">Moyenne</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">30/06/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">2 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2034</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mise à jour antivirus — postes agences</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#7E57C2"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Cybersécurité</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#7E57C2;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">CA</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">C. Abena</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">Moyenne</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#14708F;background:#E1EFF4">En cours</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">30/06/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">3 h</div></div>
+          <div style="display:grid;grid-template-columns:90px 1fr 158px 104px 116px 96px 62px;padding:12px 18px;align-items:center"><div style="font:500 12px 'IBM Plex Mono';color:#8A99A1">ACT-2033</div><div style="padding-right:12px"><div style="font:500 13px 'IBM Plex Sans';color:#16262E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Remplacement switch défectueux — siège</div><div style="display:flex;align-items:center;gap:6px;margin-top:3px"><span style="width:7px;height:7px;border-radius:2px;background:#0E5E7C"></span><span style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Infrastructure/Réseau</span></div></div><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">SN</div><span style="font:400 12.5px 'IBM Plex Sans';color:#33454F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">S. Nkodo</span></div><div><span style="padding:3px 9px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC">Haute</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB">Terminé</span></div><div style="font:400 12px 'IBM Plex Mono';color:#5E717B">30/06/26</div><div style="font:500 12.5px 'IBM Plex Mono';color:#33454F;text-align:right">1,5 h</div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#FAFBFB">
+            <div style="font:400 12.5px 'IBM Plex Sans';color:#8A99A1">Affichage <span style="font-family:'IBM Plex Mono';color:#33454F">1–9</span> sur <span style="font-family:'IBM Plex Mono';color:#33454F">342</span> activités</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;display:flex;align-items:center;justify-content:center;color:#C6D2D7"><span class="i" style="font-size:18px">chevron_left</span></div>
+              <div style="width:32px;height:32px;border-radius:7px;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Mono'">1</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">2</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">3</div>
+              <div style="font:500 13px 'IBM Plex Mono';color:#9AA7AD;padding:0 4px">…</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;color:#33454F;display:flex;align-items:center;justify-content:center;font:500 13px 'IBM Plex Mono'">38</div>
+              <div style="width:32px;height:32px;border-radius:7px;border:1px solid #E2E8EB;display:flex;align-items:center;justify-content:center;color:#5E717B"><span class="i" style="font-size:18px">chevron_right</span></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 06 · RAPPORTS INDIVIDUELS ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#093646;padding:6px 11px;border-radius:6px">ÉCRAN 06</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Rapports individuels</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— sélection employé + période, aperçu, export PDF / Excel</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="uploads/logo-1783035702706.webp" style="height:30px;display:block"><span style="font:600 10px 'IBM Plex Mono';letter-spacing:.08em;color:#0E5E7C;background:#E3EFF3;border:1px solid #CFE2E9;padding:4px 8px;border-radius:5px">ADMIN</span></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:250px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher employé, activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">AM</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Chef de service IT</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#093646;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ADMINISTRATION</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">dvr</span>Gestion des activités</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">assignment_ind</span>Rapports individuels</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">summarize</span>Rapports consolidés</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">group</span>Utilisateurs</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="display:flex;align-items:center;gap:8px;background:rgba(31,157,116,.14);border:1px solid rgba(31,157,116,.28);border-radius:9px;padding:10px 12px"><span class="i" style="font-size:18px;color:#5FBB84">verified_user</span><div style="font:500 11px/1.4 'IBM Plex Sans';color:#B7DEC9">Conforme COBAC<br><span style="color:#6E9DAB">Traçabilité activée</span></div></div><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em;margin-bottom:4px">Rapports individuels</div>
+        <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-bottom:20px">Générez le rapport d'activités d'un employé sur une période donnée.</div>
+
+        <!-- config bar -->
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:16px 18px;display:flex;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px"><div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Employé</div><div style="border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:10px;background:#fff"><div style="width:30px;height:30px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 11px 'IBM Plex Sans'">SN</div><div style="flex:1"><div style="font:500 13.5px 'IBM Plex Sans';color:#16262E">Serge Nkodo</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Ingénieur Réseau & Infra</div></div><span class="i" style="font-size:20px;color:#8A99A1">expand_more</span></div></div>
+          <div style="width:240px"><div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Période</div><div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;background:#fff;font:400 13.5px 'IBM Plex Mono';color:#16262E"><span class="i" style="font-size:18px;color:#8A99A1">calendar_month</span><span>01/06 – 30/06/2026</span><span class="i" style="font-size:18px;color:#8A99A1">expand_more</span></div></div>
+          <div style="display:flex;gap:10px">
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#C0392B;border:1px solid #EBC7C1;border-radius:8px;padding:11px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:19px">picture_as_pdf</span>Télécharger PDF</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#1B8A4B;color:#fff;border:none;border-radius:8px;padding:11px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:19px">table_view</span>Télécharger Excel</button>
+          </div>
+        </div>
+
+        <!-- report preview -->
+        <div style="font:600 11px 'IBM Plex Mono';letter-spacing:.06em;color:#8A99A1;margin:0 0 10px 2px">APERÇU DU RAPPORT</div>
+        <div style="max-width:860px;margin:0 auto;background:#fff;border:1px solid #E2E8EB;border-radius:6px;box-shadow:0 8px 30px -14px rgba(9,54,70,.25);padding:40px 44px">
+          <!-- letterhead -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #0E5E7C;padding-bottom:18px">
+            <div><img src="uploads/logo-1783035702706.webp" style="height:34px;display:block;margin-bottom:12px"><div style="font:700 20px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Rapport d'activités individuel</div><div style="font:400 13px 'IBM Plex Sans';color:#5E717B;margin-top:3px">Service Informatique — Période : Juin 2026</div></div>
+            <div style="text-align:right"><div style="font:500 10px 'IBM Plex Mono';color:#8A99A1;letter-spacing:.05em">RÉFÉRENCE</div><div style="font:600 14px 'IBM Plex Mono';color:#16262E;margin-top:2px">RAP-IND-2026-06-03</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1;margin-top:8px">Émis le 03/07/2026</div></div>
+          </div>
+          <!-- employee -->
+          <div style="display:flex;align-items:center;gap:14px;padding:20px 0;border-bottom:1px solid #EEF2F3">
+            <div style="width:52px;height:52px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 18px 'IBM Plex Sans';flex:none">SN</div>
+            <div style="flex:1"><div style="font:600 17px 'IBM Plex Sans';color:#16262E">Serge Nkodo</div><div style="font:400 13px 'IBM Plex Sans';color:#5E717B">Ingénieur Réseau & Infrastructure</div></div>
+            <div style="text-align:right;font:400 12px 'IBM Plex Sans';color:#8A99A1">Matricule <span style="font-family:'IBM Plex Mono';color:#33454F">U-03</span><br>s.nkodo@mufidunion.cm</div>
+          </div>
+          <!-- summary -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:22px 0">
+            <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Activités</div><div style="font:600 27px 'IBM Plex Mono';color:#16262E;margin-top:6px">22</div></div>
+            <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Heures</div><div style="font:600 27px 'IBM Plex Mono';color:#0E5E7C;margin-top:6px">96 h</div></div>
+            <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Complétion</div><div style="font:600 27px 'IBM Plex Mono';color:#1B8A4B;margin-top:6px">86 %</div></div>
+            <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Cat. principale</div><div style="font:600 14px 'IBM Plex Sans';color:#16262E;margin-top:10px">Infrastructure</div></div>
+          </div>
+          <!-- mini viz -->
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:26px;padding-bottom:22px;border-bottom:1px solid #EEF2F3">
+            <div>
+              <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:12px">Répartition par catégorie</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:90px;font:400 12px 'IBM Plex Sans';color:#5E717B">Infrastructure</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:55%;height:100%;background:#0E5E7C;border-radius:6px"></div></div><div style="width:34px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">55%</div></div>
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:90px;font:400 12px 'IBM Plex Sans';color:#5E717B">Maintenance</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:27%;height:100%;background:#D08A21;border-radius:6px"></div></div><div style="width:34px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">27%</div></div>
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:90px;font:400 12px 'IBM Plex Sans';color:#5E717B">Support</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:18%;height:100%;background:#1F9D74;border-radius:6px"></div></div><div style="width:34px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">18%</div></div>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:12px">Statut des activités</div>
+              <div style="display:flex;align-items:center;gap:16px">
+                <div style="width:78px;height:78px;border-radius:50%;background:conic-gradient(#1B8A4B 0 86%,#14708F 86% 100%);-webkit-mask:radial-gradient(circle 23px at 50% 50%,transparent 98%,#000 100%);mask:radial-gradient(circle 23px at 50% 50%,transparent 98%,#000 100%);flex:none"></div>
+                <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:2px;background:#1B8A4B"></span><span style="font:400 12px 'IBM Plex Sans';color:#33454F">Terminé</span><span style="font:600 11.5px 'IBM Plex Mono';color:#5E717B">86%</span></div><div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:2px;background:#14708F"></span><span style="font:400 12px 'IBM Plex Sans';color:#33454F">En cours</span><span style="font:600 11.5px 'IBM Plex Mono';color:#5E717B">14%</span></div></div>
+              </div>
+            </div>
+          </div>
+          <!-- detail table -->
+          <div style="padding-top:20px">
+            <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:12px">Détail des activités (extrait)</div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:8px 0;border-bottom:1px solid #E2E8EB;font:600 10.5px 'IBM Plex Sans';letter-spacing:.03em;text-transform:uppercase;color:#8A99A1"><div>Date</div><div>Activité</div><div>Catégorie</div><div>Statut</div><div style="text-align:right">Durée</div></div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center;font:400 12.5px 'IBM Plex Sans';color:#33454F"><div style="font-family:'IBM Plex Mono';color:#8A99A1">30/06</div><div>Remplacement switch défectueux — siège</div><div style="color:#5E717B">Infrastructure</div><div><span style="font:600 10.5px 'IBM Plex Sans';color:#1B8A4B">Terminé</span></div><div style="text-align:right;font-family:'IBM Plex Mono'">1,5 h</div></div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center;font:400 12.5px 'IBM Plex Sans';color:#33454F"><div style="font-family:'IBM Plex Mono';color:#8A99A1">28/06</div><div>Migration liaison fibre — agence Bafoussam</div><div style="color:#5E717B">Infrastructure</div><div><span style="font:600 10.5px 'IBM Plex Sans';color:#1B8A4B">Terminé</span></div><div style="text-align:right;font-family:'IBM Plex Mono'">4 h</div></div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center;font:400 12.5px 'IBM Plex Sans';color:#33454F"><div style="font-family:'IBM Plex Mono';color:#8A99A1">25/06</div><div>Maintenance préventive onduleurs</div><div style="color:#5E717B">Maintenance</div><div><span style="font:600 10.5px 'IBM Plex Sans';color:#1B8A4B">Terminé</span></div><div style="text-align:right;font-family:'IBM Plex Mono'">2 h</div></div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center;font:400 12.5px 'IBM Plex Sans';color:#33454F"><div style="font-family:'IBM Plex Mono';color:#8A99A1">22/06</div><div>Configuration pare-feu périmétrique</div><div style="color:#5E717B">Infrastructure</div><div><span style="font:600 10.5px 'IBM Plex Sans';color:#1B8A4B">Terminé</span></div><div style="text-align:right;font-family:'IBM Plex Mono'">3 h</div></div>
+            <div style="display:grid;grid-template-columns:78px 1fr 130px 84px 60px;padding:9px 0;align-items:center;font:400 12.5px 'IBM Plex Sans';color:#33454F"><div style="font-family:'IBM Plex Mono';color:#8A99A1">18/06</div><div>Assistance incident réseau — agence Douala</div><div style="color:#5E717B">Support</div><div><span style="font:600 10.5px 'IBM Plex Sans';color:#1B8A4B">Terminé</span></div><div style="text-align:right;font-family:'IBM Plex Mono'">2,5 h</div></div>
+          </div>
+          <!-- footer -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:26px;padding-top:14px;border-top:1px solid #EEF2F3;font:400 10.5px 'IBM Plex Sans';color:#9AA7AD">
+            <span>Généré par Aristide Mbarga — Chef de service IT</span>
+            <span>Document confidentiel · usage interne · MUFID UNION</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 07 · RAPPORTS CONSOLIDÉS ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#093646;padding:6px 11px;border-radius:6px">ÉCRAN 07</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Rapports consolidés</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— synthèse agrégée de tout le personnel</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="uploads/logo-1783035702706.webp" style="height:30px;display:block"><span style="font:600 10px 'IBM Plex Mono';letter-spacing:.08em;color:#0E5E7C;background:#E3EFF3;border:1px solid #CFE2E9;padding:4px 8px;border-radius:5px">ADMIN</span></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:250px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher employé, activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">AM</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Chef de service IT</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#093646;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ADMINISTRATION</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">dvr</span>Gestion des activités</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">assignment_ind</span>Rapports individuels</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">summarize</span>Rapports consolidés</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">group</span>Utilisateurs</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="display:flex;align-items:center;gap:8px;background:rgba(31,157,116,.14);border:1px solid rgba(31,157,116,.28);border-radius:9px;padding:10px 12px"><span class="i" style="font-size:18px;color:#5FBB84">verified_user</span><div style="font:500 11px/1.4 'IBM Plex Sans';color:#B7DEC9">Conforme COBAC<br><span style="color:#6E9DAB">Traçabilité activée</span></div></div><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em;margin-bottom:4px">Rapports consolidés</div>
+        <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-bottom:20px">Agrégez l'activité de l'ensemble du personnel IT sur une période.</div>
+
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:16px 18px;display:flex;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="width:240px"><div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Période</div><div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;background:#fff;font:400 13.5px 'IBM Plex Sans';color:#16262E"><span class="i" style="font-size:18px;color:#8A99A1">calendar_month</span><span>Juin 2026</span><span class="i" style="font-size:18px;color:#8A99A1">expand_more</span></div></div>
+          <div style="flex:1;min-width:200px"><div style="font:500 12px 'IBM Plex Sans';color:#33454F;margin-bottom:6px">Périmètre</div><div style="border:1px solid #CDD8DC;border-radius:8px;padding:11px 12px;display:flex;align-items:center;justify-content:space-between;background:#fff;font:400 13.5px 'IBM Plex Sans';color:#16262E"><span style="display:flex;align-items:center;gap:8px"><span class="i" style="font-size:18px;color:#8A99A1">group</span>Tout le personnel (7 employés)</span><span class="i" style="font-size:18px;color:#8A99A1">expand_more</span></div></div>
+          <div style="display:flex;gap:10px">
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#C0392B;border:1px solid #EBC7C1;border-radius:8px;padding:11px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:19px">picture_as_pdf</span>Télécharger PDF</button>
+            <button style="display:inline-flex;align-items:center;gap:8px;background:#1B8A4B;color:#fff;border:none;border-radius:8px;padding:11px 16px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:19px">table_view</span>Télécharger Excel</button>
+          </div>
+        </div>
+
+        <div style="font:600 11px 'IBM Plex Mono';letter-spacing:.06em;color:#8A99A1;margin:0 0 10px 2px">APERÇU DU RAPPORT CONSOLIDÉ</div>
+        <div style="max-width:900px;margin:0 auto;background:#fff;border:1px solid #E2E8EB;border-radius:6px;box-shadow:0 8px 30px -14px rgba(9,54,70,.25);padding:40px 44px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #0E5E7C;padding-bottom:18px">
+            <div><img src="uploads/logo-1783035702706.webp" style="height:34px;display:block;margin-bottom:12px"><div style="font:700 20px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Rapport d'activités consolidé</div><div style="font:400 13px 'IBM Plex Sans';color:#5E717B;margin-top:3px">Service Informatique — Ensemble du personnel — Juin 2026</div></div>
+            <div style="text-align:right"><div style="font:500 10px 'IBM Plex Mono';color:#8A99A1;letter-spacing:.05em">RÉFÉRENCE</div><div style="font:600 14px 'IBM Plex Mono';color:#16262E;margin-top:2px">RAP-CONS-2026-06</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1;margin-top:8px">Émis le 03/07/2026</div></div>
+          </div>
+          <!-- synthèse -->
+          <div style="padding:22px 0;border-bottom:1px solid #EEF2F3">
+            <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:14px">Synthèse globale</div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+              <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Total activités</div><div style="font:600 27px 'IBM Plex Mono';color:#16262E;margin-top:6px">342</div></div>
+              <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Heures cumulées</div><div style="font:600 27px 'IBM Plex Mono';color:#0E5E7C;margin-top:6px">1 248</div></div>
+              <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Employés</div><div style="font:600 27px 'IBM Plex Mono';color:#16262E;margin-top:6px">7</div></div>
+              <div style="border:1px solid #EEF2F3;border-radius:10px;padding:14px 16px"><div style="font:400 11.5px 'IBM Plex Sans';color:#8A99A1">Complétion globale</div><div style="font:600 27px 'IBM Plex Mono';color:#1B8A4B;margin-top:6px">81 %</div></div>
+            </div>
+          </div>
+          <!-- viz -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;padding:22px 0;border-bottom:1px solid #EEF2F3">
+            <div>
+              <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:14px">Répartition par catégorie</div>
+              <div style="display:flex;align-items:center;gap:18px">
+                <div style="width:96px;height:96px;border-radius:50%;background:conic-gradient(#1F9D74 0 25%,#2F6FE0 25% 48%,#0E5E7C 48% 66%,#7E57C2 66% 79%,#D08A21 79% 91%,#64757D 91% 100%);-webkit-mask:radial-gradient(circle 28px at 50% 50%,transparent 98%,#000 100%);mask:radial-gradient(circle 28px at 50% 50%,transparent 98%,#000 100%);flex:none"></div>
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px">
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#1F9D74"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Support 25%</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#2F6FE0"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Dévelop. 23%</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#0E5E7C"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Infra. 18%</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#7E57C2"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Cyber. 13%</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#D08A21"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Mainten. 12%</span></div>
+                  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#64757D"></span><span style="font:400 11px 'IBM Plex Sans';color:#5E717B">Report. 9%</span></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:14px">Répartition par statut</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:64px;font:400 12px 'IBM Plex Sans';color:#5E717B">Terminé</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:61%;height:100%;background:#1B8A4B;border-radius:6px"></div></div><div style="width:32px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">61%</div></div>
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:64px;font:400 12px 'IBM Plex Sans';color:#5E717B">En cours</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:22%;height:100%;background:#14708F;border-radius:6px"></div></div><div style="width:32px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">22%</div></div>
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:64px;font:400 12px 'IBM Plex Sans';color:#5E717B">À faire</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:12%;height:100%;background:#64757D;border-radius:6px"></div></div><div style="width:32px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">12%</div></div>
+                <div style="display:flex;align-items:center;gap:10px"><div style="width:64px;font:400 12px 'IBM Plex Sans';color:#5E717B">Bloqué</div><div style="flex:1;height:11px;background:#F0F3F4;border-radius:6px;overflow:hidden"><div style="width:5%;height:100%;background:#C0392B;border-radius:6px"></div></div><div style="width:32px;text-align:right;font:600 11.5px 'IBM Plex Mono';color:#33454F">5%</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- synthèse par employé -->
+          <div style="padding-top:20px">
+            <div style="font:600 13px 'IBM Plex Sans';color:#33454F;margin-bottom:12px">Synthèse par employé</div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:8px 0;border-bottom:1px solid #E2E8EB;font:600 10.5px 'IBM Plex Sans';letter-spacing:.03em;text-transform:uppercase;color:#8A99A1"><div>Employé</div><div style="text-align:right">Activités</div><div style="text-align:right">Heures</div><div style="text-align:right">Terminées</div><div style="text-align:right">Complétion</div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">NF</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Nadège Fotso</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">58</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">205</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">51</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:88%;height:100%;background:#1B8A4B"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#1B8A4B;width:34px;text-align:right">88%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#D08A21;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">YT</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Yves Talla</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">63</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">188</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">47</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:74%;height:100%;background:#D08A21"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#B4750E;width:34px;text-align:right">74%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">SN</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Serge Nkodo</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">51</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">224</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">40</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:79%;height:100%;background:#1B8A4B"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#1B8A4B;width:34px;text-align:right">79%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">AM</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">46</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">168</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">39</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:84%;height:100%;background:#1B8A4B"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#1B8A4B;width:34px;text-align:right">84%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#14708F;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">EN</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Estelle Ngono</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">44</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">161</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">40</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:90%;height:100%;background:#1B8A4B"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#1B8A4B;width:34px;text-align:right">90%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#7E57C2;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">CA</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Chantal Abena</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">39</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">152</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">32</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:82%;height:100%;background:#1B8A4B"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#1B8A4B;width:34px;text-align:right">82%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:9px 0;align-items:center"><div style="display:flex;align-items:center;gap:9px"><div style="width:26px;height:26px;border-radius:50%;background:#C0563B;color:#fff;display:flex;align-items:center;justify-content:center;font:600 10px 'IBM Plex Sans';flex:none">BE</div><span style="font:500 12.5px 'IBM Plex Sans';color:#16262E">Boris Etoa</span></div><div style="text-align:right;font:500 12.5px 'IBM Plex Mono';color:#33454F">41</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">150</div><div style="text-align:right;font:400 12.5px 'IBM Plex Mono';color:#5E717B">29</div><div style="display:flex;align-items:center;gap:8px;justify-content:flex-end"><div style="width:52px;height:6px;background:#F0F3F4;border-radius:3px;overflow:hidden"><div style="width:71%;height:100%;background:#D08A21"></div></div><span style="font:600 11.5px 'IBM Plex Mono';color:#B4750E;width:34px;text-align:right">71%</span></div></div>
+            <div style="display:grid;grid-template-columns:1fr 84px 80px 96px 128px;padding:11px 0 2px;margin-top:4px;border-top:2px solid #E2E8EB;align-items:center"><div style="font:600 12.5px 'IBM Plex Sans';color:#16262E">Total / Moyenne</div><div style="text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">342</div><div style="text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">1 248</div><div style="text-align:right;font:600 12.5px 'IBM Plex Mono';color:#16262E">278</div><div style="text-align:right;font:600 12.5px 'IBM Plex Mono';color:#1B8A4B">81%</div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid #EEF2F3;font:400 10.5px 'IBM Plex Sans';color:#9AA7AD">
+            <span>Généré par Aristide Mbarga — Chef de service IT</span>
+            <span>Document confidentiel · usage interne · MUFID UNION</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN 08 · GESTION DES UTILISATEURS ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#093646;padding:6px 11px;border-radius:6px">ÉCRAN 08</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">Gestion des utilisateurs</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— personnel du service IT</span>
+  </div>
+  <div style="border-radius:16px;overflow:hidden;box-shadow:0 24px 60px -32px rgba(9,54,70,.4),0 0 0 1px rgba(9,54,70,.06);background:#F4F6F7">
+    <header style="height:62px;background:#fff;border-bottom:1px solid #E2E8EB;display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:center;gap:14px"><img src="uploads/logo-1783035702706.webp" style="height:30px;display:block"><span style="font:600 10px 'IBM Plex Mono';letter-spacing:.08em;color:#0E5E7C;background:#E3EFF3;border:1px solid #CFE2E9;padding:4px 8px;border-radius:5px">ADMIN</span></div>
+      <div style="display:flex;align-items:center;gap:18px">
+        <div style="display:flex;align-items:center;gap:9px;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:9px;padding:9px 13px;width:250px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher employé, activité…</span></div>
+        <span class="i" style="font-size:22px;color:#5E717B">notifications</span>
+        <div style="width:1px;height:30px;background:#E2E8EB"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans'">AM</div>
+          <div style="line-height:1.25"><div style="font:600 13px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 11px 'IBM Plex Sans';color:#8A99A1">Chef de service IT</div></div>
+          <span class="i" style="font-size:20px;color:#B4BBBF">expand_more</span>
+        </div>
+        <span class="i" style="font-size:22px;color:#8A99A1">logout</span>
+      </div>
+    </header>
+    <div style="display:flex">
+      <aside style="width:238px;flex:none;background:#093646;padding:20px 14px;display:flex;flex-direction:column;align-self:stretch">
+        <div style="font:600 10px 'IBM Plex Mono';letter-spacing:.13em;color:#5E93A4;padding:4px 12px 14px">ADMINISTRATION</div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">space_dashboard</span>Tableau de bord</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">dvr</span>Gestion des activités</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">assignment_ind</span>Rapports individuels</a>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#A9C4CE;font:500 13.5px 'IBM Plex Sans';margin-bottom:5px"><span class="i" style="font-size:20px">summarize</span>Rapports consolidés</a>
+        <div style="height:1px;background:rgba(255,255,255,.09);margin:14px 12px"></div>
+        <a href="#" style="display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:9px;color:#fff;background:#0E5E7C;font:600 13.5px 'IBM Plex Sans'"><span class="i" style="font-size:20px">group</span>Utilisateurs</a>
+        <div style="margin-top:auto;padding:14px 12px 4px"><div style="display:flex;align-items:center;gap:8px;background:rgba(31,157,116,.14);border:1px solid rgba(31,157,116,.28);border-radius:9px;padding:10px 12px"><span class="i" style="font-size:18px;color:#5FBB84">verified_user</span><div style="font:500 11px/1.4 'IBM Plex Sans';color:#B7DEC9">Conforme COBAC<br><span style="color:#6E9DAB">Traçabilité activée</span></div></div><div style="font:400 10px 'IBM Plex Mono';color:#4E7C8C;text-align:center;margin-top:12px">MUFID UNION · v1.0</div></div>
+      </aside>
+      <main style="flex:1;padding:26px 30px;min-width:0;min-height:768px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <div style="font:600 23px 'IBM Plex Sans';color:#16262E;letter-spacing:-.01em">Utilisateurs</div>
+            <div style="font:400 13.5px 'IBM Plex Sans';color:#5E717B;margin-top:4px">7 membres du service informatique — 6 actifs, 1 en congé.</div>
+          </div>
+          <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:8px;padding:10px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">person_add</span>Inviter un utilisateur</button>
+        </div>
+
+        <!-- mini stats -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:9px;background:#E3EFF3;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:21px;color:#0E5E7C">group</span></div><div><div style="font:600 24px 'IBM Plex Mono';color:#16262E;line-height:1">7</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">Utilisateurs</div></div></div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:9px;background:#E4F5EB;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:21px;color:#1B8A4B">how_to_reg</span></div><div><div style="font:600 24px 'IBM Plex Mono';color:#16262E;line-height:1">6</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">Actifs</div></div></div>
+          <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px"><div style="width:40px;height:40px;border-radius:9px;background:#E3EFF3;display:flex;align-items:center;justify-content:center"><span class="i" style="font-size:21px;color:#0E5E7C">admin_panel_settings</span></div><div><div style="font:600 24px 'IBM Plex Mono';color:#16262E;line-height:1">1</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1;margin-top:3px">Administrateur</div></div></div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #E2E8EB;border-radius:12px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #EEF2F3">
+            <div style="display:flex;align-items:center;gap:9px;max-width:300px;flex:1;background:#F4F6F7;border:1px solid #E8EDEE;border-radius:8px;padding:9px 12px;color:#9AA7AD"><span class="i" style="font-size:18px">search</span><span style="font:400 13px 'IBM Plex Sans'">Rechercher un utilisateur…</span></div>
+            <div style="display:flex;gap:9px"><div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Accès<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div><div style="display:flex;align-items:center;gap:7px;border:1px solid #CDD8DC;border-radius:8px;padding:8px 12px;font:500 13px 'IBM Plex Sans';color:#5E717B;background:#fff">Statut<span class="i" style="font-size:18px;color:#9AA7AD">expand_more</span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:11px 18px;background:#FAFBFB;border-bottom:1px solid #EEF2F3;font:600 11px 'IBM Plex Sans';letter-spacing:.04em;text-transform:uppercase;color:#8A99A1"><div>Utilisateur</div><div>Accès</div><div>Statut</div><div style="text-align:right">Activités</div><div>Dernière connexion</div><div></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#0E5E7C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">AM</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Aristide Mbarga</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Chef de service IT · a.mbarga@mufidunion.cm</div></div></div><div><span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#0E5E7C;background:#E3EFF3"><span class="i" style="font-size:14px">shield</span>Administrateur</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">46</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Aujourd'hui, 09:42</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#2F6FE0;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">NF</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Nadège Fotso</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Développeuse senior · n.fotso@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">58</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Aujourd'hui, 10:18</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#1F9D74;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">SN</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Serge Nkodo</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Ingénieur Réseau & Infra · s.nkodo@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">51</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Aujourd'hui, 08:55</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#7E57C2;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">CA</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Chantal Abena</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Analyste Cybersécurité · c.abena@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">39</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Aujourd'hui, 09:10</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#D08A21;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">YT</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Yves Talla</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Support & Maintenance · y.talla@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">63</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Hier, 17:32</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;border-bottom:1px solid #F4F6F7;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#14708F;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">EN</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Estelle Ngono</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Développeuse / Reporting · e.ngono@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#1B8A4B;background:#E4F5EB"><span style="width:7px;height:7px;border-radius:50%;background:#1B8A4B"></span>Actif</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">44</div><div style="font:400 12.5px 'IBM Plex Sans';color:#5E717B">Aujourd'hui, 08:40</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+          <div style="display:grid;grid-template-columns:1fr 132px 116px 92px 168px 60px;padding:13px 18px;align-items:center"><div style="display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:50%;background:#C0563B;color:#fff;display:flex;align-items:center;justify-content:center;font:600 13px 'IBM Plex Sans';flex:none">BE</div><div><div style="font:600 13.5px 'IBM Plex Sans';color:#16262E">Boris Etoa</div><div style="font:400 12px 'IBM Plex Sans';color:#8A99A1">Technicien Support · b.etoa@mufidunion.cm</div></div></div><div><span style="padding:4px 10px;border-radius:6px;font:600 11px 'IBM Plex Sans';color:#5E717B;background:#EDF1F2">Employé</span></div><div><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font:600 11.5px 'IBM Plex Sans';color:#B4750E;background:#FBF0DC"><span style="width:7px;height:7px;border-radius:50%;background:#D08A21"></span>En congé</span></div><div style="text-align:right;font:500 13px 'IBM Plex Mono';color:#33454F">41</div><div style="font:400 12.5px 'IBM Plex Sans';color:#8A99A1">il y a 4 jours</div><div style="text-align:right;color:#9AA7AD"><span class="i" style="font-size:20px">more_vert</span></div></div>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ÉTATS VIDES ============ -->
+<section style="width:1360px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin:0 0 18px 2px">
+    <span style="font:600 11px 'IBM Plex Mono';letter-spacing:.09em;color:#fff;background:#0E5E7C;padding:6px 11px;border-radius:6px">ANNEXE</span>
+    <span style="font:600 19px 'IBM Plex Sans';color:#16262E">États vides</span>
+    <span style="font:400 14px 'IBM Plex Sans';color:#5E717B">— messages soignés lorsqu'il n'y a rien à afficher</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div style="background:#fff;border:1px solid #E2E8EB;border-radius:14px;padding:56px 40px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 12px 40px -26px rgba(9,54,70,.3)">
+      <div style="width:74px;height:74px;border-radius:50%;background:#EAF3F6;display:flex;align-items:center;justify-content:center;margin-bottom:22px"><span class="i" style="font-size:36px;color:#0E5E7C">assignment_add</span></div>
+      <div style="font:600 18px 'IBM Plex Sans';color:#16262E">Aucune activité pour le moment</div>
+      <div style="font:400 13.5px/1.6 'IBM Plex Sans';color:#5E717B;margin-top:8px;max-width:340px">Commencez par enregistrer votre première tâche du jour. Elle apparaîtra ensuite dans votre tableau de bord et vos rapports.</div>
+      <button style="display:inline-flex;align-items:center;gap:8px;background:#0E5E7C;color:#fff;border:none;border-radius:9px;padding:12px 20px;font:600 13px 'IBM Plex Sans';cursor:pointer;margin-top:24px"><span class="i" style="font-size:18px">add</span>Saisir une activité</button>
+      <div style="font:400 11.5px 'IBM Plex Sans';color:#B4BBBF;margin-top:16px">Première utilisation — espace employé</div>
+    </div>
+    <div style="background:#fff;border:1px solid #E2E8EB;border-radius:14px;padding:56px 40px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:0 12px 40px -26px rgba(9,54,70,.3)">
+      <div style="width:74px;height:74px;border-radius:50%;background:#F0F3F4;display:flex;align-items:center;justify-content:center;margin-bottom:22px"><span class="i" style="font-size:36px;color:#8A99A1">search_off</span></div>
+      <div style="font:600 18px 'IBM Plex Sans';color:#16262E">Aucun résultat</div>
+      <div style="font:400 13.5px/1.6 'IBM Plex Sans';color:#5E717B;margin-top:8px;max-width:340px">Aucune activité ne correspond à vos critères. Essayez d'élargir la période ou de retirer un filtre.</div>
+      <div style="display:flex;gap:10px;margin-top:24px">
+        <button style="display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0E5E7C;border:1px solid #CDD8DC;border-radius:9px;padding:12px 18px;font:600 13px 'IBM Plex Sans';cursor:pointer"><span class="i" style="font-size:18px">restart_alt</span>Réinitialiser les filtres</button>
+      </div>
+      <div style="font:400 11.5px 'IBM Plex Sans';color:#B4BBBF;margin-top:16px">Résultat de recherche filtrée — espace admin</div>
+    </div>
+  </div>
+</section>
+
+<!--SCREENS-->
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const employees = [
+      {id:'U-01', name:'Aristide Mbarga',  role:'Chef de service IT',        initials:'AM', color:'#0E5E7C', email:'a.mbarga@mufidunion.cm', joined:'Mars 2018',    last:"Aujourd'hui, 09:42", statU:'Actif',    acts:46, hours:168, comp:84},
+      {id:'U-02', name:'Nadège Fotso',     role:'Développeuse senior',       initials:'NF', color:'#2F6FE0', email:'n.fotso@mufidunion.cm',  joined:'Janv. 2020',   last:"Aujourd'hui, 10:18", statU:'Actif',    acts:58, hours:205, comp:88},
+      {id:'U-03', name:'Serge Nkodo',      role:'Ingénieur Réseau & Infra',  initials:'SN', color:'#1F9D74', email:'s.nkodo@mufidunion.cm',  joined:'Sept. 2019',   last:"Aujourd'hui, 08:55", statU:'Actif',    acts:51, hours:224, comp:79},
+      {id:'U-04', name:'Chantal Abena',    role:'Analyste Cybersécurité',    initials:'CA', color:'#7E57C2', email:'c.abena@mufidunion.cm',  joined:'Févr. 2021',   last:"Aujourd'hui, 09:10", statU:'Actif',    acts:39, hours:152, comp:82},
+      {id:'U-05', name:'Yves Talla',       role:'Support & Maintenance',     initials:'YT', color:'#D08A21', email:'y.talla@mufidunion.cm',  joined:'Août 2019',    last:"Hier, 17:32",        statU:'Actif',    acts:63, hours:188, comp:74},
+      {id:'U-06', name:'Estelle Ngono',    role:'Développeuse / Reporting',  initials:'EN', color:'#14708F', email:'e.ngono@mufidunion.cm',  joined:'Juin 2022',    last:"Aujourd'hui, 08:40", statU:'Actif',    acts:44, hours:161, comp:90},
+      {id:'U-07', name:'Boris Etoa',       role:'Technicien Support',        initials:'BE', color:'#C0563B', email:'b.etoa@mufidunion.cm',   joined:'Avr. 2023',    last:"il y a 4 jours",     statU:'En congé', acts:41, hours:150, comp:71},
+    ];
+    const CS = {'Terminé':{c:'#1B8A4B',bg:'#E4F5EB'},'En cours':{c:'#14708F',bg:'#E1EFF4'},'À faire':{c:'#64757D',bg:'#EDF1F2'},'Bloqué':{c:'#C0392B',bg:'#FBEAE7'}};
+    const PR = {'Basse':{c:'#1F9D74',bg:'#E4F4EE'},'Moyenne':{c:'#14708F',bg:'#E1EFF4'},'Haute':{c:'#D08A21',bg:'#FBF0DC'},'Critique':{c:'#C0392B',bg:'#FBEAE7'}};
+    const CAT = {
+      'Développement':'#2F6FE0','Cybersécurité':'#7E57C2','Infrastructure/Réseau':'#0E5E7C',
+      'Support':'#1F9D74','Maintenance':'#D08A21','Reporting':'#64757D'
+    };
+    const empBy = {};
+    employees.forEach(e => empBy[e.name] = e);
+    const raw = [
+      {id:'ACT-2041', titre:"Déploiement du correctif v2.3 — app mobile Épargne",        cat:'Développement',        prio:'Haute',    statut:'En cours', date:'03/07/2026', duree:3.5, emp:'Nadège Fotso'},
+      {id:'ACT-2040', titre:"Analyse des logs pare-feu — tentatives d'accès Douala",       cat:'Cybersécurité',        prio:'Critique', statut:'En cours', date:'03/07/2026', duree:2,   emp:'Chantal Abena'},
+      {id:'ACT-2039', titre:"Configuration VPN — nouvelle agence de Bafoussam",            cat:'Infrastructure/Réseau',prio:'Haute',    statut:'Terminé',  date:'02/07/2026', duree:4,   emp:'Serge Nkodo'},
+      {id:'ACT-2038', titre:"Assistance utilisateurs — réinitialisation comptes SIB",      cat:'Support',              prio:'Moyenne',  statut:'Terminé',  date:'02/07/2026', duree:1.5, emp:'Yves Talla'},
+      {id:'ACT-2037', titre:"Sauvegarde & test de restauration — base clients",            cat:'Maintenance',          prio:'Haute',    statut:'Terminé',  date:'01/07/2026', duree:2.5, emp:'Serge Nkodo'},
+      {id:'ACT-2036', titre:"Intégration passerelle Mobile Money (MTN / Orange)",          cat:'Développement',        prio:'Critique', statut:'Bloqué',   date:'01/07/2026', duree:5,   emp:'Nadège Fotso'},
+      {id:'ACT-2035', titre:"Rapport mensuel de disponibilité des services",               cat:'Reporting',            prio:'Moyenne',  statut:'Terminé',  date:'30/06/2026', duree:2,   emp:'Estelle Ngono'},
+      {id:'ACT-2034', titre:"Mise à jour antivirus — postes des agences",                  cat:'Cybersécurité',        prio:'Moyenne',  statut:'En cours', date:'30/06/2026', duree:3,   emp:'Chantal Abena'},
+      {id:'ACT-2033', titre:"Remplacement switch défectueux — siège",                      cat:'Infrastructure/Réseau',prio:'Haute',    statut:'Terminé',  date:'30/06/2026', duree:1.5, emp:'Serge Nkodo'},
+      {id:'ACT-2032', titre:"Formation utilisateurs — nouveau module crédit",              cat:'Support',              prio:'Basse',    statut:'À faire',  date:'29/06/2026', duree:3,   emp:'Yves Talla'},
+      {id:'ACT-2031', titre:"Optimisation requêtes SQL — reporting réglementaire COBAC",   cat:'Développement',        prio:'Haute',    statut:'En cours', date:'29/06/2026', duree:4,   emp:'Estelle Ngono'},
+      {id:'ACT-2030', titre:"Audit des droits d'accès applicatifs",                        cat:'Cybersécurité',        prio:'Haute',    statut:'À faire',  date:'29/06/2026', duree:2.5, emp:'Chantal Abena'},
+      {id:'ACT-2029', titre:"Maintenance préventive onduleurs — salle serveurs",           cat:'Maintenance',          prio:'Moyenne',  statut:'Terminé',  date:'28/06/2026', duree:2,   emp:'Yves Talla'},
+      {id:'ACT-2028', titre:"Correction bug rapprochement comptable",                      cat:'Développement',        prio:'Critique', statut:'Terminé',  date:'28/06/2026', duree:3.5, emp:'Nadège Fotso'},
+    ];
+    const dec = n => (Number.isInteger(n) ? String(n) : String(n).replace('.', ',')) + ' h';
+    const mk = a => {
+      const c = CS[a.statut], p = PR[a.prio], e = empBy[a.emp] || employees[0];
+      return {...a, statC:c.c, statBg:c.bg, prioC:p.c, prioBg:p.bg, catColor:CAT[a.cat],
+        dureeTxt:dec(a.duree), empInit:e.initials, empColor:e.color};
+    };
+    const activities = raw.map(mk);
+    // activités de l'employé connecté (Nadège Fotso)
+    const mineRaw = [
+      raw[0], raw[5], raw[13],
+      {id:'ACT-2019', titre:"Revue de code — module virements internes",     cat:'Développement', prio:'Moyenne', statut:'Terminé', date:'27/06/2026', duree:2,   emp:'Nadège Fotso'},
+      {id:'ACT-2015', titre:"Mise en place des tests automatisés (CI)",       cat:'Développement', prio:'Basse',   statut:'Terminé', date:'26/06/2026', duree:3,   emp:'Nadège Fotso'},
+      {id:'ACT-2012', titre:"Hotfix affichage des soldes — app mobile",       cat:'Développement', prio:'Haute',   statut:'Terminé', date:'25/06/2026', duree:1.5, emp:'Nadège Fotso'},
+      {id:'ACT-2008', titre:"Documentation de l'API interne de virement",     cat:'Reporting',     prio:'Basse',   statut:'À faire', date:'24/06/2026', duree:2,   emp:'Nadège Fotso'},
+    ];
+    const myActivities = mineRaw.map(mk);
+
+    const weekBars = [
+      {j:'Lun',v:6},{j:'Mar',v:8},{j:'Mer',v:5},{j:'Jeu',v:9},{j:'Ven',v:7},{j:'Sam',v:4},{j:'Dim',v:2}
+    ].map(b => ({...b, h:(Math.round(b.v/9*100))+'%'}));
+
+    const catDist = [
+      {name:'Support',               count:84, pct:25, color:'#1F9D74', bg:'#E4F4EE'},
+      {name:'Développement',         count:78, pct:23, color:'#2F6FE0', bg:'#E9F0FC'},
+      {name:'Infrastructure/Réseau', count:63, pct:18, color:'#0E5E7C', bg:'#E3EFF3'},
+      {name:'Cybersécurité',         count:45, pct:13, color:'#7E57C2', bg:'#F0EBF9'},
+      {name:'Maintenance',           count:42, pct:12, color:'#D08A21', bg:'#FBF0DC'},
+      {name:'Reporting',             count:30, pct:9,  color:'#64757D', bg:'#EDF1F2'},
+    ].map(c => ({...c, pctTxt:c.pct+'%'}));
+
+    const statusDist = [
+      {name:'Terminé',  pct:61, color:'#1B8A4B'},
+      {name:'En cours', pct:22, color:'#14708F'},
+      {name:'À faire',  pct:12, color:'#64757D'},
+      {name:'Bloqué',   pct:5,  color:'#C0392B'},
+    ].map(s => ({...s, w:s.pct+'%'}));
+
+    const charge = employees.map(e => ({name:e.name, initials:e.initials, color:e.color, hours:e.hours, w:Math.round(e.hours/224*100)+'%'}))
+      .sort((a,b)=>b.hours-a.hours);
+
+    const topContrib = employees.slice().sort((a,b)=>b.acts-a.acts).slice(0,5)
+      .map((e,i)=>({rank:i+1, name:e.name, initials:e.initials, color:e.color, acts:e.acts, w:Math.round(e.acts/63*100)+'%'}));
+
+    const trend = [
+      {m:'Janv.',v:231},{m:'Févr.',v:258},{m:'Mars',v:242},{m:'Avr.',v:289},{m:'Mai',v:301},{m:'Juin',v:342}
+    ];
+
+    return {
+      employees, activities, myActivities, weekBars, catDist, statusDist, charge, topContrib, trend
+    };
+  }
+}
+</script>
+</body>
+</html>

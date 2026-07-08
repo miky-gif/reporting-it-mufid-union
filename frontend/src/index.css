@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  body {
+    @apply bg-fond text-encre antialiased;
+  }
+  /* Chiffres, montants, durées, références : IBM Plex Mono */
+  .font-mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer components {
+  .carte {
+    @apply bg-white border border-bordure rounded-xl2 shadow-carte;
+  }
+  .champ {
+    @apply w-full border border-[#CDD8DC] rounded-lg px-3 py-2.5 text-sm text-encre bg-white
+           outline-none transition focus:border-petrole-600 focus:ring-[3px] focus:ring-petrole-600/15;
+  }
+  .label {
+    @apply block text-[12.5px] font-medium text-ardoise mb-1.5;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-semibold
+           transition disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+  .btn-primaire {
+    @apply btn bg-petrole-600 text-white hover:bg-petrole-700;
+  }
+  .btn-secondaire {
+    @apply btn bg-white text-petrole-600 border border-[#CDD8DC] hover:bg-surface;
+  }
+  .btn-succes {
+    @apply btn bg-succes text-white hover:brightness-95;
+  }
+  .btn-danger {
+    @apply btn bg-transparent text-danger border border-[#EBC7C1] hover:bg-danger/5;
+  }
+  .btn-fantome {
+    @apply btn bg-transparent text-gris hover:text-ardoise;
+  }
+}
+
+/* Barre de défilement discrète */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5d9;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
