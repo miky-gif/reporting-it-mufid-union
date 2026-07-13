@@ -20,7 +20,8 @@ const app = creerApp();
 // Démarre le serveur sur un port éphémère et utilise fetch.
 const serveur = app.listen(0);
 const port = serveur.address().port;
-const base = `http://127.0.0.1:${port}`;
+// L'API est servie sous /api (même contrat qu'en production).
+const base = `http://127.0.0.1:${port}/api`;
 
 const j = (h = {}) => ({ "Content-Type": "application/json", ...h });
 const bearer = (t) => ({ Authorization: `Bearer ${t}` });

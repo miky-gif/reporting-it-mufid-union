@@ -20,7 +20,7 @@ const UTILISATEURS = [
 // [email, titre, catégorie, priorité, statut, joursAvantAujourdhui, durée]
 const ACTIVITES = [
   ["n.fotso@mufidunion.cm", "Déploiement du correctif v2.3 — app mobile Épargne", "DEVELOPPEMENT", "HAUTE", "EN_COURS", 2, 3.5],
-  ["n.fotso@mufidunion.cm", "Intégration passerelle Mobile Money (MTN / Orange)", "DEVELOPPEMENT", "CRITIQUE", "BLOQUE", 4, 5],
+  ["n.fotso@mufidunion.cm", "Intégration passerelle Mobile Money (MTN / Orange)", "DEVELOPPEMENT", "CRITIQUE", "STANDBY", 4, 5],
   ["n.fotso@mufidunion.cm", "Correction bug rapprochement comptable", "DEVELOPPEMENT", "CRITIQUE", "TERMINE", 7, 3.5],
   ["n.fotso@mufidunion.cm", "Revue de code — module virements internes", "DEVELOPPEMENT", "MOYENNE", "TERMINE", 9, 2],
   ["n.fotso@mufidunion.cm", "Mise en place des tests automatisés (CI)", "DEVELOPPEMENT", "BASSE", "TERMINE", 12, 3],
@@ -114,8 +114,9 @@ export async function executerSeed({ force = false } = {}) {
   const A_MENER = {
     A_FAIRE: "Démarrer l'activité au cours de la semaine.",
     EN_COURS: "Poursuivre et finaliser l'activité.",
-    BLOQUE: "Lever le point de blocage identifié.",
+    STANDBY: "Lever le point de blocage identifié.",
     TERMINE: "",
+    CLOTURE: "",
   };
 
   const lignes = ACTIVITES.map(([email, titre, cat, prio, statut, jours, duree]) => ({
@@ -128,7 +129,11 @@ export async function executerSeed({ force = false } = {}) {
     priorite: prio,
     statut,
     date_activite: isoMoins(jours),
+    date_debut: isoMoins(jours + 2),
+    date_fin: isoMoins(jours),
+    duree_minutes: Math.round(duree * 60),
     duree_heures: duree,
+    ...(statut === "CLOTURE" ? { date_cloture: new Date() } : {}),
   }));
   await Activite.bulkCreate(lignes);
 

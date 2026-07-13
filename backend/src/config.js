@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const config = {
+  env: process.env.NODE_ENV || "development",
+  estProduction: process.env.NODE_ENV === "production",
   port: Number(process.env.PORT || 8000),
   databaseUrl: process.env.DATABASE_URL || "mysql://root:root@localhost:3306/mufid_activites",
   jwtSecret: process.env.JWT_SECRET || "dev-secret-a-changer",

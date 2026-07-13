@@ -14,8 +14,10 @@ export const CATEGORIES_DEFAUT_CODES = [
   "REPORTING",
   "AUTRE",
 ];
-export const PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "CRITIQUE"];
-export const STATUTS = ["A_FAIRE", "EN_COURS", "TERMINE", "BLOQUE"];
+export const PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "TRES_HAUTE", "CRITIQUE"];
+export const STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"];
+// Points : référence 40 h de travail = 5 points -> 1 point = 480 minutes.
+export const MINUTES_PAR_POINT = 480;
 
 // Table des catégories gérées par l'administrateur (avec leurs rubriques).
 export const Categorie = sequelize.define(
@@ -57,20 +59,36 @@ export const Activite = sequelize.define(
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     user_id: { type: DataTypes.INTEGER, allowNull: false },
     titre: { type: DataTypes.STRING(200), allowNull: false },
-    description: { type: DataTypes.TEXT, allowNull: true }, // « État d'exécution » dans le rapport
-    // Résultat obtenu / livrable produit (colonne du rapport hebdomadaire).
+    description: { type: DataTypes.TEXT, allowNull: true }, // « État d'exécution de l'activité »
+    // Consigne de départ (attentes/instructions) — modifiable par l'admin uniquement.
+    consignes: { type: DataTypes.TEXT, allowNull: true },
+    // Résultat attendu / livrable produit (colonne du rapport hebdomadaire).
     livrable: { type: DataTypes.TEXT, allowNull: true },
     // Activités à mener la semaine suivante (colonne du rapport hebdomadaire).
     activites_a_mener: { type: DataTypes.TEXT, allowNull: true },
     // Vrai si la tâche a été affectée par un admin : l'employé ne peut alors
-    // en modifier que le statut (pas les autres champs).
+    // modifier que le statut et l'état d'exécution (pas les consignes ni les autres champs).
     assignee_par_admin: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    // Relie les instances d'une même affectation à plusieurs agents.
+    groupe_affectation_id: { type: DataTypes.STRING(40), allowNull: true },
     // Code de la catégorie (dynamique) — voir la table categories.
     categorie: { type: DataTypes.STRING(40), allowNull: false },
     priorite: { type: DataTypes.ENUM(...PRIORITES), allowNull: false, defaultValue: "MOYENNE" },
     statut: { type: DataTypes.ENUM(...STATUTS), allowNull: false, defaultValue: "A_FAIRE" },
+    // Pourcentage de réalisation (0-100). Si null -> déduit du statut.
+    pourcentage: { type: DataTypes.INTEGER, allowNull: true },
+    // Échéance (= fin de période) — conservée pour compatibilité (tri, retard, rapports).
     date_activite: { type: DataTypes.DATEONLY, allowNull: false },
+    // Période de réalisation de la tâche (début -> fin).
+    date_debut: { type: DataTypes.DATEONLY, allowNull: true },
+    date_fin: { type: DataTypes.DATEONLY, allowNull: true },
+    // Durée canonique en minutes (granularité fine : 15 min possible).
+    duree_minutes: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    // Durée en heures dérivée (conservée pour compat. affichage/stats).
     duree_heures: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
+    // Validation finale par l'admin (clôture).
+    date_cloture: { type: DataTypes.DATE, allowNull: true },
+    cloture_par: { type: DataTypes.INTEGER, allowNull: true },
     date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     date_modification: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
@@ -111,8 +129,26 @@ export const Notification = sequelize.define(
   },
 );
 
+// Pièces jointes rattachées à une activité (rapports numérisés, etc.).
+export const PieceJointe = sequelize.define(
+  "pieces_jointes",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    activite_id: { type: DataTypes.INTEGER, allowNull: false },
+    nom_fichier: { type: DataTypes.STRING(255), allowNull: false },
+    fichier: { type: DataTypes.STRING(255), allowNull: false }, // nom stocké sur disque
+    mime: { type: DataTypes.STRING(120), allowNull: true },
+    taille: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    televerse_par: { type: DataTypes.INTEGER, allowNull: true },
+    date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+  },
+  { timestamps: false, indexes: [{ fields: ["activite_id"] }] },
+);
+
 // Associations
 User.hasMany(Activite, { foreignKey: "user_id", onDelete: "CASCADE" });
 Activite.belongsTo(User, { foreignKey: "user_id", as: "user" });
 User.hasMany(Notification, { foreignKey: "user_id", onDelete: "CASCADE" });
 Notification.belongsTo(User, { foreignKey: "user_id", as: "user" });
+Activite.hasMany(PieceJointe, { foreignKey: "activite_id", as: "pieces", onDelete: "CASCADE" });
+PieceJointe.belongsTo(Activite, { foreignKey: "activite_id", as: "activite" });

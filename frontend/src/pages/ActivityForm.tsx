@@ -5,23 +5,29 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LISTE_PRIORITES, LISTE_STATUTS_EMPLOYE, PRIORITES, STATUTS } from "@/lib/constants";
+import { LISTE_PRIORITES, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
-import { isoDate } from "@/lib/format";
+import { formatDuree, isoDate } from "@/lib/format";
 import type { Activite, Categorie, Priorite, Statut } from "@/types";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
+import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointes";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
   titre: z.string().min(2, "La rubrique est requise.").max(200), // stocke la rubrique choisie
-  description: z.string().max(2000).optional(),
+  description: z.string().max(2000).optional(), // état d'exécution
   livrable: z.string().max(1000).optional(),
   activites_a_mener: z.string().max(1000).optional(),
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
-  statut: z.enum(["A_FAIRE", "EN_COURS", "TERMINE", "BLOQUE"] as [Statut, ...Statut[]]),
-  date_activite: z.string().min(1, "La date est requise."),
-  duree_heures: z.coerce.number().min(0, "Durée invalide.").max(24, "Maximum 24 h."),
+  statut: z.enum(["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"] as [Statut, ...Statut[]]),
+  pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),
+  date_debut: z.string().min(1, "La date de début est requise."),
+  date_fin: z.string().min(1, "La date de fin est requise."),
+  duree_minutes: z.coerce.number().int().min(1, "Durée requise (min. 1 minute).").max(1440, "Maximum 24 h."),
+}).refine((d) => !d.date_debut || !d.date_fin || d.date_fin >= d.date_debut, {
+  message: "La date de fin doit être postérieure ou égale à la date de début.",
+  path: ["date_fin"],
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -33,8 +39,10 @@ export default function ActivityForm() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargementInitial, setChargementInitial] = useState(!!editionId);
   const [initFait, setInitFait] = useState(false);
-  // Tâche affectée par l'admin : l'employé ne peut en changer que le statut.
+  // Tâche affectée par l'admin : l'employé ne peut en changer que le statut/l'état.
   const [verrouille, setVerrouille] = useState(false);
+  const [consignes, setConsignes] = useState<string | null>(null);
+  const [pending, setPending] = useState<File[]>([]);
 
   const {
     register,
@@ -53,10 +61,23 @@ export default function ActivityForm() {
       activites_a_mener: "",
       priorite: "MOYENNE",
       statut: "EN_COURS",
-      date_activite: isoDate(new Date()),
-      duree_heures: 1,
+      pourcentage: POURCENTAGE_PAR_STATUT.EN_COURS,
+      date_debut: isoDate(new Date()),
+      date_fin: isoDate(new Date()),
+      duree_minutes: 60,
     },
   });
+
+  // Saisie de la durée : valeur + unité (minutes ou heures) -> duree_minutes.
+  const [unite, setUnite] = useState<"MIN" | "H">("H");
+  const [dureeSaisie, setDureeSaisie] = useState("1");
+
+  useEffect(() => {
+    const v = parseFloat(dureeSaisie.replace(",", "."));
+    if (!Number.isNaN(v) && v > 0) {
+      setValue("duree_minutes", Math.round(unite === "H" ? v * 60 : v), { shouldValidate: true });
+    }
+  }, [dureeSaisie, unite, setValue]);
 
   const val = watch();
 
@@ -74,10 +95,21 @@ export default function ActivityForm() {
           activites_a_mener: a.activites_a_mener ?? "",
           priorite: a.priorite,
           statut: a.statut,
-          date_activite: a.date_activite,
-          duree_heures: a.duree_heures,
+          pourcentage: a.pourcentage,
+          date_debut: a.date_debut ?? a.date_activite,
+          date_fin: a.date_fin ?? a.date_activite,
+          duree_minutes: a.duree_minutes,
         });
+        // Réaffiche la durée dans l'unité la plus lisible (heures si multiple de 60).
+        if (a.duree_minutes >= 60 && a.duree_minutes % 60 === 0) {
+          setUnite("H");
+          setDureeSaisie(String(a.duree_minutes / 60));
+        } else {
+          setUnite("MIN");
+          setDureeSaisie(String(a.duree_minutes));
+        }
         setVerrouille(a.assignee_par_admin);
+        setConsignes(a.consignes ?? null);
         setInitFait(true);
       })
       .catch(() => setErreur("Activité introuvable."))
@@ -103,9 +135,11 @@ export default function ActivityForm() {
   // Statuts proposés : « À faire » réservé à l'admin ; on l'affiche seulement s'il
   // s'agit d'une tâche déjà « À faire » (affectée par l'admin) que l'on modifie.
   const statutsDisponibles = useMemo<Statut[]>(() => {
+    if (editionId && val.statut === "CLOTURE") return ["CLOTURE"]; // clôturé par l'admin
     if (editionId && val.statut === "A_FAIRE") return ["A_FAIRE", ...LISTE_STATUTS_EMPLOYE];
     return LISTE_STATUTS_EMPLOYE;
   }, [editionId, val.statut]);
+  const cloturee = val.statut === "CLOTURE";
 
   // Quand la catégorie change, on cale la rubrique sur une valeur valide.
   function changerCategorie(cat: Categorie) {
@@ -118,10 +152,11 @@ export default function ActivityForm() {
     setErreur(null);
     try {
       if (editionId) {
-        // Tâche affectée : seul le statut est modifiable côté employé.
-        await api.put(`/activites/${editionId}`, verrouille ? { statut: valeurs.statut } : valeurs);
+        // Le backend applique les règles de périmètre (état/statut si affectée).
+        await api.put(`/activites/${editionId}`, valeurs);
       } else {
-        await api.post("/activites", valeurs);
+        const r = await api.post<Activite>("/activites", valeurs);
+        if (pending.length) await televerserEnAttente(r.data.id, pending);
       }
       navigate("/activites");
     } catch (err) {
@@ -151,17 +186,34 @@ export default function ActivityForm() {
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#DCE9ED] bg-petrole-50 px-3 py-2.5 text-[13px] text-ardoise">
           <Lock size={16} className="mt-0.5 flex-none text-petrole-600" />
           <span>
-            Cette tâche vous a été <strong>affectée par un administrateur</strong>. Vous pouvez uniquement en
-            mettre à jour le <strong>statut</strong> ; les autres champs sont en lecture seule.
+            Cette tâche vous a été <strong>affectée par un administrateur</strong>. Vous pouvez mettre à jour
+            l'<strong>état d'exécution</strong> et le <strong>statut</strong> ; le cadrage (catégorie, rubrique,
+            priorité, durée, consignes) reste en lecture seule.
           </span>
+        </div>
+      )}
+      {cloturee && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#B7DEC9] bg-succes/5 px-3 py-2.5 text-[13px] text-succes">
+          <Lock size={16} className="mt-0.5 flex-none" />
+          <span>Cette tâche a été <strong>clôturée par l'administrateur</strong> : elle n'est plus modifiable.</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_340px]">
         <div className="carte p-[26px_28px]">
+          {/* Consigne de départ donnée par l'admin (lecture seule côté employé) */}
+          {consignes && (
+            <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50 px-3.5 py-3">
+              <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-petrole-600">
+                Consigne de départ (administrateur)
+              </div>
+              <div className="whitespace-pre-wrap text-[13px] leading-snug text-ardoise">{consignes}</div>
+            </div>
+          )}
+
           {/* Catégorie — premier champ */}
           <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
-            <select className="champ" value={val.categorie} disabled={verrouille} onChange={(e) => changerCategorie(e.target.value)}>
+            <select className="champ" value={val.categorie} disabled={verrouille || cloturee} onChange={(e) => changerCategorie(e.target.value)}>
               {actives.map((c) => (
                 <option key={c.code} value={c.code}>{c.nom}</option>
               ))}
@@ -170,29 +222,29 @@ export default function ActivityForm() {
 
           {/* Rubrique — dépend de la catégorie, remplace le titre */}
           <Champ label="Rubrique" requis erreur={errors.titre?.message}>
-            <select className="champ" disabled={verrouille} {...register("titre")}>
+            <select className="champ" disabled={verrouille || cloturee} {...register("titre")}>
               {rubriques.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
           </Champ>
 
-          <Champ label="Description de l'activité">
+          <Champ label="État d'exécution de l'activité">
             <textarea
               rows={3}
               className="champ resize-y"
-              disabled={verrouille}
+              disabled={cloturee}
               placeholder="Détaillez les actions menées, une par ligne (repris en puces dans le rapport)…"
               {...register("description")}
             />
           </Champ>
 
           <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Champ label="Résultat obtenu (livrable)">
+            <Champ label="Résultat attendu (livrable)">
               <textarea
                 rows={2}
                 className="champ resize-y"
-                disabled={verrouille}
+                disabled={cloturee}
                 placeholder="Ex. Fichier des incidents, rapport produit…"
                 {...register("livrable")}
               />
@@ -201,26 +253,49 @@ export default function ActivityForm() {
               <textarea
                 rows={2}
                 className="champ resize-y"
-                disabled={verrouille}
+                disabled={cloturee}
                 placeholder="Ce qu'il reste à faire / prochaines étapes…"
                 {...register("activites_a_mener")}
               />
             </Champ>
           </div>
 
-          <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Champ label="Durée (heures)" requis erreur={errors.duree_heures?.message}>
-              <input type="number" step="0.5" min="0" className="champ font-mono" disabled={verrouille} {...register("duree_heures")} />
+          <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Champ label="Début" requis erreur={errors.date_debut?.message}>
+              <input type="date" className="champ font-mono" disabled={verrouille || cloturee} {...register("date_debut")} />
             </Champ>
-            <Champ label="Date" requis erreur={errors.date_activite?.message}>
-              <input type="date" className="champ font-mono" disabled={verrouille} {...register("date_activite")} />
+            <Champ label="Fin (échéance)" requis erreur={errors.date_fin?.message}>
+              <input type="date" className="champ font-mono" disabled={verrouille || cloturee} {...register("date_fin")} />
+            </Champ>
+            <Champ label="Durée" requis erreur={errors.duree_minutes?.message}>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step={unite === "H" ? "0.25" : "1"}
+                  min="0"
+                  className="champ flex-1 font-mono"
+                  disabled={verrouille || cloturee}
+                  value={dureeSaisie}
+                  onChange={(e) => setDureeSaisie(e.target.value)}
+                />
+                <select
+                  className="champ w-[104px]"
+                  disabled={verrouille || cloturee}
+                  value={unite}
+                  onChange={(e) => setUnite(e.target.value as "MIN" | "H")}
+                >
+                  <option value="MIN">minutes</option>
+                  <option value="H">heures</option>
+                </select>
+              </div>
+              <p className="mt-1 text-[11.5px] text-grisdoux">= {formatDuree(val.duree_minutes ?? 0)}</p>
             </Champ>
           </div>
 
           <Champ label="Priorité" requis>
             <div className="flex flex-wrap gap-2">
               {LISTE_PRIORITES.map((p) => (
-                <BoutonChoix key={p} actif={val.priorite === p} disabled={verrouille} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
+                <BoutonChoix key={p} actif={val.priorite === p} disabled={verrouille || cloturee} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
                   {PRIORITES[p].libelle}
                 </BoutonChoix>
               ))}
@@ -230,16 +305,55 @@ export default function ActivityForm() {
           <Champ label="Statut" requis>
             <div className="flex flex-wrap gap-2">
               {statutsDisponibles.map((s) => (
-                <BoutonChoix key={s} actif={val.statut === s} couleur={STATUTS[s].couleur} fond={STATUTS[s].fond} onClick={() => setValue("statut", s)}>
+                <BoutonChoix
+                  key={s}
+                  actif={val.statut === s}
+                  disabled={cloturee}
+                  couleur={STATUTS[s].couleur}
+                  fond={STATUTS[s].fond}
+                  onClick={() => {
+                    setValue("statut", s);
+                    // Pré-remplit le % selon le statut ; reste ajustable à la main.
+                    setValue("pourcentage", POURCENTAGE_PAR_STATUT[s]);
+                  }}
+                >
                   {STATUTS[s].libelle}
                 </BoutonChoix>
               ))}
             </div>
           </Champ>
 
-          <div className="flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
+          <Champ label="% réalisation" requis erreur={errors.pourcentage?.message}>
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                className="flex-1 accent-[#0E5E7C]"
+                disabled={cloturee}
+                value={val.pourcentage ?? 0}
+                onChange={(e) => setValue("pourcentage", Number(e.target.value))}
+              />
+              <input
+                type="number"
+                min="0"
+                max="100"
+                className="champ w-[86px] font-mono"
+                disabled={cloturee}
+                {...register("pourcentage")}
+              />
+              <span className="text-[13px] font-semibold text-petrole-600">%</span>
+            </div>
+          </Champ>
+
+          <div className="mt-[18px] border-t border-[#EEF2F3] pt-[18px]">
+            <PiecesJointes activiteId={editionId} pending={pending} onPendingChange={setPending} />
+          </div>
+
+          <div className="mt-5 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
             <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
-            <button type="submit" disabled={isSubmitting} className="btn-primaire">
+            <button type="submit" disabled={isSubmitting || cloturee} className="btn-primaire">
               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
               {editionId ? "Enregistrer les modifications" : "Enregistrer l'activité"}
             </button>
@@ -257,11 +371,13 @@ export default function ActivityForm() {
               <StatutBadge statut={val.statut} />
             </div>
             <div className="flex items-center justify-between border-t border-[#EEF2F3] pt-3">
-              <span className="text-[12.5px] text-grisdoux">
-                {val.date_activite ? val.date_activite.split("-").reverse().join("/") : "—"}
+              <span className="text-[12px] text-grisdoux">
+                {val.date_debut && val.date_fin
+                  ? `du ${jjmm(val.date_debut)} au ${jjmm(val.date_fin)}`
+                  : "—"}
               </span>
               <span className="font-mono text-[13px] font-semibold text-petrole-600">
-                {String(val.duree_heures ?? 0).replace(".", ",")} h
+                {formatDuree(val.duree_minutes ?? 0)}
               </span>
             </div>
           </div>
@@ -287,6 +403,11 @@ export default function ActivityForm() {
       </form>
     </>
   );
+}
+
+function jjmm(iso: string): string {
+  const [, m, j] = iso.split("-");
+  return j && m ? `${j}/${m}` : iso;
 }
 
 function Champ({

@@ -1,4 +1,4 @@
-import { Clock, Gauge, LayoutList, TrendingUp, Users as UsersIcon } from "lucide-react";
+import { AlertTriangle, Award, Clock, LayoutList, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Area,
@@ -11,8 +11,8 @@ import {
   XAxis,
 } from "recharts";
 import { api } from "@/lib/api";
-import { formatHeures } from "@/lib/format";
-import type { StatsAdmin } from "@/types";
+import { formatDuree, formatPoints } from "@/lib/format";
+import type { ChargeEmploye, StatsAdmin } from "@/types";
 import { KpiCard, BarreProgression } from "@/components/ui/KpiCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
@@ -32,8 +32,8 @@ export default function AdminDashboard() {
     couleur: r.couleur ?? "#8A99A1",
     pct: r.pourcentage,
   }));
-  const maxHeures = Math.max(1, ...stats.charge_par_employe.map((c) => c.heures));
-  const maxContrib = Math.max(1, ...stats.top_contributeurs.map((c) => c.nb_activites));
+  const maxMinutes = Math.max(1, ...stats.charge_par_employe.map((c) => c.minutes));
+  const maxPoints = Math.max(1, ...stats.charge_par_employe.map((c) => c.points ?? 0));
 
   return (
     <>
@@ -43,32 +43,37 @@ export default function AdminDashboard() {
       />
 
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard titre="Total activités" valeur={stats.total_activites} icone={LayoutList} bas="sur la période" />
-        <KpiCard titre="Employés actifs" valeur={stats.employes_actifs} icone={UsersIcon} bas="membres du service" />
         <KpiCard
-          titre="Taux de complétion"
-          valeur={`${stats.taux_completion} %`}
-          icone={Gauge}
-          couleurIcone="#1B8A4B"
-          fondIcone="#E4F5EB"
-          valeurCouleur="#1B8A4B"
+          titre="Total activités"
+          valeur={stats.total_activites}
+          icone={LayoutList}
+          bas={`${stats.cloturees} clôturée(s) · ${stats.employes_actifs} agent(s)`}
+        />
+        <KpiCard
+          titre="Heures réalisées"
+          valeur={formatDuree(stats.minutes_realisees)}
+          icone={Clock}
+          couleurIcone="#0E5E7C"
+          fondIcone="#E1EFF4"
           bas={<BarreProgression valeur={stats.taux_completion} />}
         />
         <KpiCard
-          titre="Heures cumulées"
-          valeur={
-            <>
-              {stats.heures_cumulees.toLocaleString("fr-FR")} <span className="text-base text-grisdoux">h</span>
-            </>
-          }
-          icone={Clock}
+          titre="Points cumulés"
+          valeur={formatPoints(stats.points_total)}
+          icone={Award}
           couleurIcone="#B4750E"
           fondIcone="#FBF0DC"
-          bas={
-            stats.employes_actifs
-              ? `≈ ${Math.round(stats.heures_cumulees / stats.employes_actifs)} h / employé`
-              : undefined
-          }
+          valeurCouleur="#B4750E"
+          bas="pondération (tâches clôturées)"
+        />
+        <KpiCard
+          titre="En retard"
+          valeur={stats.en_retard}
+          icone={AlertTriangle}
+          couleurIcone="#C0392B"
+          fondIcone="#FBEAE7"
+          valeurCouleur={stats.en_retard > 0 ? "#C0392B" : undefined}
+          bas={stats.en_retard > 0 ? "échéance dépassée" : "rien en retard"}
         />
       </div>
 
@@ -158,11 +163,11 @@ export default function AdminDashboard() {
                 <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-[#F0F3F4]">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[#1B7C9E] to-petrole-600"
-                    style={{ width: `${(c.heures / maxHeures) * 100}%` }}
+                    style={{ width: `${(c.minutes / maxMinutes) * 100}%` }}
                   />
                 </div>
-                <div className="w-12 text-right font-mono text-[12.5px] font-semibold text-encre">
-                  {formatHeures(c.heures)}
+                <div className="w-16 text-right font-mono text-[12.5px] font-semibold text-encre">
+                  {formatDuree(c.minutes)}
                 </div>
               </div>
             ))}
@@ -170,32 +175,36 @@ export default function AdminDashboard() {
         </div>
 
         <div className="carte p-[20px_22px]">
-          <div className="mb-4 text-[15px] font-semibold text-encre">Top contributeurs</div>
-          <div className="flex flex-col gap-3.5">
-            {stats.top_contributeurs.map((c, i) => (
-              <div key={c.user_id} className="flex items-center gap-3">
-                <span
-                  className="w-5 text-center font-mono text-sm font-bold"
-                  style={{ color: i === 0 ? "#B4750E" : i < 3 ? "#5E717B" : "#9AA7AD" }}
-                >
-                  {i + 1}
-                </span>
-                <Avatar nom={c.nom_complet} id={c.user_id} taille={34} />
-                <div className="flex-1">
-                  <div className="text-[13px] font-medium text-encre">{c.nom_complet}</div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#F0F3F4]">
-                    <div
-                      className="h-full"
-                      style={{ width: `${(c.nb_activites / maxContrib) * 100}%`, background: i < 3 ? "#0E5E7C" : "#8FB2BF" }}
-                    />
-                  </div>
-                </div>
-                <span className="font-mono text-[13px] font-semibold text-encre">{c.nb_activites}</span>
-              </div>
-            ))}
+          <div className="mb-3 flex items-center gap-2 text-[15px] font-semibold text-encre">
+            <TrendingUp size={17} className="text-succes" /> Top contributeurs
+            <span className="text-xs font-normal text-grisdoux">— points (clôturés)</span>
           </div>
+          <ContribListe items={stats.top_contributeurs} maxPoints={maxPoints} couleur="#0E5E7C" />
         </div>
       </div>
     </>
+  );
+}
+
+function ContribListe({ items, maxPoints, couleur }: { items: ChargeEmploye[]; maxPoints: number; couleur: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {items.map((c) => (
+        <div key={c.user_id} className="flex items-center gap-3">
+          <Avatar nom={c.nom_complet} id={c.user_id} taille={32} />
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-encre">{c.nom_complet}</span>
+              <span className="font-mono text-[12.5px] text-grisdoux">{c.cloturees ?? 0} clôt.</span>
+            </div>
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#F0F3F4]">
+              <div className="h-full" style={{ width: `${((c.points ?? 0) / maxPoints) * 100}%`, background: couleur }} />
+            </div>
+          </div>
+          <span className="w-14 text-right font-mono text-[13px] font-semibold text-encre">{formatPoints(c.points ?? 0)}</span>
+        </div>
+      ))}
+      {items.length === 0 && <div className="text-[12.5px] text-grisdoux">Aucune donnée.</div>}
+    </div>
   );
 }

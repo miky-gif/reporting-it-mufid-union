@@ -13,11 +13,9 @@ export function Header() {
     <header className="flex h-[62px] flex-none items-center justify-between border-b border-bordure bg-white px-[22px]">
       <div className="flex items-center gap-3.5">
         <img src="/logo-mufid.webp" alt="MUFID UNION" className="h-[30px]" />
-        {estAdmin && (
-          <span className="rounded-[5px] border border-[#CFE2E9] bg-petrole-100 px-2 py-1 font-mono text-[10px] font-semibold tracking-wider text-petrole-600">
-            ADMIN
-          </span>
-        )}
+        <span className="rounded-[5px] border border-[#CFE2E9] bg-petrole-100 px-2 py-1 font-mono text-[10px] font-semibold tracking-wider text-petrole-600">
+          {estAdmin ? "ADMIN" : "IT"}
+        </span>
       </div>
 
       <div className="flex items-center gap-4">

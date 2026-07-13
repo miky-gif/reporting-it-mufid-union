@@ -9,12 +9,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // Proxy des appels API vers le backend FastAPI en développement.
+    // En dev, on relaie /api vers le backend SANS réécriture : l'API est déjà
+    // servie sous /api côté Express (même contrat qu'en production).
     proxy: {
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, ""),
       },
     },
   },

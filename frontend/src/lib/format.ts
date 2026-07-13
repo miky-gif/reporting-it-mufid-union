@@ -15,6 +15,22 @@ export function formatHeures(h: number): string {
   return `${s} h`;
 }
 
+/** Durée en minutes -> « 45 min », « 1 h », « 1 h 30 ». */
+export function formatDuree(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes || 0));
+  const h = Math.floor(m / 60);
+  const reste = m % 60;
+  if (h === 0) return `${reste} min`;
+  if (reste === 0) return `${h} h`;
+  return `${h} h ${String(reste).padStart(2, "0")}`;
+}
+
+/** Points (pondération) « 2,5 pts ». */
+export function formatPoints(p: number): string {
+  const s = Number.isInteger(p) ? String(p) : String(Math.round(p * 100) / 100).replace(".", ",");
+  return `${s} pt${p >= 2 ? "s" : ""}`;
+}
+
 /** Date « 03/07/2026 ». */
 export function formatDate(iso: string): string {
   try {

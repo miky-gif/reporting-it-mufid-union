@@ -80,7 +80,7 @@ export function UserModal({
           <div>
             <label className="label">Rôle</label>
             <select className="champ" value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="EMPLOYE">Employé</option>
+              <option value="EMPLOYE">IT</option>
               <option value="ADMIN">Administrateur</option>
             </select>
           </div>

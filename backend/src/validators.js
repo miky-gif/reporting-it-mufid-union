@@ -9,20 +9,44 @@ export const loginSchema = z.object({
   mot_de_passe: z.string().min(1, "Mot de passe requis."),
 });
 
-export const activiteCreateSchema = z.object({
+export const changeMotDePasseSchema = z.object({
+  ancien_mot_de_passe: z.string().min(1, "Mot de passe actuel requis."),
+  nouveau_mot_de_passe: z.string().min(6, "6 caractères minimum."),
+});
+
+const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+
+const activiteBase = z.object({
   titre: z.string().min(2, "Le titre est requis (2 caractères min.).").max(200),
-  description: z.string().max(2000).optional().nullable(), // « État d'exécution » du rapport
+  description: z.string().max(2000).optional().nullable(), // état d'exécution de l'activité
+  consignes: z.string().max(2000).optional().nullable(), // consigne de départ (admin)
   livrable: z.string().max(1000).optional().nullable(),
   activites_a_mener: z.string().max(1000).optional().nullable(),
   categorie: z.string().min(1, "Catégorie requise.").max(40), // code de catégorie (validé côté route)
   priorite: z.enum(PRIORITES).default("MOYENNE"),
   statut: z.enum(STATUTS).default("A_FAIRE"),
-  date_activite: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide (AAAA-MM-JJ)."),
-  duree_heures: z.coerce.number().min(0).max(24),
+  // % de réalisation (0-100). Si absent, déduit du statut.
+  pourcentage: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  // Période de réalisation (début -> fin). L'échéance = date_fin (calculée côté route).
+  date_debut: z.string().regex(dateRe, "Date de début invalide (AAAA-MM-JJ)."),
+  date_fin: z.string().regex(dateRe, "Date de fin invalide (AAAA-MM-JJ)."),
+  // Durée libre en minutes (granularité fine). 1 min à 24 h (1440 min).
+  duree_minutes: z.coerce.number().int().min(1, "Durée requise (en minutes).").max(1440),
   user_id: z.coerce.number().int().positive().optional(),
+  // Affectation multiple : liste d'agents destinataires (admin).
+  user_ids: z.array(z.coerce.number().int().positive()).optional(),
 });
 
-export const activiteUpdateSchema = activiteCreateSchema.partial().omit({ user_id: true });
+const periodeCoherente = (d) =>
+  !d.date_debut || !d.date_fin || d.date_fin >= d.date_debut;
+const messagePeriode = { message: "La date de fin doit être postérieure ou égale à la date de début.", path: ["date_fin"] };
+
+export const activiteCreateSchema = activiteBase.refine(periodeCoherente, messagePeriode);
+
+export const activiteUpdateSchema = activiteBase
+  .partial()
+  .omit({ user_id: true, user_ids: true })
+  .refine(periodeCoherente, messagePeriode);
 
 export const userCreateSchema = z.object({
   nom_complet: z.string().min(2, "Nom requis.").max(150),

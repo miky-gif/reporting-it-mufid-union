@@ -44,7 +44,7 @@ export function Sidebar() {
   return (
     <aside className={clsx("flex w-[238px] flex-none flex-col self-stretch p-[20px_14px]", fond)}>
       <div className="px-3 pb-3.5 pt-1 font-mono text-[10px] font-semibold tracking-[0.13em] text-[#5E93A4]">
-        {estAdmin ? "ADMINISTRATION" : "ESPACE EMPLOYÉ"}
+        {estAdmin ? "ADMINISTRATION" : "ESPACE IT"}
       </div>
 
       {liens.map((l) => (

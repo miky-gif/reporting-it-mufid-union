@@ -183,7 +183,7 @@ function BadgeRole({ role }: { role: Role }) {
       </span>
     );
   }
-  return <span className="rounded-md bg-[#EDF1F2] px-2.5 py-1 text-[11px] font-semibold text-gris">Employé</span>;
+  return <span className="rounded-md bg-[#EDF1F2] px-2.5 py-1 text-[11px] font-semibold text-gris">IT</span>;
 }
 
 function BadgeStatut({ actif }: { actif: boolean }) {

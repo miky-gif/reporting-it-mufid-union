@@ -15,8 +15,16 @@ export interface CategorieDef {
   actif: boolean;
 }
 
-export type Priorite = "BASSE" | "MOYENNE" | "HAUTE" | "CRITIQUE";
-export type Statut = "A_FAIRE" | "EN_COURS" | "TERMINE" | "BLOQUE";
+export type Priorite = "BASSE" | "MOYENNE" | "HAUTE" | "TRES_HAUTE" | "CRITIQUE";
+export type Statut = "A_FAIRE" | "EN_COURS" | "STANDBY" | "TERMINE" | "CLOTURE";
+
+export interface PieceJointe {
+  id: number;
+  nom_fichier: string;
+  mime: string | null;
+  taille: number;
+  date_creation: string;
+}
 
 export interface User {
   id: number;
@@ -37,18 +45,30 @@ export interface Activite {
   user_id: number;
   reference: string;
   titre: string;
-  description: string | null;
+  description: string | null; // état d'exécution de l'activité
+  consignes: string | null;
   livrable: string | null;
   activites_a_mener: string | null;
   assignee_par_admin: boolean;
+  groupe_affectation_id: string | null;
   categorie: Categorie;
   priorite: Priorite;
   statut: Statut;
-  date_activite: string;
+  pourcentage: number; // % réalisation (0-100)
+  date_activite: string; // échéance (= date_fin)
+  date_debut: string;
+  date_fin: string;
+  duree_minutes: number;
   duree_heures: number;
+  points: number;
+  points_acquis: number;
+  en_retard: boolean;
+  date_cloture: string | null;
+  cloture_par: number | null;
   date_creation: string;
   date_modification: string;
   user?: { id: number; nom_complet: string; poste: string | null } | null;
+  pieces?: PieceJointe[];
 }
 
 export interface PageActivites {
@@ -80,21 +100,40 @@ export interface ChargeEmploye {
   user_id: number;
   nom_complet: string;
   initiales: string;
-  heures: number;
+  minutes: number; // durée exacte (source de vérité)
+  heures: number; // dérivé, pour affichage décimal éventuel
   nb_activites: number;
+  cloturees?: number;
+  points?: number;
+}
+
+export interface ActiviteEnRetard {
+  id: number;
+  titre: string;
+  categorie: string;
+  date_activite: string;
+  statut: string;
+  priorite: string;
 }
 
 export interface StatsEmploye {
   taches_du_jour: number;
   en_cours: number;
-  bloquees: number;
+  en_standby: number;
+  en_retard: number;
   terminees_semaine: number;
+  cloturees: number;
   total_activites: number;
-  heures_cumulees: number;
+  minutes_realisees: number;
+  minutes_total: number;
+  heures_realisees: number;
+  points_acquis: number;
+  points_potentiels: number;
   taux_completion: number;
   repartition_statut: Repartition[];
   repartition_categorie: Repartition[];
   activite_semaine: SerieJour[];
+  activites_en_retard: ActiviteEnRetard[];
 }
 
 export interface Notification {
@@ -116,8 +155,12 @@ export interface NotificationsReponse {
 export interface StatsAdmin {
   total_activites: number;
   employes_actifs: number;
+  cloturees: number;
+  en_retard: number;
   taux_completion: number;
-  heures_cumulees: number;
+  minutes_realisees: number;
+  heures_realisees: number;
+  points_total: number;
   repartition_categorie: Repartition[];
   repartition_statut: Repartition[];
   charge_par_employe: ChargeEmploye[];

@@ -1,10 +1,10 @@
-import { ArrowDown, ArrowUp, Filter, Search, SendHorizonal } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCheck, Filter, Loader2, Pencil, Search, SendHorizonal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
-import { formatDate, formatHeures } from "@/lib/format";
+import { formatDate, formatDuree } from "@/lib/format";
 import type { Activite, Categorie, PageActivites, Priorite, Statut, UserWithStats } from "@/types";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { Avatar } from "@/components/ui/Avatar";
@@ -13,6 +13,9 @@ import { Pagination } from "@/components/ui/Pagination";
 import { SearchX } from "lucide-react";
 
 const TAILLE = 9;
+
+// Le filtre de statut accepte aussi le pseudo-statut « EN_RETARD ».
+type FiltreStatut = Statut | "EN_RETARD" | "";
 
 export default function ActivitiesManagement() {
   const navigate = useNavigate();
@@ -24,7 +27,7 @@ export default function ActivitiesManagement() {
   const [recherche, setRecherche] = useState("");
   const [userId, setUserId] = useState<string>("");
   const [categorie, setCategorie] = useState<Categorie | "">("");
-  const [statut, setStatut] = useState<Statut | "">("");
+  const [statut, setStatut] = useState<FiltreStatut>("");
   const [priorite, setPriorite] = useState<Priorite | "">("");
   const [ordre, setOrdre] = useState<"asc" | "desc">("desc");
 
@@ -108,10 +111,12 @@ export default function ActivitiesManagement() {
                 <option key={c.code} value={c.code}>{c.nom}</option>
               ))}
             </Select>
-            <Select valeur={statut} onChange={(v) => setStatut(v as Statut | "")} defaut="Statut">
+            <Select valeur={statut} onChange={(v) => setStatut(v as FiltreStatut)} defaut="Statut">
               {LISTE_STATUTS.map((s) => (
                 <option key={s} value={s}>{STATUTS[s].libelle}</option>
               ))}
+              {/* Pseudo-statut : échéance dépassée et tâche non terminée/clôturée */}
+              <option value="EN_RETARD">⚠ En retard</option>
             </Select>
             <Select valeur={priorite} onChange={(v) => setPriorite(v as Priorite | "")} defaut="Priorité">
               {LISTE_PRIORITES.map((p) => (
@@ -152,12 +157,13 @@ export default function ActivitiesManagement() {
                         Date {ordre === "desc" ? <ArrowDown size={15} /> : <ArrowUp size={15} />}
                       </button>
                     </th>
-                    <th className="px-[18px] py-2.5 text-right font-semibold">Durée</th>
+                    <th className="py-2.5 text-right font-semibold">Durée</th>
+                    <th className="px-[18px] py-2.5 text-right font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {donnees!.items.map((a) => (
-                    <LigneActivite key={a.id} a={a} />
+                    <LigneActivite key={a.id} a={a} onChange={charger} />
                   ))}
                 </tbody>
               </table>
@@ -176,7 +182,20 @@ export default function ActivitiesManagement() {
   );
 }
 
-function LigneActivite({ a }: { a: Activite }) {
+function LigneActivite({ a, onChange }: { a: Activite; onChange: () => void }) {
+  const navigate = useNavigate();
+  const [enCours, setEnCours] = useState(false);
+
+  async function cloturer() {
+    setEnCours(true);
+    try {
+      await api.put(`/activites/${a.id}`, { statut: "CLOTURE" });
+      onChange();
+    } finally {
+      setEnCours(false);
+    }
+  }
+
   return (
     <tr className="border-b border-[#F4F6F7] last:border-0 hover:bg-[#FAFBFB]">
       <td className="px-[18px] py-3 font-mono text-xs text-grisdoux">{a.reference}</td>
@@ -191,9 +210,39 @@ function LigneActivite({ a }: { a: Activite }) {
         </div>
       </td>
       <td className="py-3"><PrioriteBadge priorite={a.priorite} /></td>
-      <td className="py-3"><StatutBadge statut={a.statut} /></td>
+      <td className="py-3">
+        <div className="flex items-center gap-1.5">
+          <StatutBadge statut={a.statut} />
+          {a.en_retard && (
+            <span className="rounded bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger">retard</span>
+          )}
+        </div>
+      </td>
       <td className="py-3 font-mono text-[12px] text-gris">{formatDate(a.date_activite)}</td>
-      <td className="px-[18px] py-3 text-right font-mono text-[12.5px] text-ardoise">{formatHeures(a.duree_heures)}</td>
+      <td className="py-3 text-right font-mono text-[12.5px] text-ardoise">{formatDuree(a.duree_minutes)}</td>
+      <td className="px-[18px] py-3">
+        <div className="flex items-center justify-end gap-2.5">
+          <button
+            onClick={() => navigate(`/activites/${a.id}/modifier`)}
+            title="Ouvrir / modifier"
+            className="text-grisdoux hover:text-petrole-600"
+          >
+            <Pencil size={17} />
+          </button>
+          {a.statut !== "CLOTURE" ? (
+            <button
+              onClick={cloturer}
+              disabled={enCours}
+              title="Clôturer (valider) la tâche"
+              className="flex items-center gap-1 rounded-md border border-[#B7DEC9] bg-succes/5 px-2 py-1 text-[11.5px] font-medium text-succes hover:bg-succes/10 disabled:opacity-50"
+            >
+              {enCours ? <Loader2 size={14} className="animate-spin" /> : <CheckCheck size={14} />} Clôturer
+            </button>
+          ) : (
+            <span className="text-[11.5px] font-medium text-succes">✓ Clôturée</span>
+          )}
+        </div>
+      </td>
     </tr>
   );
 }

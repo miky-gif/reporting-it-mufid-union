@@ -1,28 +1,51 @@
-// Génération des rapports Excel avec exceljs, en-tête MUFID UNION.
+// Génération des rapports Excel (.xlsx) avec exceljs, au format du modèle métier
+// (mêmes colonnes que Word/PDF : Rubriques, Activités programmées, Description,
+// Résultat attendu, Statut, Activités à mener ; + Agent pour le consolidé).
 import ExcelJS from "exceljs";
 
-const BLEU = "FF0E5E7C";
 const BLEU_FONCE = "FF093646";
+const PETROLE_CLAIR = "FFE3EDF1";
+const PETROLE_TRES_CLAIR = "FFEEF4F6";
 const BLANC = "FFFFFFFF";
+const ENCRE = "FF16262E";
+const GRIS = "FF5E717B";
 
-function enteteFeuille(ws, titre, periode, span) {
+function couleurStatutArgb(statut) {
+  if (statut === "Clôturé") return "FF1B8A4B";
+  if (statut === "Terminé") return "FF14708F";
+  if (statut === "En cours") return "FF0E5E7C";
+  if (statut === "Standby") return "FFD08A21";
+  return "FF5E717B"; // À faire / autre
+}
+
+const BORDURE = { style: "thin", color: { argb: "FFC6D2D7" } };
+const BORDS = { top: BORDURE, left: BORDURE, bottom: BORDURE, right: BORDURE };
+
+function blocTitre(ws, span, sousTitre, ligne) {
   ws.mergeCells(1, 1, 1, span);
   const c1 = ws.getCell(1, 1);
-  c1.value = "MUFID UNION";
-  c1.font = { bold: true, size: 16, color: { argb: BLANC } };
-  c1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BLEU_FONCE } };
-  c1.alignment = { vertical: "middle" };
-  ws.getRow(1).height = 24;
+  c1.value = "RAPPORT D'ACTIVITÉS";
+  c1.font = { bold: true, size: 15, color: { argb: ENCRE } };
+  c1.alignment = { horizontal: "center" };
 
   ws.mergeCells(2, 1, 2, span);
-  ws.getCell(2, 1).value = titre;
-  ws.getCell(2, 1).font = { bold: true, size: 13, color: { argb: "FF16262E" } };
+  const c2 = ws.getCell(2, 1);
+  c2.value = sousTitre;
+  c2.font = { bold: true, size: 12, color: { argb: "FF0E5E7C" } };
+  c2.alignment = { horizontal: "center" };
 
   ws.mergeCells(3, 1, 3, span);
-  const d = new Date().toLocaleDateString("fr-FR");
-  ws.getCell(3, 1).value = `Période : ${periode}  ·  Émis le ${d}`;
-  ws.getCell(3, 1).font = { size: 10, color: { argb: "FF5E717B" } };
-  return 5;
+  const c3 = ws.getCell(3, 1);
+  c3.value = "Département de l'Exploitation Informatique";
+  c3.font = { size: 10, color: { argb: GRIS } };
+  c3.alignment = { horizontal: "center" };
+
+  ws.mergeCells(4, 1, 4, span);
+  const c4 = ws.getCell(4, 1);
+  c4.value = ligne;
+  c4.font = { bold: true, size: 11, color: { argb: ENCRE } };
+  c4.alignment = { horizontal: "center" };
+  return 6; // première ligne d'en-tête de tableau
 }
 
 function enteteTableau(ws, ligne, colonnes) {
@@ -30,94 +53,132 @@ function enteteTableau(ws, ligne, colonnes) {
     const c = ws.getCell(ligne, i + 1);
     c.value = nom;
     c.font = { bold: true, color: { argb: BLANC }, size: 10 };
-    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BLEU } };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BLEU_FONCE } };
+    c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    c.border = BORDS;
   });
+  ws.getRow(ligne).height = 30;
   return ligne + 1;
 }
 
-export async function rapportIndividuelExcel(rap) {
+function ecrireCellule(ws, r, c, valeur, { wrap = false, bold = false, color, fill, align } = {}) {
+  const cell = ws.getCell(r, c);
+  cell.value = valeur ?? "";
+  cell.font = { size: 10, color: { argb: color || ENCRE }, bold };
+  cell.alignment = { vertical: "top", wrapText: wrap, horizontal: align || "left" };
+  cell.border = BORDS;
+  if (fill) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+  return cell;
+}
+
+// Fusionne verticalement la cellule (colonne `col`) de `debut` à `fin` si besoin.
+function fusion(ws, col, debut, fin) {
+  if (fin > debut) ws.mergeCells(debut, col, fin, col);
+}
+
+export async function rapportHebdoExcel(rap) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Rapport individuel");
-  let r = enteteFeuille(ws, `Rapport individuel — ${rap.user.nom_complet}`, rap.periode, 6);
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
 
-  const infos = [
-    ["Employé", rap.user.nom_complet],
-    ["Poste", rap.user.poste || "—"],
-    ["E-mail", rap.user.email],
-    ["Total activités", rap.nb_activites],
-    ["Heures cumulées", `${rap.heures} h`],
-    ["Taux de complétion", `${rap.taux_completion} %`],
-    ["Catégorie principale", rap.categorie_principale],
-  ];
-  for (const [k, v] of infos) {
-    ws.getCell(r, 1).value = k;
-    ws.getCell(r, 1).font = { bold: true, color: { argb: "FF5E717B" } };
-    ws.getCell(r, 2).value = v;
-    r += 1;
+  let r = blocTitre(
+    ws,
+    7,
+    `Du ${rap.debut_court} au ${rap.fin_court}`,
+    `${rap.user.nom_complet.toUpperCase()}${rap.user.poste ? "  —  " + rap.user.poste : ""}`,
+  );
+
+  r = enteteTableau(ws, r, [
+    "Rubriques",
+    `Activités programmées de la semaine ${periodeCol}`,
+    "Description de l'activité",
+    "Résultat attendu (livrable)",
+    "Statut",
+    "% réalisation",
+    "Activités à mener (semaine suivante)",
+  ]);
+
+  for (const g of rap.groupes) {
+    const debut = r;
+    for (const l of g.lignes) {
+      ecrireCellule(ws, r, 1, g.rubrique, { bold: true, color: "FF0E5E7C", align: "center", fill: PETROLE_CLAIR });
+      ecrireCellule(ws, r, 2, l.programmee, { wrap: true });
+      ecrireCellule(ws, r, 3, l.etat, { wrap: true });
+      ecrireCellule(ws, r, 4, l.livrable, { wrap: true });
+      ecrireCellule(ws, r, 5, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
+      ecrireCellule(ws, r, 6, l.pourcentage, { bold: true, align: "center" });
+      ecrireCellule(ws, r, 7, l.aMener, { wrap: true });
+      r += 1;
+    }
+    fusion(ws, 1, debut, r - 1);
   }
-  r += 1;
-
-  r = enteteTableau(ws, r, ["Date", "Réf.", "Activité", "Catégorie", "Statut", "Durée (h)"]);
-  for (const l of rap.lignes) {
-    ws.getRow(r).values = [l.date, l.reference, l.titre, l.categorie, l.statut, l.duree];
-    r += 1;
+  if (rap.groupes.length === 0) {
+    ws.mergeCells(r, 1, r, 7);
+    ecrireCellule(ws, r, 1, "Aucune activité enregistrée sur cette période.", { align: "center", color: GRIS });
   }
-  ws.getCell(r, 5).value = "Total";
-  ws.getCell(r, 5).font = { bold: true };
-  ws.getCell(r, 6).value = rap.heures;
-  ws.getCell(r, 6).font = { bold: true };
 
-  ws.columns = [{ width: 14 }, { width: 14 }, { width: 52 }, { width: 22 }, { width: 14 }, { width: 12 }];
-  ws.views = [{ state: "frozen", ySplit: 4 }];
-
+  ws.columns = [{ width: 22 }, { width: 30 }, { width: 38 }, { width: 24 }, { width: 13 }, { width: 12 }, { width: 32 }];
+  ws.views = [{ state: "frozen", ySplit: 6 }];
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
-export async function rapportConsolideExcel(rap) {
+export async function rapportConsolideHebdoExcel(rap) {
   const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Rapport consolidé");
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
 
-  // Feuille 1 : synthèse
-  const ws = wb.addWorksheet("Synthèse");
-  let r = enteteFeuille(ws, "Rapport consolidé — Service IT", rap.periode, 3);
-  const infos = [
-    ["Total activités", rap.nb_activites],
-    ["Employés", rap.nb_employes],
-    ["Heures cumulées", `${rap.heures} h`],
-    ["Taux de complétion", `${rap.taux_completion} %`],
-  ];
-  for (const [k, v] of infos) {
-    ws.getCell(r, 1).value = k;
-    ws.getCell(r, 1).font = { bold: true, color: { argb: "FF5E717B" } };
-    ws.getCell(r, 2).value = v;
-    r += 1;
-  }
-  r += 1;
-  ws.getCell(r, 1).value = "Répartition par catégorie";
-  ws.getCell(r, 1).font = { bold: true, size: 11 };
-  r += 1;
-  r = enteteTableau(ws, r, ["Catégorie", "Nombre", "%"]);
-  for (const it of rap.repartition_categorie) {
-    ws.getRow(r).values = [it.libelle, it.total, `${it.pourcentage} %`];
-    r += 1;
-  }
-  ws.columns = [{ width: 26 }, { width: 14 }, { width: 12 }];
+  let r = blocTitre(
+    ws,
+    8,
+    `Rapport consolidé — Du ${rap.debut_court} au ${rap.fin_court}`,
+    `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
+  );
 
-  // Feuille 2 : par employé
-  const ws2 = wb.addWorksheet("Par employé");
-  let r2 = enteteFeuille(ws2, "Synthèse par employé", rap.periode, 5);
-  r2 = enteteTableau(ws2, r2, ["Employé", "Poste", "Activités", "Heures", "Complétion"]);
-  for (const b of rap.par_employe) {
-    ws2.getRow(r2).values = [b.nom_complet, b.poste || "—", b.nb_activites, b.heures, `${b.taux_completion} %`];
-    r2 += 1;
-  }
-  ws2.getCell(r2, 1).value = "TOTAL";
-  ws2.getCell(r2, 1).font = { bold: true };
-  ws2.getCell(r2, 3).value = rap.nb_activites;
-  ws2.getCell(r2, 3).font = { bold: true };
-  ws2.getCell(r2, 4).value = rap.heures;
-  ws2.getCell(r2, 4).font = { bold: true };
-  ws2.columns = [{ width: 26 }, { width: 30 }, { width: 12 }, { width: 12 }, { width: 14 }];
-  ws2.views = [{ state: "frozen", ySplit: 4 }];
+  r = enteteTableau(ws, r, [
+    "Agent",
+    "Rubriques",
+    `Activités programmées de la semaine ${periodeCol}`,
+    "Description de l'activité",
+    "Résultat attendu (livrable)",
+    "Statut",
+    "% réalisation",
+    "Activités à mener (semaine suivante)",
+  ]);
 
+  for (const emp of rap.employes) {
+    const debutEmp = r;
+    for (const g of emp.groupes) {
+      const debutCat = r;
+      for (const l of g.lignes) {
+        ecrireCellule(ws, r, 1, "", { fill: PETROLE_TRES_CLAIR });
+        ecrireCellule(ws, r, 2, g.rubrique, { bold: true, color: "FF0E5E7C", align: "center", fill: PETROLE_CLAIR });
+        ecrireCellule(ws, r, 3, l.programmee, { wrap: true });
+        ecrireCellule(ws, r, 4, l.etat, { wrap: true });
+        ecrireCellule(ws, r, 5, l.livrable, { wrap: true });
+        ecrireCellule(ws, r, 6, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
+        ecrireCellule(ws, r, 7, l.pourcentage, { bold: true, align: "center" });
+        ecrireCellule(ws, r, 8, l.aMener, { wrap: true });
+        r += 1;
+      }
+      fusion(ws, 2, debutCat, r - 1);
+    }
+    // Colonne Agent : nom (+ poste) fusionné sur tout le bloc de l'agent.
+    const cellAgent = ecrireCellule(
+      ws,
+      debutEmp,
+      1,
+      emp.nom_complet.toUpperCase() + (emp.poste ? `\n${emp.poste}` : ""),
+      { bold: true, align: "center", color: ENCRE, fill: PETROLE_TRES_CLAIR, wrap: true },
+    );
+    cellAgent.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    fusion(ws, 1, debutEmp, r - 1);
+  }
+  if (rap.employes.length === 0) {
+    ws.mergeCells(r, 1, r, 8);
+    ecrireCellule(ws, r, 1, "Aucune activité enregistrée sur cette période.", { align: "center", color: GRIS });
+  }
+
+  ws.columns = [{ width: 22 }, { width: 19 }, { width: 26 }, { width: 32 }, { width: 22 }, { width: 13 }, { width: 12 }, { width: 28 }];
+  ws.views = [{ state: "frozen", ySplit: 6 }];
   return Buffer.from(await wb.xlsx.writeBuffer());
 }

@@ -18,10 +18,11 @@ export const STATUTS: Record<
   Statut,
   { libelle: string; couleur: string; fond: string }
 > = {
-  TERMINE: { libelle: "Terminé", couleur: "#1B8A4B", fond: "#E4F5EB" },
-  EN_COURS: { libelle: "En cours", couleur: "#14708F", fond: "#E1EFF4" },
   A_FAIRE: { libelle: "À faire", couleur: "#64757D", fond: "#EDF1F2" },
-  BLOQUE: { libelle: "Bloqué", couleur: "#C0392B", fond: "#FBEAE7" },
+  EN_COURS: { libelle: "En cours", couleur: "#14708F", fond: "#E1EFF4" },
+  STANDBY: { libelle: "Standby", couleur: "#D08A21", fond: "#FBF0DC" },
+  TERMINE: { libelle: "Terminé", couleur: "#1B8A4B", fond: "#E4F5EB" },
+  CLOTURE: { libelle: "Clôturé", couleur: "#0B6E39", fond: "#DDF0E4" },
 };
 
 export const PRIORITES: Record<
@@ -31,14 +32,26 @@ export const PRIORITES: Record<
   BASSE: { libelle: "Basse", couleur: "#1F9D74", fond: "#E4F4EE" },
   MOYENNE: { libelle: "Moyenne", couleur: "#14708F", fond: "#E1EFF4" },
   HAUTE: { libelle: "Haute", couleur: "#B4750E", fond: "#FBF0DC" },
+  TRES_HAUTE: { libelle: "Très haute", couleur: "#D2691E", fond: "#FBE9DC" },
   CRITIQUE: { libelle: "Critique", couleur: "#C0392B", fond: "#FBEAE7" },
 };
 
+// % de réalisation proposé par défaut selon le statut (ajustable à la main).
+export const POURCENTAGE_PAR_STATUT: Record<Statut, number> = {
+  A_FAIRE: 0,
+  EN_COURS: 50,
+  STANDBY: 25,
+  TERMINE: 100,
+  CLOTURE: 100,
+};
+
 export const LISTE_CATEGORIES = Object.keys(CATEGORIES) as Categorie[];
-export const LISTE_STATUTS = ["A_FAIRE", "EN_COURS", "TERMINE", "BLOQUE"] as Statut[];
-// Statuts disponibles pour l'employé : « À faire » est réservé à l'affectation par l'admin.
-export const LISTE_STATUTS_EMPLOYE = ["EN_COURS", "TERMINE", "BLOQUE"] as Statut[];
-export const LISTE_PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "CRITIQUE"] as Priorite[];
+export const LISTE_STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"] as Statut[];
+// Statuts posables par l'admin lors d'une affectation (« Clôturé » vient après coup).
+export const LISTE_STATUTS_ADMIN = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE"] as Statut[];
+// Statuts disponibles pour l'employé : « À faire » et « Clôturé » sont réservés à l'admin.
+export const LISTE_STATUTS_EMPLOYE = ["EN_COURS", "STANDBY", "TERMINE"] as Statut[];
+export const LISTE_PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "TRES_HAUTE", "CRITIQUE"] as Priorite[];
 
 // Rubriques prédéfinies par catégorie (la liste dépend de la catégorie choisie).
 export const RUBRIQUES: Record<Categorie, string[]> = {

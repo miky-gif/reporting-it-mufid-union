@@ -181,7 +181,7 @@ export function rapportIndividuelPdf(rap) {
 // ===========================================================================
 
 const ML = 28; // marge du rapport paysage
-const LARGEURS_PCT = [13, 18, 22, 15, 10, 22]; // 6 colonnes, somme = 100
+const LARGEURS_PCT = [12, 17, 21, 14, 9, 8, 19]; // 7 colonnes, somme = 100
 
 function rendrePaysage(construire) {
   return new Promise((resolve, reject) => {
@@ -274,8 +274,9 @@ export function rapportHebdoPdf(rap) {
       { text: "Rubriques" },
       { text: `Activités programmées de la semaine ${periodeCol}` },
       { text: "Description de l'activité" },
-      { text: "Résultat obtenu (livrable)" },
+      { text: "Résultat attendu (livrable)" },
       { text: "Statut" },
+      { text: "% réal." },
       { text: "Activités à mener au cours de la semaine suivante" },
     ];
     const dessinerEntete = (y) => {
@@ -298,6 +299,7 @@ export function rapportHebdoPdf(rap) {
           { text: l.etat },
           { text: l.livrable },
           { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut) },
+          { text: l.pourcentage, align: "center", bold: true },
           { text: l.aMener },
         ];
         const { infos, rowH } = mesurerLigne(doc, cells, widths, false);
@@ -323,7 +325,7 @@ export function rapportHebdoPdf(rap) {
 // par cellule et en omettant le trait supérieur des cellules « continuation ».
 // ---------------------------------------------------------------------------
 
-const LARGEURS_CONS_PCT = [12, 12, 16, 19, 13, 9, 19]; // 7 colonnes, somme = 100
+const LARGEURS_CONS_PCT = [11, 11, 15, 18, 12, 8, 7, 18]; // 8 colonnes, somme = 100
 
 // Mesure une ligne du tableau consolidé (les colonnes `multi` passent en puces).
 function mesurerLigneCons(doc, cells, widths) {
@@ -396,8 +398,9 @@ export function rapportConsolideHebdoPdf(rap) {
       { text: "Rubriques" },
       { text: `Activités programmées de la semaine ${periodeCol}` },
       { text: "Description de l'activité" },
-      { text: "Résultat obtenu (livrable)" },
+      { text: "Résultat attendu (livrable)" },
       { text: "Statut" },
+      { text: "% réal." },
       { text: "Activités à mener au cours de la semaine suivante" },
     ];
     const dessinerEntete = (yy) => {
@@ -425,6 +428,7 @@ export function rapportConsolideHebdoPdf(rap) {
             { text: l.etat, multi: true, topBorder: true },
             { text: l.livrable, multi: true, topBorder: true },
             { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut), topBorder: true },
+            { text: l.pourcentage, align: "center", bold: true, topBorder: true },
             { text: l.aMener, multi: true, topBorder: true },
           ];
           let mesure = mesurerLigneCons(doc, cells, widths);

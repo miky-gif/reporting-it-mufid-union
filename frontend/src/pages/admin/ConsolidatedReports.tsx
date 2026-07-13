@@ -1,4 +1,4 @@
-import { FileText, FileType2, Loader2 } from "lucide-react";
+import { FileSpreadsheet, FileText, FileType2, Loader2 } from "lucide-react";
 import { startOfMonth, subMonths } from "date-fns";
 import { useEffect, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
@@ -44,7 +44,7 @@ export default function ConsolidatedReports() {
   const [fin, setFin] = useState(isoDate(new Date()));
   const [apercu, setApercu] = useState<Apercu | null>(null);
   const [chargement, setChargement] = useState(false);
-  const [telechargement, setTelechargement] = useState<"pdf" | "word" | null>(null);
+  const [telechargement, setTelechargement] = useState<"pdf" | "word" | "excel" | null>(null);
 
   useEffect(() => {
     setChargement(true);
@@ -55,7 +55,7 @@ export default function ConsolidatedReports() {
       .finally(() => setChargement(false));
   }, [debut, fin]);
 
-  async function exporter(format: "pdf" | "word") {
+  async function exporter(format: "pdf" | "word" | "excel") {
     setTelechargement(format);
     try {
       await telechargerFichier("/rapports/consolide", { date_debut: debut, date_fin: fin, format });
@@ -85,11 +85,15 @@ export default function ConsolidatedReports() {
         <div className="flex gap-2.5">
           <button className="btn-primaire" disabled={!!telechargement} onClick={() => exporter("word")}>
             {telechargement === "word" ? <Loader2 size={19} className="animate-spin" /> : <FileType2 size={19} />}
-            Télécharger Word
+            Word
+          </button>
+          <button className="btn-succes" disabled={!!telechargement} onClick={() => exporter("excel")}>
+            {telechargement === "excel" ? <Loader2 size={19} className="animate-spin" /> : <FileSpreadsheet size={19} />}
+            Excel
           </button>
           <button className="btn-danger" disabled={!!telechargement} onClick={() => exporter("pdf")}>
             {telechargement === "pdf" ? <Loader2 size={19} className="animate-spin" /> : <FileText size={19} />}
-            Télécharger PDF
+            PDF
           </button>
         </div>
       </div>
@@ -119,15 +123,16 @@ export default function ConsolidatedReports() {
                   <Th>Rubriques</Th>
                   <Th>Activités programmées {periodeCol}</Th>
                   <Th>Description de l'activité</Th>
-                  <Th>Résultat obtenu (livrable)</Th>
+                  <Th>Résultat attendu (livrable)</Th>
                   <Th className="text-center">Statut</Th>
+                  <Th className="text-center">% réal.</Th>
                   <Th>Activités à mener (semaine suivante)</Th>
                 </tr>
               </thead>
               <tbody>
                 {apercu.employes.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="border border-[#D8E1E5] py-8 text-center text-grisdoux">
+                    <td colSpan={8} className="border border-[#D8E1E5] py-8 text-center text-grisdoux">
                       Aucune activité enregistrée sur cette période.
                     </td>
                   </tr>
@@ -158,6 +163,7 @@ export default function ConsolidatedReports() {
                         <Td><Multiligne texte={l.etat} /></Td>
                         <Td><Multiligne texte={l.livrable} /></Td>
                         <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>
+                        <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold text-ardoise">{l.pourcentage}</td>
                         <Td><Multiligne texte={l.aMener} /></Td>
                       </tr>
                     )),

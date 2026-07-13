@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { api, messageErreur } from "@/lib/api";
 import { LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
-import { formatDate, formatHeures } from "@/lib/format";
+import { formatDate, formatDuree } from "@/lib/format";
 import type { Activite, Categorie, PageActivites, Priorite, Statut } from "@/types";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
@@ -23,7 +23,7 @@ export default function MyActivities() {
   const [categorie, setCategorie] = useState<Categorie | "">("");
   const [statut, setStatut] = useState<Statut | "">("");
   const [priorite, setPriorite] = useState<Priorite | "">("");
-  const [tri, setTri] = useState<"date_activite" | "duree_heures" | "titre">("date_activite");
+  const [tri, setTri] = useState<"date_activite" | "duree_minutes" | "titre">("date_activite");
   const [ordre, setOrdre] = useState<"asc" | "desc">("desc");
   const [aSupprimer, setASupprimer] = useState<Activite | null>(null);
 
@@ -176,7 +176,7 @@ export default function MyActivities() {
                       <td className="py-3"><PrioriteBadge priorite={a.priorite} /></td>
                       <td className="py-3"><StatutBadge statut={a.statut} /></td>
                       <td className="py-3 font-mono text-[12.5px] text-gris">{formatDate(a.date_activite)}</td>
-                      <td className="py-3 text-right font-mono text-[13px] text-ardoise">{formatHeures(a.duree_heures)}</td>
+                      <td className="py-3 text-right font-mono text-[13px] text-ardoise">{formatDuree(a.duree_minutes)}</td>
                       <td className="px-[18px] py-3">
                         <div className="flex justify-end gap-3 text-grisdoux">
                           <button onClick={() => navigate(`/activites/${a.id}/modifier`)} title="Modifier" className="hover:text-petrole-600">

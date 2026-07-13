@@ -28,10 +28,10 @@ const BORDURE = "C6D2D7";
 const BORD = { style: BorderStyle.SINGLE, size: 4, color: BORDURE };
 const BORDS_CELLULE = { top: BORD, bottom: BORD, left: BORD, right: BORD };
 
-// Largeurs relatives des 6 colonnes (en pourcentage, somme = 100).
-const LARGEURS = [14, 18, 22, 15, 10, 21];
-// Rapport consolidé : 7 colonnes (Agent en tête). Somme = 100.
-const LARGEURS_CONS = [12, 12, 16, 19, 13, 9, 19];
+// Largeurs relatives des 7 colonnes (en pourcentage, somme = 100).
+const LARGEURS = [13, 17, 21, 14, 9, 8, 18];
+// Rapport consolidé : 8 colonnes (Agent en tête). Somme = 100.
+const LARGEURS_CONS = [11, 11, 15, 18, 12, 8, 7, 18];
 
 // Couleur (hex sans #) associée au libellé de statut.
 function couleurStatutHex(statut) {
@@ -99,8 +99,9 @@ export async function rapportHebdoWord(rap) {
       celluleEntete("Rubriques"),
       celluleEntete(`Activités programmées de la semaine ${periodeCol}`),
       celluleEntete("Description de l'activité"),
-      celluleEntete("Résultat obtenu (livrable)"),
+      celluleEntete("Résultat attendu (livrable)"),
       celluleEntete("Statut"),
+      celluleEntete("% réalisation"),
       celluleEntete("Activités à mener au cours de la semaine suivante"),
     ],
   });
@@ -131,6 +132,7 @@ export async function rapportHebdoWord(rap) {
               [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
               { align: "center" },
             ),
+            cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
             cellule(contenuMultiligne(l.aMener)),
           ],
         }),
@@ -143,7 +145,7 @@ export async function rapportHebdoWord(rap) {
       new TableRow({
         children: [
           new TableCell({
-            columnSpan: 6,
+            columnSpan: 7,
             borders: BORDS_CELLULE,
             margins: { top: 80, bottom: 80, left: 80, right: 80 },
             children: [
@@ -263,8 +265,9 @@ export async function rapportConsolideHebdoWord(rap) {
       celluleEntete("Rubriques"),
       celluleEntete(`Activités programmées de la semaine ${periodeCol}`),
       celluleEntete("Description de l'activité"),
-      celluleEntete("Résultat obtenu (livrable)"),
+      celluleEntete("Résultat attendu (livrable)"),
       celluleEntete("Statut"),
+      celluleEntete("% réalisation"),
       celluleEntete("Activités à mener au cours de la semaine suivante"),
     ],
   });
@@ -313,6 +316,7 @@ export async function rapportConsolideHebdoWord(rap) {
                 [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
                 { align: "center" },
               ),
+              cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
               cellule(contenuMultiligne(l.aMener)),
             ],
           }),
@@ -327,7 +331,7 @@ export async function rapportConsolideHebdoWord(rap) {
       new TableRow({
         children: [
           new TableCell({
-            columnSpan: 7,
+            columnSpan: 8,
             borders: BORDS_CELLULE,
             margins: { top: 80, bottom: 80, left: 80, right: 80 },
             children: [

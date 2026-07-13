@@ -1,8 +1,9 @@
 // Routes CRUD des activités, avec filtres, recherche et pagination.
 // Règle : un EMPLOYE ne voit/modifie que ses propres activités ; l'ADMIN voit tout.
+import { randomUUID } from "crypto";
 import { Router } from "express";
 import { Op } from "sequelize";
-import { Activite, PRIORITES, STATUTS, User } from "../models/index.js";
+import { Activite, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
 import { requireAuth } from "../middleware/auth.js";
 import { serialiserActivite } from "../utils.js";
 import { activiteCreateSchema, activiteUpdateSchema, valider } from "../validators.js";
@@ -14,6 +15,9 @@ import {
   notifierSuppressionTache,
 } from "../services/notifications.js";
 import { categorieActiveExiste } from "../services/categoriesStore.js";
+import { upload, DOSSIER_UPLOADS } from "../services/uploads.js";
+import { existsSync, unlink } from "fs";
+import path from "path";
 
 // Les notifications ne doivent jamais faire échouer l'action métier.
 async function sansErreur(promesse, contexte) {
@@ -27,16 +31,51 @@ async function sansErreur(promesse, contexte) {
 export const activitesRouter = Router();
 activitesRouter.use(requireAuth);
 
-const COLONNES_TRI = new Set(["date_activite", "titre", "duree_heures", "priorite", "statut", "id"]);
+const COLONNES_TRI = new Set([
+  "date_activite", "titre", "duree_minutes", "duree_heures", "priorite", "statut", "id",
+]);
+
+// Champs qu'un employé peut modifier sur une tâche AFFECTÉE par l'admin.
+// (Il peut renseigner l'état d'exécution mais pas les consignes ni le cadrage.)
+const CHAMPS_EMPLOYE_TACHE_ASSIGNEE = ["statut", "pourcentage", "description", "livrable", "activites_a_mener"];
+
+// Garde en cohérence la durée en heures (dérivée) avec la durée en minutes.
+function synchroniserDuree(donnees) {
+  if (donnees.duree_minutes !== undefined) {
+    donnees.duree_heures = Math.round((donnees.duree_minutes / 60) * 100) / 100;
+  }
+  return donnees;
+}
+
+// L'échéance (date_activite) suit la fin de période, pour le tri/retard/rapports.
+function synchroniserPeriode(donnees) {
+  if (donnees.date_fin) donnees.date_activite = donnees.date_fin;
+  return donnees;
+}
 
 // Charge une activité en vérifiant le périmètre selon le rôle.
 async function chargerOu404(id, user, res) {
-  const activite = await Activite.findByPk(id, { include: { model: User, as: "user" } });
+  const activite = await Activite.findByPk(id, {
+    include: [
+      { model: User, as: "user" },
+      { model: PieceJointe, as: "pieces" },
+    ],
+  });
   if (!activite || (user.role !== "ADMIN" && activite.user_id !== user.id)) {
     res.status(404).json({ detail: "Activité introuvable." });
     return null;
   }
   return activite;
+}
+
+// Recharge une activité complète (auteur + pièces jointes) pour la réponse.
+function chargerComplet(id) {
+  return Activite.findByPk(id, {
+    include: [
+      { model: User, as: "user" },
+      { model: PieceJointe, as: "pieces" },
+    ],
+  });
 }
 
 // GET /activites — liste filtrée + paginée
@@ -62,10 +101,18 @@ activitesRouter.get("/", async (req, res) => {
     where.user_id = req.user.id;
   }
   if (categorie) where.categorie = categorie; // code de catégorie (dynamique)
-  if (statut && STATUTS.includes(statut)) where.statut = statut;
+  if (statut === "EN_RETARD") {
+    // Pseudo-statut : échéance dépassée et tâche ni terminée ni clôturée.
+    const auj = new Date().toISOString().slice(0, 10);
+    where.date_activite = { [Op.lt]: auj };
+    where.statut = { [Op.notIn]: ["TERMINE", "CLOTURE"] };
+  } else if (statut && STATUTS.includes(statut)) {
+    where.statut = statut;
+  }
   if (priorite && PRIORITES.includes(priorite)) where.priorite = priorite;
   if (date_debut || date_fin) {
-    where.date_activite = {};
+    // Fusionne avec une éventuelle contrainte posée par le filtre « En retard ».
+    where.date_activite = { ...(where.date_activite || {}) };
     if (date_debut) where.date_activite[Op.gte] = date_debut;
     if (date_fin) where.date_activite[Op.lte] = date_fin;
   }
@@ -101,56 +148,71 @@ activitesRouter.get("/", async (req, res) => {
 activitesRouter.post("/", async (req, res) => {
   const v = valider(activiteCreateSchema, req.body, res);
   if (!v.ok) return;
-  const { user_id, ...donnees } = v.data;
+  const { user_id, user_ids, ...donnees } = v.data;
+  synchroniserDuree(donnees);
+  synchroniserPeriode(donnees);
 
   // La catégorie doit correspondre à une catégorie active.
   if (!(await categorieActiveExiste(donnees.categorie))) {
     return res.status(400).json({ detail: "Catégorie inconnue ou désactivée." });
   }
 
-  // Le statut « À faire » est réservé à l'administrateur (affectation de tâche).
-  if (req.user.role !== "ADMIN" && donnees.statut === "A_FAIRE") {
+  // Les statuts « À faire » et « Clôturé » sont réservés à l'administrateur.
+  if (req.user.role !== "ADMIN" && (donnees.statut === "A_FAIRE" || donnees.statut === "CLOTURE")) {
     return res.status(400).json({
-      detail: "Le statut « À faire » est réservé à l'affectation par un administrateur.",
+      detail: "Les statuts « À faire » et « Clôturé » sont réservés à l'administrateur.",
     });
   }
 
-  let cibleId = req.user.id;
-  let destinataire = null;
-  if (user_id && user_id !== req.user.id) {
+  // Détermine la liste des destinataires (affectation simple ou multiple).
+  let cibles = [];
+  const idsDemandes = [...new Set([...(user_ids || []), ...(user_id ? [user_id] : [])])].filter(
+    (id) => id && id !== req.user.id,
+  );
+  if (idsDemandes.length > 0) {
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({ detail: "Vous ne pouvez créer que vos propres activités." });
     }
-    destinataire = await User.findByPk(user_id);
-    if (!destinataire) {
-      return res.status(404).json({ detail: "Employé cible introuvable." });
+    cibles = await User.findAll({ where: { id: idsDemandes, actif: true } });
+    if (cibles.length === 0) {
+      return res.status(404).json({ detail: "Aucun employé cible valide." });
     }
-    cibleId = user_id;
   }
 
-  const activite = await Activite.create({
-    ...donnees,
-    user_id: cibleId,
-    // Marque l'affectation par un admin (l'employé ne pourra changer que le statut).
-    assignee_par_admin: Boolean(destinataire),
-  });
-  const complet = await Activite.findByPk(activite.id, { include: { model: User, as: "user" } });
+  // Création : soit pour soi-même, soit une instance par agent affecté.
+  const affectation = cibles.length > 0;
+  const groupeId = cibles.length > 1 ? randomUUID() : null;
+  const cibleUsers = affectation ? cibles : [req.user];
 
-  if (destinataire) {
-    // Affectation par l'admin à un employé -> notification plateforme + e-mail.
+  const creees = [];
+  for (const cible of cibleUsers) {
+    const a = await Activite.create({
+      ...donnees,
+      user_id: cible.id,
+      assignee_par_admin: affectation,
+      groupe_affectation_id: groupeId,
+    });
+    const complet = await chargerComplet(a.id);
+    creees.push(complet);
+
+    if (affectation) {
+      await sansErreur(
+        notifierAffectation({ destinataire: cible, admin: req.user, activite: complet }),
+        "affectation",
+      );
+    }
+  }
+
+  // Un employé a créé sa propre activité -> alerte des administrateurs.
+  if (!affectation && req.user.role !== "ADMIN") {
     await sansErreur(
-      notifierAffectation({ destinataire, admin: req.user, activite: complet }),
-      "affectation",
-    );
-  } else if (req.user.role !== "ADMIN") {
-    // Un employé a créé sa propre activité -> alerte des administrateurs.
-    await sansErreur(
-      notifierNouvelleTacheEmploye({ auteur: req.user, activite: complet }),
+      notifierNouvelleTacheEmploye({ auteur: req.user, activite: creees[0] }),
       "nouvelle tâche employé",
     );
   }
 
-  res.status(201).json(serialiserActivite(complet));
+  // Réponse : l'activité créée (ou la 1re instance en cas d'affectation multiple).
+  res.status(201).json(serialiserActivite(creees[0]));
 });
 
 // GET /activites/:id
@@ -167,10 +229,37 @@ activitesRouter.put("/:id", async (req, res) => {
   const v = valider(activiteUpdateSchema, req.body, res);
   if (!v.ok) return;
 
-  // Tâche affectée par l'admin : un employé ne peut en modifier QUE le statut.
-  let donnees = v.data;
-  if (req.user.role !== "ADMIN" && activite.assignee_par_admin) {
-    donnees = v.data.statut !== undefined ? { statut: v.data.statut } : {};
+  const estAdmin = req.user.role === "ADMIN";
+
+  // Le statut « Clôturé » ne peut être posé que par l'admin (validation finale).
+  if (!estAdmin && v.data.statut === "CLOTURE") {
+    return res.status(403).json({ detail: "Seul un administrateur peut clôturer une tâche." });
+  }
+
+  // Périmètre de modification côté employé.
+  let donnees = { ...v.data };
+  if (!estAdmin) {
+    if (activite.assignee_par_admin) {
+      // Tâche affectée : l'employé ne touche que l'état d'exécution et le statut.
+      donnees = Object.fromEntries(
+        Object.entries(v.data).filter(([k]) => CHAMPS_EMPLOYE_TACHE_ASSIGNEE.includes(k)),
+      );
+    } else {
+      // Tâche personnelle : l'employé ne peut jamais poser « À faire »/« Clôturé ».
+      delete donnees.consignes; // les consignes restent l'apanage de l'admin
+    }
+  }
+  synchroniserDuree(donnees);
+  synchroniserPeriode(donnees);
+
+  // Gestion de la clôture (date + auteur) côté admin.
+  const ancienStatut = activite.statut;
+  if (donnees.statut === "CLOTURE" && ancienStatut !== "CLOTURE") {
+    donnees.date_cloture = new Date();
+    donnees.cloture_par = req.user.id;
+  } else if (donnees.statut && donnees.statut !== "CLOTURE" && ancienStatut === "CLOTURE") {
+    donnees.date_cloture = null;
+    donnees.cloture_par = null;
   }
 
   // Validation de la catégorie si elle est modifiée.
@@ -178,10 +267,9 @@ activitesRouter.put("/:id", async (req, res) => {
     return res.status(400).json({ detail: "Catégorie inconnue ou désactivée." });
   }
 
-  const ancienStatut = activite.statut;
   const proprietaire = activite.user; // inclus par chargerOu404
   await activite.update(donnees);
-  const complet = await Activite.findByPk(activite.id, { include: { model: User, as: "user" } });
+  const complet = await chargerComplet(activite.id);
 
   const statutChange = donnees.statut && donnees.statut !== ancienStatut;
   if (req.user.role !== "ADMIN" && statutChange) {
@@ -204,6 +292,70 @@ activitesRouter.put("/:id", async (req, res) => {
   }
 
   res.json(serialiserActivite(complet));
+});
+
+// ---------------------------------------------------------------------------
+// Pièces jointes
+// ---------------------------------------------------------------------------
+
+// Enveloppe multer pour renvoyer une erreur JSON propre (taille/type/…).
+function televerser(req, res, next) {
+  upload.single("fichier")(req, res, (err) => {
+    if (err) return res.status(400).json({ detail: err.message || "Téléversement impossible." });
+    next();
+  });
+}
+
+// POST /activites/:id/pieces — téléverse une pièce jointe (propriétaire ou admin).
+activitesRouter.post("/:id/pieces", televerser, async (req, res) => {
+  const activite = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!activite) {
+    if (req.file) unlink(path.join(DOSSIER_UPLOADS, req.file.filename), () => {});
+    return;
+  }
+  if (!req.file) return res.status(400).json({ detail: "Aucun fichier reçu." });
+
+  const piece = await PieceJointe.create({
+    activite_id: activite.id,
+    nom_fichier: req.file.originalname,
+    fichier: req.file.filename,
+    mime: req.file.mimetype,
+    taille: req.file.size,
+    televerse_par: req.user.id,
+  });
+  res.status(201).json({
+    id: piece.id,
+    nom_fichier: piece.nom_fichier,
+    mime: piece.mime,
+    taille: piece.taille,
+    date_creation: piece.date_creation,
+  });
+});
+
+// GET /activites/:id/pieces/:pieceId — télécharge une pièce jointe.
+activitesRouter.get("/:id/pieces/:pieceId", async (req, res) => {
+  const activite = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!activite) return;
+  const piece = await PieceJointe.findOne({
+    where: { id: Number(req.params.pieceId), activite_id: activite.id },
+  });
+  if (!piece) return res.status(404).json({ detail: "Pièce jointe introuvable." });
+  const chemin = path.join(DOSSIER_UPLOADS, piece.fichier);
+  if (!existsSync(chemin)) return res.status(404).json({ detail: "Fichier absent du serveur." });
+  res.download(chemin, piece.nom_fichier);
+});
+
+// DELETE /activites/:id/pieces/:pieceId — supprime une pièce jointe.
+activitesRouter.delete("/:id/pieces/:pieceId", async (req, res) => {
+  const activite = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!activite) return;
+  const piece = await PieceJointe.findOne({
+    where: { id: Number(req.params.pieceId), activite_id: activite.id },
+  });
+  if (!piece) return res.status(404).json({ detail: "Pièce jointe introuvable." });
+  unlink(path.join(DOSSIER_UPLOADS, piece.fichier), () => {});
+  await piece.destroy();
+  res.status(204).end();
 });
 
 // DELETE /activites/:id

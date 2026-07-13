@@ -1,7 +1,7 @@
 // Agrégation des données pour les rapports individuels et consolidés.
 import { Op } from "sequelize";
 import { Activite, User } from "../models/index.js";
-import { libelleCategorie, libellePriorite, libelleStatut, referenceActivite } from "../utils.js";
+import { libelleCategorie, libellePriorite, libelleStatut, pourcentageEffectif, referenceActivite } from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
 
 const MOIS_FR = [
@@ -24,12 +24,6 @@ const fmtCourt = (iso) => {
 };
 const libCat = (code, map) => map[code]?.nom ?? libelleCategorie(code);
 
-// « % réalisation » déduit du statut (le modèle n'a pas de champ dédié).
-function pourcentageStatut(statut) {
-  if (statut === "TERMINE") return "100%";
-  if (statut === "EN_COURS") return "50%";
-  return "0%"; // À faire / Bloqué
-}
 
 export function periodeLibelle(debut, fin) {
   const [ad, md] = debut.split("-");
@@ -104,7 +98,8 @@ function ligneActivite(a) {
     programmee: a.titre,
     etat: a.description ?? "",
     livrable: a.livrable ?? "",
-    pourcentage: pourcentageStatut(a.statut),
+    // % réalisation : valeur saisie si présente, sinon déduite du statut.
+    pourcentage: `${pourcentageEffectif(a.pourcentage, a.statut)}%`,
     statut: libelleStatut(a.statut),
     aMener: a.activites_a_mener ?? "",
   };

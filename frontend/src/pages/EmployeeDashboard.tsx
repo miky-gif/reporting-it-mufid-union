@@ -1,9 +1,9 @@
 import {
+  AlertTriangle,
+  Award,
   CalendarDays,
-  CheckCircle2,
   ChevronRight,
   CircleDashed,
-  Gauge,
   Plus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -18,10 +18,10 @@ import {
 } from "recharts";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { formatDateLongue, formatHeures } from "@/lib/format";
+import { formatDateLongue, formatDuree, formatPoints } from "@/lib/format";
 import { STATUTS } from "@/lib/constants";
 import type { Activite, PageActivites, StatsEmploye } from "@/types";
-import { BarreProgression, KpiCard, TendanceHausse } from "@/components/ui/KpiCard";
+import { KpiCard } from "@/components/ui/KpiCard";
 import { CategorieTag, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection } from "@/components/ui/Divers";
 import { Spinner } from "@/components/ui/Divers";
@@ -78,26 +78,49 @@ export default function EmployeeDashboard() {
           icone={CircleDashed}
           couleurIcone="#14708F"
           fondIcone="#E1EFF4"
-          bas={stats.bloquees > 0 ? `${stats.bloquees} bloquée(s)` : "aucune bloquée"}
+          bas={stats.en_standby > 0 ? `${stats.en_standby} en standby` : "aucune en standby"}
         />
         <KpiCard
-          titre="Terminées cette semaine"
-          valeur={stats.terminees_semaine}
-          icone={CheckCircle2}
-          couleurIcone="#1B8A4B"
-          fondIcone="#E4F5EB"
-          bas={<TendanceHausse valeur={`${stats.terminees_semaine}`} texte="cette semaine" />}
+          titre="En retard"
+          valeur={stats.en_retard}
+          icone={AlertTriangle}
+          couleurIcone="#C0392B"
+          fondIcone="#FBEAE7"
+          valeurCouleur={stats.en_retard > 0 ? "#C0392B" : undefined}
+          bas={stats.en_retard > 0 ? "échéance dépassée" : "rien en retard"}
         />
         <KpiCard
-          titre="Taux de complétion"
-          valeur={`${stats.taux_completion} %`}
-          icone={Gauge}
-          couleurIcone="#1B8A4B"
-          fondIcone="#E4F5EB"
-          valeurCouleur="#1B8A4B"
-          bas={<BarreProgression valeur={stats.taux_completion} />}
+          titre="Mes points"
+          valeur={formatPoints(stats.points_acquis)}
+          icone={Award}
+          couleurIcone="#B4750E"
+          fondIcone="#FBF0DC"
+          valeurCouleur="#B4750E"
+          bas={`${formatPoints(stats.points_potentiels)} potentiels · ${stats.cloturees} clôturée(s)`}
         />
       </div>
+
+      {/* Activités en retard */}
+      {stats.activites_en_retard.length > 0 && (
+        <div className="mb-4 rounded-xl2 border border-[#EBC7C1] bg-danger/5 p-[16px_18px]">
+          <div className="mb-2.5 flex items-center gap-2 text-[13.5px] font-semibold text-danger">
+            <AlertTriangle size={17} /> {stats.en_retard} activité(s) en retard
+          </div>
+          <div className="flex flex-col gap-1.5">
+            {stats.activites_en_retard.map((a) => (
+              <Link
+                key={a.id}
+                to="/activites"
+                className="flex items-center gap-2 rounded-lg border border-[#EFD3CD] bg-white px-3 py-2 text-[12.5px] hover:bg-danger/5"
+              >
+                <span className="min-w-0 flex-1 truncate font-medium text-encre">{a.titre}</span>
+                <span className="flex-none text-grisdoux">{a.categorie}</span>
+                <span className="flex-none font-mono text-danger">échéance {a.date_activite.split("-").reverse().join("/")}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Graphiques */}
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
@@ -198,7 +221,7 @@ export default function EmployeeDashboard() {
                     <StatutBadge statut={a.statut} />
                   </td>
                   <td className="px-[22px] py-3 text-right font-mono text-[13px] text-ardoise">
-                    {formatHeures(a.duree_heures)}
+                    {formatDuree(a.duree_minutes)}
                   </td>
                 </tr>
               ))}

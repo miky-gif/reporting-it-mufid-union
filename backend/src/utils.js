@@ -13,16 +13,46 @@ export const LIBELLES_CATEGORIE = {
 export const LIBELLES_STATUT = {
   A_FAIRE: "À faire",
   EN_COURS: "En cours",
+  STANDBY: "Standby",
   TERMINE: "Terminé",
-  BLOQUE: "Bloqué",
+  CLOTURE: "Clôturé",
+  BLOQUE: "Standby", // rétro-compatibilité (ancien libellé)
 };
 
 export const LIBELLES_PRIORITE = {
   BASSE: "Basse",
   MOYENNE: "Moyenne",
   HAUTE: "Haute",
+  TRES_HAUTE: "Très haute",
   CRITIQUE: "Critique",
 };
+
+// % de réalisation par défaut, déduit du statut (utilisé si non saisi).
+export const POURCENTAGE_PAR_STATUT = {
+  A_FAIRE: 0,
+  EN_COURS: 50,
+  STANDBY: 25,
+  TERMINE: 100,
+  CLOTURE: 100,
+};
+// Pourcentage effectif : la valeur saisie prime, sinon on déduit du statut.
+export function pourcentageEffectif(pourcentage, statut) {
+  if (pourcentage !== null && pourcentage !== undefined && pourcentage !== "") {
+    return Math.max(0, Math.min(100, Number(pourcentage)));
+  }
+  return POURCENTAGE_PAR_STATUT[statut] ?? 0;
+}
+
+// Points : 40 h = 5 points -> 1 point = 480 minutes.
+export const MINUTES_PAR_POINT = 480;
+export const pointsDepuisMinutes = (min) => Math.round(((min || 0) / MINUTES_PAR_POINT) * 1000) / 1000;
+
+// Une tâche est en retard si l'échéance est passée et qu'elle n'est ni terminée ni clôturée.
+export function estEnRetard(dateActivite, statut) {
+  if (statut === "TERMINE" || statut === "CLOTURE") return false;
+  const auj = new Date().toISOString().slice(0, 10);
+  return String(dateActivite) < auj;
+}
 
 export const libelleCategorie = (c) => LIBELLES_CATEGORIE[c] ?? c;
 export const libelleStatut = (s) => LIBELLES_STATUT[s] ?? s;
@@ -54,20 +84,43 @@ export function serialiserActivite(a) {
     user_id: plain.user_id,
     reference: referenceActivite(plain.id),
     titre: plain.titre,
-    description: plain.description ?? null,
+    description: plain.description ?? null, // état d'exécution
+    consignes: plain.consignes ?? null,
     livrable: plain.livrable ?? null,
     activites_a_mener: plain.activites_a_mener ?? null,
     assignee_par_admin: !!plain.assignee_par_admin,
+    groupe_affectation_id: plain.groupe_affectation_id ?? null,
     categorie: plain.categorie,
     priorite: plain.priorite,
     statut: plain.statut,
+    pourcentage: pourcentageEffectif(plain.pourcentage, plain.statut),
     date_activite: plain.date_activite,
+    date_debut: plain.date_debut ?? plain.date_activite,
+    date_fin: plain.date_fin ?? plain.date_activite,
+    duree_minutes: plain.duree_minutes ?? Math.round((plain.duree_heures || 0) * 60),
     duree_heures: plain.duree_heures,
+    points: pointsDepuisMinutes(plain.duree_minutes ?? (plain.duree_heures || 0) * 60),
+    points_acquis:
+      plain.statut === "CLOTURE"
+        ? pointsDepuisMinutes(plain.duree_minutes ?? (plain.duree_heures || 0) * 60)
+        : 0,
+    en_retard: estEnRetard(plain.date_activite, plain.statut),
+    date_cloture: plain.date_cloture ?? null,
+    cloture_par: plain.cloture_par ?? null,
     date_creation: plain.date_creation,
     date_modification: plain.date_modification,
     user: plain.user
       ? { id: plain.user.id, nom_complet: plain.user.nom_complet, poste: plain.user.poste ?? null }
       : null,
+    pieces: Array.isArray(plain.pieces)
+      ? plain.pieces.map((p) => ({
+          id: p.id,
+          nom_fichier: p.nom_fichier,
+          mime: p.mime,
+          taille: p.taille,
+          date_creation: p.date_creation,
+        }))
+      : undefined,
   };
   return out;
 }
