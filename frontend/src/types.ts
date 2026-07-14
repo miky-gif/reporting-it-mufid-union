@@ -1,6 +1,41 @@
 // Types partagés, alignés sur les schémas Pydantic du backend.
 
-export type Role = "EMPLOYE" | "ADMIN";
+export type Role = "EMPLOYE" | "ADMIN" | "SUPER_ADMIN";
+
+/** Droits granulaires attribuables à un ADMIN par le super admin. */
+export type Permission =
+  | "IT_CREER"
+  | "IT_MODIFIER"
+  | "IT_DESACTIVER"
+  | "CATEGORIES_GERER"
+  | "TACHES_AFFECTER"
+  | "TACHES_MODIFIER"
+  | "TACHES_REAFFECTER"
+  | "TACHES_CLOTURER"
+  | "TACHES_SUPPRIMER"
+  | "STATISTIQUES_VOIR"
+  | "RAPPORTS_EXPORTER";
+
+export interface Departement {
+  id: number;
+  code: string;
+  nom: string;
+  description: string | null;
+  couleur: string;
+  actif: boolean;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_user: string | null;
+  smtp_tls_insecure: boolean;
+  mail_from: string | null;
+  smtp_configure: boolean;
+  date_creation: string;
+  // Renseignés pour le super admin
+  nb_admins?: number;
+  nb_agents?: number;
+  nb_activites?: number;
+  nb_categories?: number;
+}
 
 // La catégorie est désormais dynamique (gérée par l'admin) : c'est un code libre.
 export type Categorie = string;
@@ -13,6 +48,8 @@ export interface CategorieDef {
   rubriques: string[];
   ordre: number;
   actif: boolean;
+  /** Département propriétaire : chaque département a son propre référentiel. */
+  departement_id: number | null;
 }
 
 export type Priorite = "BASSE" | "MOYENNE" | "HAUTE" | "TRES_HAUTE" | "CRITIQUE";
@@ -33,6 +70,9 @@ export interface User {
   poste: string | null;
   role: Role;
   actif: boolean;
+  departement_id: number | null;
+  departement: { id: number; code: string; nom: string; couleur: string } | null;
+  permissions: Permission[];
   date_creation: string;
 }
 

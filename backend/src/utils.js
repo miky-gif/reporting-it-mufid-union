@@ -43,6 +43,22 @@ export function pourcentageEffectif(pourcentage, statut) {
   return POURCENTAGE_PAR_STATUT[statut] ?? 0;
 }
 
+/**
+ * Libellé d'en-tête d'un département, avec l'élision correcte :
+ *   « Infrastructure »        -> « Département d'Infrastructure »
+ *   « Exploitation Système »  -> « Département d'Exploitation Système »
+ *   « Cybersécurité »         -> « Département de Cybersécurité »
+ * Si le nom contient déjà « Département », il est repris tel quel.
+ */
+export function libelleDepartement(nom) {
+  const n = (nom || "").trim();
+  if (!n) return "Direction des Systèmes d'Information";
+  if (/^d[ée]partement/i.test(n)) return n;
+  const premiere = n[0].toLowerCase();
+  const voyelle = "aeiouyàâäéèêëîïôöùûü".includes(premiere);
+  return `Département ${voyelle ? "d'" : "de "}${n}`;
+}
+
 // Points : 40 h = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 export const pointsDepuisMinutes = (min) => Math.round(((min || 0) / MINUTES_PAR_POINT) * 1000) / 1000;
@@ -82,6 +98,7 @@ export function serialiserActivite(a) {
   const out = {
     id: plain.id,
     user_id: plain.user_id,
+    departement_id: plain.departement_id ?? null,
     reference: referenceActivite(plain.id),
     titre: plain.titre,
     description: plain.description ?? null, // état d'exécution
@@ -129,6 +146,18 @@ export function serialiserActivite(a) {
   return out;
 }
 
+// Liste de droits d'un utilisateur (MariaDB renvoie le JSON en chaîne).
+export function parsePermissions(valeur) {
+  if (!valeur) return [];
+  if (Array.isArray(valeur)) return valeur;
+  try {
+    const p = JSON.parse(valeur);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+}
+
 // Formate un objet User pour les réponses (sans le mot de passe).
 export function serialiserUser(u) {
   const p = u.get ? u.get({ plain: true }) : u;
@@ -139,6 +168,32 @@ export function serialiserUser(u) {
     poste: p.poste ?? null,
     role: p.role,
     actif: !!p.actif,
+    departement_id: p.departement_id ?? null,
+    departement: p.departement
+      ? { id: p.departement.id, code: p.departement.code, nom: p.departement.nom, couleur: p.departement.couleur }
+      : null,
+    permissions: p.role === "ADMIN" ? parsePermissions(p.permissions) : [],
+    date_creation: p.date_creation,
+  };
+}
+
+// Formate un département (le mot de passe SMTP n'est jamais exposé).
+export function serialiserDepartement(d) {
+  const p = d.get ? d.get({ plain: true }) : d;
+  return {
+    id: p.id,
+    code: p.code,
+    nom: p.nom,
+    description: p.description ?? null,
+    couleur: p.couleur,
+    actif: !!p.actif,
+    smtp_host: p.smtp_host ?? null,
+    smtp_port: p.smtp_port ?? null,
+    smtp_user: p.smtp_user ?? null,
+    smtp_tls_insecure: !!p.smtp_tls_insecure,
+    mail_from: p.mail_from ?? null,
+    // On n'expose jamais le mot de passe : seulement s'il est renseigné.
+    smtp_configure: Boolean(p.smtp_host && p.smtp_pass),
     date_creation: p.date_creation,
   };
 }

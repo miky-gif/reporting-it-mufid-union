@@ -4,7 +4,42 @@ import { sequelize } from "../db.js";
 
 // Valeurs d'énumération. La CATÉGORIE est désormais dynamique (table categories) :
 // les codes ci-dessous ne servent que de valeurs par défaut / repli.
-export const ROLES = ["EMPLOYE", "ADMIN"];
+//
+// Rôles (3 niveaux) :
+//   SUPER_ADMIN : voit tout, crée les départements, les admins et leurs droits.
+//   ADMIN       : rattaché à UN département, cloisonné, droits granulaires.
+//   EMPLOYE     : l'agent IT, rattaché à UN département.
+export const ROLES = ["EMPLOYE", "ADMIN", "SUPER_ADMIN"];
+
+// Catalogue des droits attribuables à un ADMIN par le super admin.
+// (Le SUPER_ADMIN les possède tous implicitement.)
+export const PERMISSIONS = {
+  IT_CREER: "Créer des agents IT",
+  IT_MODIFIER: "Modifier des agents IT",
+  IT_DESACTIVER: "Désactiver des agents IT",
+  CATEGORIES_GERER: "Gérer les catégories et rubriques",
+  TACHES_AFFECTER: "Affecter des tâches",
+  TACHES_MODIFIER: "Modifier les tâches",
+  TACHES_REAFFECTER: "Réaffecter les tâches",
+  TACHES_CLOTURER: "Clôturer (valider) les tâches",
+  TACHES_SUPPRIMER: "Supprimer des tâches",
+  STATISTIQUES_VOIR: "Consulter les statistiques",
+  RAPPORTS_EXPORTER: "Générer et exporter les rapports",
+};
+export const CODES_PERMISSIONS = Object.keys(PERMISSIONS);
+
+// Droits attribués par défaut à un nouvel admin (le super admin peut ajuster).
+export const PERMISSIONS_DEFAUT = [
+  "IT_CREER",
+  "IT_MODIFIER",
+  "CATEGORIES_GERER",
+  "TACHES_AFFECTER",
+  "TACHES_MODIFIER",
+  "TACHES_REAFFECTER",
+  "TACHES_CLOTURER",
+  "STATISTIQUES_VOIR",
+  "RAPPORTS_EXPORTER",
+];
 export const CATEGORIES_DEFAUT_CODES = [
   "DEVELOPPEMENT",
   "CYBERSECURITE",
@@ -19,7 +54,32 @@ export const STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"];
 // Points : référence 40 h de travail = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 
+// Départements de la direction (Exploitation Système, Infrastructure, …).
+// Créés dynamiquement par le SUPER_ADMIN. Chacun peut avoir sa propre boîte
+// d'envoi SMTP : les notifications de ses agents partent alors de cette boîte.
+export const Departement = sequelize.define(
+  "departements",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    code: { type: DataTypes.STRING(40), allowNull: false, unique: true },
+    nom: { type: DataTypes.STRING(120), allowNull: false },
+    description: { type: DataTypes.STRING(255), allowNull: true },
+    couleur: { type: DataTypes.STRING(9), allowNull: false, defaultValue: "#0E5E7C" },
+    actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    // Configuration e-mail propre au département (facultative : repli sur .env).
+    smtp_host: { type: DataTypes.STRING(150), allowNull: true },
+    smtp_port: { type: DataTypes.INTEGER, allowNull: true },
+    smtp_user: { type: DataTypes.STRING(150), allowNull: true },
+    smtp_pass: { type: DataTypes.STRING(255), allowNull: true },
+    smtp_tls_insecure: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    mail_from: { type: DataTypes.STRING(200), allowNull: true },
+    date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+  },
+  { timestamps: false },
+);
+
 // Table des catégories gérées par l'administrateur (avec leurs rubriques).
+// Chaque catégorie appartient à UN département (métiers différents).
 export const Categorie = sequelize.define(
   "categories",
   {
@@ -31,8 +91,9 @@ export const Categorie = sequelize.define(
     rubriques: { type: DataTypes.JSON, allowNull: false, defaultValue: [] },
     ordre: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    departement_id: { type: DataTypes.INTEGER, allowNull: true },
   },
-  { timestamps: false },
+  { timestamps: false, indexes: [{ fields: ["departement_id"] }] },
 );
 
 export const User = sequelize.define(
@@ -45,11 +106,15 @@ export const User = sequelize.define(
     role: { type: DataTypes.ENUM(...ROLES), allowNull: false, defaultValue: "EMPLOYE" },
     poste: { type: DataTypes.STRING(120), allowNull: true },
     actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    // Rattachement au département (null pour le SUPER_ADMIN : il les voit tous).
+    departement_id: { type: DataTypes.INTEGER, allowNull: true },
+    // Droits granulaires d'un ADMIN (tableau de codes). Ignoré pour les autres rôles.
+    permissions: { type: DataTypes.JSON, allowNull: true },
     date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
   {
     timestamps: false,
-    indexes: [{ fields: ["email"] }],
+    indexes: [{ fields: ["email"] }, { fields: ["departement_id"] }, { fields: ["role"] }],
   },
 );
 
@@ -58,6 +123,9 @@ export const Activite = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     user_id: { type: DataTypes.INTEGER, allowNull: false },
+    // Département de l'agent au moment de l'affectation (dénormalisé : permet
+    // un cloisonnement simple et rapide des listes, stats et rapports).
+    departement_id: { type: DataTypes.INTEGER, allowNull: true },
     titre: { type: DataTypes.STRING(200), allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true }, // « État d'exécution de l'activité »
     // Consigne de départ (attentes/instructions) — modifiable par l'admin uniquement.
@@ -106,6 +174,7 @@ export const Activite = sequelize.define(
     // Index de performance pour les filtres et agrégations.
     indexes: [
       { fields: ["user_id"] },
+      { fields: ["departement_id"] },
       { fields: ["categorie"] },
       { fields: ["statut"] },
       { fields: ["date_activite"] },
@@ -150,6 +219,13 @@ export const PieceJointe = sequelize.define(
 );
 
 // Associations
+Departement.hasMany(User, { foreignKey: "departement_id", as: "membres" });
+User.belongsTo(Departement, { foreignKey: "departement_id", as: "departement" });
+Departement.hasMany(Categorie, { foreignKey: "departement_id", as: "categories" });
+Categorie.belongsTo(Departement, { foreignKey: "departement_id", as: "departement" });
+Departement.hasMany(Activite, { foreignKey: "departement_id", as: "activites" });
+Activite.belongsTo(Departement, { foreignKey: "departement_id", as: "departement" });
+
 User.hasMany(Activite, { foreignKey: "user_id", onDelete: "CASCADE" });
 Activite.belongsTo(User, { foreignKey: "user_id", as: "user" });
 User.hasMany(Notification, { foreignKey: "user_id", onDelete: "CASCADE" });

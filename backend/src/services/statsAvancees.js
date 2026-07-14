@@ -1,10 +1,11 @@
 // Statistiques avancées de la plateforme (écran « Statistiques » de l'admin).
 // Toutes les durées sont agrégées en MINUTES (exact), les heures en sont dérivées.
 import { Op } from "sequelize";
-import { Activite, PRIORITES, STATUTS, User } from "../models/index.js";
+import { Activite, Departement, PRIORITES, STATUTS, User } from "../models/index.js";
 import {
   estEnRetard,
   libelleCategorie,
+  libelleDepartement,
   libellePriorite,
   libelleStatut,
   pointsDepuisMinutes,
@@ -60,13 +61,29 @@ function repartition(cle, activites, libelleFn, mapCat) {
     .sort((x, y) => y.total - x.total);
 }
 
-export async function statistiquesAvancees(debut, fin) {
+/**
+ * Statistiques avancées.
+ * `departementId` : limite au département (admin) ; null = tout (super admin).
+ */
+export async function statistiquesAvancees(debut, fin, departementId = null) {
+  const filtreDep = departementId ? { departement_id: departementId } : {};
   const activites = await Activite.findAll({
-    where: { date_activite: { [Op.gte]: debut, [Op.lte]: fin } },
+    where: { date_activite: { [Op.gte]: debut, [Op.lte]: fin }, ...filtreDep },
     include: { model: User, as: "user" },
   });
-  const users = await User.findAll({ raw: true });
+  const users = await User.findAll({ where: filtreDep, raw: true });
   const mapCat = await chargerMapCategories();
+
+  // En-tête : le département concerné, ou l'ensemble (super admin).
+  let entete = "Direction des Systèmes d'Information";
+  if (departementId) {
+    const dep = await Departement.findByPk(departementId);
+    if (dep) entete = libelleDepartement(dep.nom);
+  } else {
+    const deps = await Departement.findAll({ where: { actif: true }, order: [["nom", "ASC"]] });
+    if (deps.length === 1) entete = libelleDepartement(deps[0].nom);
+    else if (deps.length > 1) entete = `Tous les départements — ${deps.map((d) => d.nom).join(", ")}`;
+  }
 
   const total = activites.length;
   const par = (s) => activites.filter((a) => a.statut === s).length;
@@ -157,6 +174,7 @@ export async function statistiquesAvancees(debut, fin) {
     debut,
     fin,
     periode,
+    departement: entete, // en-tête dynamique du département
     debut_court: fmtCourt(debut),
     fin_court: fmtCourt(fin),
     synthese: {

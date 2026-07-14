@@ -4,7 +4,14 @@ import { randomUUID } from "crypto";
 import { Router } from "express";
 import { Op } from "sequelize";
 import { Activite, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
+import {
+  estAdministration,
+  estSuperAdmin,
+  peut,
+  requireAdmin,
+  requireAuth,
+  requirePermission,
+} from "../middleware/auth.js";
 import { serialiserActivite } from "../utils.js";
 import {
   activiteCreateSchema,
@@ -68,7 +75,15 @@ async function chargerOu404(id, user, res) {
       { model: PieceJointe, as: "pieces" },
     ],
   });
-  if (!activite || (user.role !== "ADMIN" && activite.user_id !== user.id)) {
+  if (!activite) {
+    res.status(404).json({ detail: "Activité introuvable." });
+    return null;
+  }
+  // IT : uniquement les siennes. Admin : uniquement son département.
+  const horsPerimetre = estAdministration(user)
+    ? !estSuperAdmin(user) && activite.departement_id !== user.departement_id
+    : activite.user_id !== user.id;
+  if (horsPerimetre) {
     res.status(404).json({ detail: "Activité introuvable." });
     return null;
   }
@@ -101,8 +116,11 @@ activitesRouter.get("/", async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const taille = Math.min(100, Math.max(1, Number(req.query.taille) || 10));
 
+  // Cloisonnement : l'IT ne voit que les siennes ; l'admin, celles de SON
+  // département ; le super admin, toutes.
   const where = {};
-  if (req.user.role === "ADMIN") {
+  if (estAdministration(req.user)) {
+    if (!estSuperAdmin(req.user)) where.departement_id = req.user.departement_id ?? -1;
     if (user_id) where.user_id = Number(user_id);
   } else {
     where.user_id = req.user.id;
@@ -165,7 +183,7 @@ activitesRouter.post("/", async (req, res) => {
   }
 
   // Les statuts « À faire » et « Clôturé » sont réservés à l'administrateur.
-  if (req.user.role !== "ADMIN" && (donnees.statut === "A_FAIRE" || donnees.statut === "CLOTURE")) {
+  if (!estAdministration(req.user) && (donnees.statut === "A_FAIRE" || donnees.statut === "CLOTURE")) {
     return res.status(400).json({
       detail: "Les statuts « À faire » et « Clôturé » sont réservés à l'administrateur.",
     });
@@ -177,12 +195,24 @@ activitesRouter.post("/", async (req, res) => {
     (id) => id && id !== req.user.id,
   );
   if (idsDemandes.length > 0) {
-    if (req.user.role !== "ADMIN") {
+    if (!estAdministration(req.user)) {
       return res.status(403).json({ detail: "Vous ne pouvez créer que vos propres activités." });
+    }
+    if (!peut(req.user, "TACHES_AFFECTER")) {
+      return res.status(403).json({ detail: "Droit manquant : « Affecter des tâches »." });
     }
     cibles = await User.findAll({ where: { id: idsDemandes, actif: true } });
     if (cibles.length === 0) {
       return res.status(404).json({ detail: "Aucun employé cible valide." });
+    }
+    // Cloisonnement : un admin n'affecte qu'aux agents de SON département.
+    if (!estSuperAdmin(req.user)) {
+      const horsDep = cibles.filter((c) => c.departement_id !== req.user.departement_id);
+      if (horsDep.length > 0) {
+        return res.status(403).json({
+          detail: "Vous ne pouvez affecter des tâches qu'aux agents de votre département.",
+        });
+      }
     }
   }
 
@@ -196,6 +226,7 @@ activitesRouter.post("/", async (req, res) => {
     const a = await Activite.create({
       ...donnees,
       user_id: cible.id,
+      departement_id: cible.departement_id ?? null, // l'activité suit l'agent
       assignee_par_admin: affectation,
       groupe_affectation_id: groupeId,
     });
@@ -211,7 +242,7 @@ activitesRouter.post("/", async (req, res) => {
   }
 
   // Un employé a créé sa propre activité -> alerte des administrateurs.
-  if (!affectation && req.user.role !== "ADMIN") {
+  if (!affectation && !estAdministration(req.user)) {
     await sansErreur(
       notifierNouvelleTacheEmploye({ auteur: req.user, activite: creees[0] }),
       "nouvelle tâche employé",
@@ -236,11 +267,22 @@ activitesRouter.put("/:id", async (req, res) => {
   const v = valider(activiteUpdateSchema, req.body, res);
   if (!v.ok) return;
 
-  const estAdmin = req.user.role === "ADMIN";
+  const estAdmin = estAdministration(req.user);
 
-  // Le statut « Clôturé » ne peut être posé que par l'admin (validation finale).
+  // Le statut « Clôturé » ne peut être posé que par l'administration (validation finale).
   if (!estAdmin && v.data.statut === "CLOTURE") {
     return res.status(403).json({ detail: "Seul un administrateur peut clôturer une tâche." });
+  }
+  // Droits granulaires de l'administration.
+  if (estAdmin) {
+    const cloture = v.data.statut === "CLOTURE" && activite.statut !== "CLOTURE";
+    if (cloture && !peut(req.user, "TACHES_CLOTURER")) {
+      return res.status(403).json({ detail: "Droit manquant : « Clôturer (valider) les tâches »." });
+    }
+    // Modifier la tâche d'un agent nécessite le droit correspondant.
+    if (activite.user_id !== req.user.id && !peut(req.user, "TACHES_MODIFIER")) {
+      return res.status(403).json({ detail: "Droit manquant : « Modifier les tâches »." });
+    }
   }
 
   // Périmètre de modification côté employé.
@@ -279,7 +321,7 @@ activitesRouter.put("/:id", async (req, res) => {
   const complet = await chargerComplet(activite.id);
 
   const statutChange = donnees.statut && donnees.statut !== ancienStatut;
-  if (req.user.role !== "ADMIN" && statutChange) {
+  if (!estAdministration(req.user) && statutChange) {
     // L'employé a changé le statut de sa tâche -> alerte des administrateurs.
     await sansErreur(
       notifierChangementStatut({
@@ -290,7 +332,7 @@ activitesRouter.put("/:id", async (req, res) => {
       }),
       "changement de statut",
     );
-  } else if (req.user.role === "ADMIN" && proprietaire && proprietaire.id !== req.user.id) {
+  } else if (estAdministration(req.user) && proprietaire && proprietaire.id !== req.user.id) {
     // L'admin a modifié la tâche d'un employé -> notification interne à l'employé.
     await sansErreur(
       notifierModificationTache({ destinataire: proprietaire, admin: req.user, activite: complet }),
@@ -303,13 +345,13 @@ activitesRouter.put("/:id", async (req, res) => {
 
 // POST /activites/:id/reaffecter — l'ADMIN confie la tâche à un autre agent
 // (agent indisponible, en retard, ou non compétent sur le sujet).
-activitesRouter.post("/:id/reaffecter", requireAdmin, async (req, res) => {
+activitesRouter.post("/:id/reaffecter", requirePermission("TACHES_REAFFECTER"), async (req, res) => {
   const activite = await chargerOu404(Number(req.params.id), req.user, res);
   if (!activite) return;
 
   const v = valider(reaffecterSchema, req.body, res);
   if (!v.ok) return;
-  const { user_id, motif, reinitialiser } = v.data;
+  const { user_id, motif, reinitialiser, date_debut, date_fin, duree_minutes } = v.data;
 
   if (activite.statut === "CLOTURE") {
     return res.status(400).json({ detail: "Une tâche clôturée ne peut plus être réaffectée." });
@@ -320,30 +362,51 @@ activitesRouter.post("/:id/reaffecter", requireAdmin, async (req, res) => {
 
   const nouveau = await User.findOne({ where: { id: user_id, actif: true } });
   if (!nouveau) return res.status(404).json({ detail: "Agent destinataire introuvable ou désactivé." });
+  // Cloisonnement : on ne réaffecte qu'à un agent de son propre département.
+  if (!estSuperAdmin(req.user) && nouveau.departement_id !== req.user.departement_id) {
+    return res.status(403).json({
+      detail: "Vous ne pouvez réaffecter qu'à un agent de votre département.",
+    });
+  }
 
   const ancien = activite.user; // inclus par chargerOu404
   const ancienId = activite.user_id;
+  const motifPropre = typeof motif === "string" && motif.trim() ? motif.trim() : null;
 
-  await activite.update({
+  // Nouvelle période / durée : indispensable si la tâche était déjà en retard,
+  // sinon elle resterait en retard chez le nouvel agent.
+  const donnees = {
     user_id: nouveau.id,
+    departement_id: nouveau.departement_id ?? null, // l'activité suit l'agent
     assignee_par_admin: true, // devient une tâche affectée par l'admin
     reaffectee_de: ancienId,
     date_reaffectation: new Date(),
-    motif_reaffectation: motif || null,
+    motif_reaffectation: motifPropre,
     // Repartir de zéro pour le nouvel agent (par défaut).
     ...(reinitialiser ? { statut: "A_FAIRE", pourcentage: 0 } : {}),
-  });
+  };
+  if (date_debut) donnees.date_debut = date_debut;
+  if (date_fin) {
+    donnees.date_fin = date_fin;
+    donnees.date_activite = date_fin; // l'échéance suit la fin de période
+  }
+  if (duree_minutes !== undefined) {
+    donnees.duree_minutes = duree_minutes;
+    donnees.duree_heures = Math.round((duree_minutes / 60) * 100) / 100;
+  }
+
+  await activite.update(donnees);
   const complet = await chargerComplet(activite.id);
 
-  // Le nouvel agent est prévenu (plateforme + e-mail).
+  // Le nouvel agent est prévenu (plateforme + e-mail), motif inclus.
   await sansErreur(
-    notifierReaffectation({ destinataire: nouveau, ancien, admin: req.user, activite: complet, motif }),
+    notifierReaffectation({ destinataire: nouveau, ancien, admin: req.user, activite: complet, motif: motifPropre }),
     "réaffectation",
   );
   // L'ancien agent est informé du retrait (notification interne).
   if (ancien && ancien.id !== req.user.id) {
     await sansErreur(
-      notifierRetraitTache({ destinataire: ancien, nouveau, admin: req.user, activite: complet, motif }),
+      notifierRetraitTache({ destinataire: ancien, nouveau, admin: req.user, activite: complet, motif: motifPropre }),
       "retrait de tâche",
     );
   }
@@ -419,12 +482,22 @@ activitesRouter.delete("/:id/pieces/:pieceId", async (req, res) => {
 activitesRouter.delete("/:id", async (req, res) => {
   const activite = await chargerOu404(Number(req.params.id), req.user, res);
   if (!activite) return;
+
+  // Supprimer la tâche d'un agent exige le droit correspondant.
+  if (
+    estAdministration(req.user) &&
+    activite.user_id !== req.user.id &&
+    !peut(req.user, "TACHES_SUPPRIMER")
+  ) {
+    return res.status(403).json({ detail: "Droit manquant : « Supprimer des tâches »." });
+  }
+
   const proprietaire = activite.user;
   const snapshot = { titre: activite.titre };
   await activite.destroy();
 
   // L'admin a supprimé la tâche d'un employé -> notification interne à l'employé.
-  if (req.user.role === "ADMIN" && proprietaire && proprietaire.id !== req.user.id) {
+  if (estAdministration(req.user) && proprietaire && proprietaire.id !== req.user.id) {
     await sansErreur(
       notifierSuppressionTache({ destinataire: proprietaire, admin: req.user, activite: snapshot }),
       "suppression tâche",

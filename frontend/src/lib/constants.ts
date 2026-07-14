@@ -1,5 +1,50 @@
 // Libellés français, couleurs et métadonnées des énumérations (alignés sur la maquette).
-import type { Categorie, Priorite, Statut } from "@/types";
+import type { Categorie, Permission, Priorite, Role, Statut } from "@/types";
+
+// Rôles (3 niveaux).
+export const ROLES: Record<Role, { libelle: string; couleur: string; fond: string }> = {
+  SUPER_ADMIN: { libelle: "Super admin", couleur: "#7E57C2", fond: "#EFE9F8" },
+  ADMIN: { libelle: "Administrateur", couleur: "#0E5E7C", fond: "#E1EFF4" },
+  EMPLOYE: { libelle: "IT", couleur: "#5E717B", fond: "#EDF1F2" },
+};
+
+// Catalogue des droits attribuables à un admin, groupés pour l'affichage.
+export const PERMISSIONS: Record<Permission, string> = {
+  IT_CREER: "Créer des agents IT",
+  IT_MODIFIER: "Modifier des agents IT",
+  IT_DESACTIVER: "Désactiver des agents IT",
+  CATEGORIES_GERER: "Gérer les catégories et rubriques",
+  TACHES_AFFECTER: "Affecter des tâches",
+  TACHES_MODIFIER: "Modifier les tâches",
+  TACHES_REAFFECTER: "Réaffecter les tâches",
+  TACHES_CLOTURER: "Clôturer (valider) les tâches",
+  TACHES_SUPPRIMER: "Supprimer des tâches",
+  STATISTIQUES_VOIR: "Consulter les statistiques",
+  RAPPORTS_EXPORTER: "Générer et exporter les rapports",
+};
+
+export const GROUPES_PERMISSIONS: { titre: string; droits: Permission[] }[] = [
+  { titre: "Agents IT", droits: ["IT_CREER", "IT_MODIFIER", "IT_DESACTIVER"] },
+  { titre: "Référentiel", droits: ["CATEGORIES_GERER"] },
+  {
+    titre: "Tâches",
+    droits: ["TACHES_AFFECTER", "TACHES_MODIFIER", "TACHES_REAFFECTER", "TACHES_CLOTURER", "TACHES_SUPPRIMER"],
+  },
+  { titre: "Pilotage", droits: ["STATISTIQUES_VOIR", "RAPPORTS_EXPORTER"] },
+];
+
+// Droits cochés par défaut à la création d'un admin.
+export const PERMISSIONS_DEFAUT: Permission[] = [
+  "IT_CREER",
+  "IT_MODIFIER",
+  "CATEGORIES_GERER",
+  "TACHES_AFFECTER",
+  "TACHES_MODIFIER",
+  "TACHES_REAFFECTER",
+  "TACHES_CLOTURER",
+  "STATISTIQUES_VOIR",
+  "RAPPORTS_EXPORTER",
+];
 
 export const CATEGORIES: Record<
   Categorie,

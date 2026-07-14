@@ -3,7 +3,12 @@
 // télécharger SON propre rapport (route /mien).
 import { Router } from "express";
 import { User } from "../models/index.js";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
+import {
+  accedeDepartement,
+  perimetreDepartement,
+  requireAuth,
+  requirePermission,
+} from "../middleware/auth.js";
 import { rapportConsolideHebdo, rapportHebdo } from "../services/rapportsData.js";
 import { rapportConsolideHebdoPdf, rapportHebdoPdf } from "../services/rapportsPdf.js";
 import { rapportConsolideHebdoWord, rapportHebdoWord } from "../services/rapportsWord.js";
@@ -47,7 +52,7 @@ rapportsRouter.get("/mien", async (req, res) => {
 });
 
 // GET /rapports/individuel — ADMIN, pour n'importe quel agent
-rapportsRouter.get("/individuel", requireAdmin, async (req, res) => {
+rapportsRouter.get("/individuel", requirePermission("RAPPORTS_EXPORTER"), async (req, res) => {
   const { user_id, date_debut, date_fin, format = "pdf" } = req.query;
   if (!dateOk(date_debut) || !dateOk(date_fin)) {
     return res.status(400).json({ detail: "Dates requises au format AAAA-MM-JJ." });
@@ -57,11 +62,15 @@ rapportsRouter.get("/individuel", requireAdmin, async (req, res) => {
   }
   const user = await User.findByPk(Number(user_id));
   if (!user) return res.status(404).json({ detail: "Employé introuvable." });
+  // Cloisonnement : un admin ne sort que les rapports de son département.
+  if (!accedeDepartement(req.user, user.departement_id)) {
+    return res.status(403).json({ detail: "Cet agent n'appartient pas à votre département." });
+  }
   await envoyerRapportIndividuel(res, user, date_debut, date_fin, format);
 });
 
 // GET /rapports/consolide
-rapportsRouter.get("/consolide", requireAdmin, async (req, res) => {
+rapportsRouter.get("/consolide", requirePermission("RAPPORTS_EXPORTER"), async (req, res) => {
   const { date_debut, date_fin, format = "pdf" } = req.query;
   if (!dateOk(date_debut) || !dateOk(date_fin)) {
     return res.status(400).json({ detail: "Dates requises au format AAAA-MM-JJ." });
@@ -69,7 +78,7 @@ rapportsRouter.get("/consolide", requireAdmin, async (req, res) => {
   if (date_fin < date_debut) {
     return res.status(400).json({ detail: "La date de fin doit être postérieure à la date de début." });
   }
-  const rap = await rapportConsolideHebdo(date_debut, date_fin);
+  const rap = await rapportConsolideHebdo(date_debut, date_fin, perimetreDepartement(req.user));
   const base = `rapport-consolide-${date_debut}_${date_fin}`;
   if (format === "word") {
     return envoyerFichier(res, await rapportConsolideHebdoWord(rap), `${base}.docx`, MIME_DOCX);
@@ -81,13 +90,17 @@ rapportsRouter.get("/consolide", requireAdmin, async (req, res) => {
 });
 
 // GET /rapports/individuel/apercu — aperçu JSON pour l'écran (ADMIN)
-rapportsRouter.get("/individuel/apercu", requireAdmin, async (req, res) => {
+rapportsRouter.get("/individuel/apercu", requirePermission("RAPPORTS_EXPORTER"), async (req, res) => {
   const { user_id, date_debut, date_fin } = req.query;
   if (!dateOk(date_debut) || !dateOk(date_fin)) {
     return res.status(400).json({ detail: "Dates requises au format AAAA-MM-JJ." });
   }
   const user = await User.findByPk(Number(user_id));
   if (!user) return res.status(404).json({ detail: "Employé introuvable." });
+  // Cloisonnement : un admin ne sort que les rapports de son département.
+  if (!accedeDepartement(req.user, user.departement_id)) {
+    return res.status(403).json({ detail: "Cet agent n'appartient pas à votre département." });
+  }
   const rap = await rapportHebdo(user, date_debut, date_fin);
   res.json({
     user: { id: user.id, nom_complet: user.nom_complet, poste: user.poste, email: user.email },
@@ -102,12 +115,12 @@ rapportsRouter.get("/individuel/apercu", requireAdmin, async (req, res) => {
 });
 
 // GET /rapports/consolide/apercu — aperçu JSON pour l'écran (ADMIN)
-rapportsRouter.get("/consolide/apercu", requireAdmin, async (req, res) => {
+rapportsRouter.get("/consolide/apercu", requirePermission("RAPPORTS_EXPORTER"), async (req, res) => {
   const { date_debut, date_fin } = req.query;
   if (!dateOk(date_debut) || !dateOk(date_fin)) {
     return res.status(400).json({ detail: "Dates requises au format AAAA-MM-JJ." });
   }
-  const rap = await rapportConsolideHebdo(date_debut, date_fin);
+  const rap = await rapportConsolideHebdo(date_debut, date_fin, perimetreDepartement(req.user));
   res.json({
     periode: rap.periode,
     reference: rap.reference,

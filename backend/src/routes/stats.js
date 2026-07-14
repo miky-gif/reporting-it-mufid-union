@@ -1,6 +1,11 @@
 // Routes des statistiques / tableaux de bord.
 import { Router } from "express";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
+import {
+  perimetreDepartement,
+  requireAdmin,
+  requireAuth,
+  requirePermission,
+} from "../middleware/auth.js";
 import { statsAdmin, statsEmploye } from "../services/stats.js";
 import { statistiquesAvancees } from "../services/statsAvancees.js";
 import { statistiquesExcel, statistiquesPdf } from "../services/statsExport.js";
@@ -15,8 +20,9 @@ statsRouter.get("/employe", requireAuth, async (req, res) => {
   res.json(await statsEmploye(req.user.id));
 });
 
-statsRouter.get("/admin", requireAuth, requireAdmin, async (_req, res) => {
-  res.json(await statsAdmin());
+statsRouter.get("/admin", requireAuth, requireAdmin, async (req, res) => {
+  // Cloisonné : l'admin ne voit que son département, le super admin voit tout.
+  res.json(await statsAdmin(perimetreDepartement(req.user)));
 });
 
 // Valide la période passée en query (?date_debut&date_fin).
@@ -33,19 +39,19 @@ function periode(req, res) {
   return { date_debut, date_fin };
 }
 
-// GET /api/stats/avancees — statistiques détaillées de la plateforme (écran admin).
-statsRouter.get("/avancees", requireAuth, requireAdmin, async (req, res) => {
+// GET /api/stats/avancees — statistiques détaillées (droit « Consulter les statistiques »).
+statsRouter.get("/avancees", requireAuth, requirePermission("STATISTIQUES_VOIR"), async (req, res) => {
   const p = periode(req, res);
   if (!p) return;
-  res.json(await statistiquesAvancees(p.date_debut, p.date_fin));
+  res.json(await statistiquesAvancees(p.date_debut, p.date_fin, perimetreDepartement(req.user)));
 });
 
 // GET /api/stats/export?format=excel|pdf — export des statistiques.
-statsRouter.get("/export", requireAuth, requireAdmin, async (req, res) => {
+statsRouter.get("/export", requireAuth, requirePermission("STATISTIQUES_VOIR"), async (req, res) => {
   const p = periode(req, res);
   if (!p) return;
   const format = req.query.format === "excel" ? "excel" : "pdf";
-  const st = await statistiquesAvancees(p.date_debut, p.date_fin);
+  const st = await statistiquesAvancees(p.date_debut, p.date_fin, perimetreDepartement(req.user));
   const base = `statistiques-${p.date_debut}_${p.date_fin}`;
 
   const buffer = format === "excel" ? await statistiquesExcel(st) : await statistiquesPdf(st);

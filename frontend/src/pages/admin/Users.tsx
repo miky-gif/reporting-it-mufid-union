@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { formatDate } from "@/lib/format";
+import { ROLES } from "@/lib/constants";
 import type { Role, UserWithStats } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
@@ -83,6 +84,7 @@ export default function UsersPage() {
                 <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux">
                   <th className="px-[18px] py-2.5 font-semibold">Utilisateur</th>
                   <th className="py-2.5 font-semibold">Accès</th>
+                  <th className="py-2.5 font-semibold">Département</th>
                   <th className="py-2.5 font-semibold">Statut</th>
                   <th className="py-2.5 text-right font-semibold">Activités</th>
                   <th className="py-2.5 font-semibold">Membre depuis</th>
@@ -102,6 +104,7 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="py-3"><BadgeRole role={u.role} /></td>
+                    <td className="py-3"><BadgeDepartement dep={u.departement} /></td>
                     <td className="py-3"><BadgeStatut actif={u.actif} /></td>
                     <td className="py-3 text-right font-mono text-[13px] text-ardoise">{u.nb_activites}</td>
                     <td className="py-3 text-[12.5px] text-gris">{formatDate(u.date_creation)}</td>
@@ -176,14 +179,27 @@ function MiniStat({ icone: Icone, valeur, label, couleur = "#0E5E7C", fond = "#E
 }
 
 function BadgeRole({ role }: { role: Role }) {
-  if (role === "ADMIN") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-md bg-petrole-100 px-2.5 py-1 text-[11px] font-semibold text-petrole-600">
-        <ShieldCheck size={14} /> Administrateur
-      </span>
-    );
-  }
-  return <span className="rounded-md bg-[#EDF1F2] px-2.5 py-1 text-[11px] font-semibold text-gris">IT</span>;
+  const r = ROLES[role];
+  const avecIcone = role !== "EMPLOYE";
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold"
+      style={{ background: r.fond, color: r.couleur }}
+    >
+      {avecIcone && <ShieldCheck size={14} />} {r.libelle}
+    </span>
+  );
+}
+
+/** Département de rattachement (le super admin n'en a aucun : il les voit tous). */
+function BadgeDepartement({ dep }: { dep: UserWithStats["departement"] }) {
+  if (!dep) return <span className="text-[12px] italic text-grisdoux">Tous</span>;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[12px] text-ardoise">
+      <span className="h-2 w-2 flex-none rounded-full" style={{ background: dep.couleur }} />
+      {dep.nom}
+    </span>
+  );
 }
 
 function BadgeStatut({ actif }: { actif: boolean }) {

@@ -1,8 +1,9 @@
 // Routes de gestion des catégories (et de leurs rubriques).
-// Lecture : tout utilisateur authentifié. Écriture : ADMIN uniquement.
+// Les catégories appartiennent à UN département : chaque département a son
+// propre référentiel métier. Un admin ne gère que celles de son département.
 import { Router } from "express";
 import { Activite, Categorie } from "../models/index.js";
-import { requireAdmin, requireAuth } from "../middleware/auth.js";
+import { estSuperAdmin, requireAuth, requirePermission } from "../middleware/auth.js";
 import { categorieCreateSchema, categorieUpdateSchema, valider } from "../validators.js";
 import { slugAscii } from "../utils.js";
 
@@ -33,6 +34,7 @@ function serialiser(c) {
     rubriques: parseRubriques(p.rubriques),
     ordre: p.ordre,
     actif: !!p.actif,
+    departement_id: p.departement_id ?? null,
   };
 }
 
@@ -45,21 +47,48 @@ async function genererCode(nom) {
   return code;
 }
 
-// GET /categories — toutes les catégories (triées), avec leurs rubriques.
-categoriesRouter.get("/", async (_req, res) => {
-  const cats = await Categorie.findAll({ order: [["ordre", "ASC"], ["nom", "ASC"]] });
+/** Charge une catégorie du périmètre du demandeur, ou répond 404/403. */
+async function chargerOu404(id, demandeur, res) {
+  const cat = await Categorie.findByPk(id);
+  if (!cat) {
+    res.status(404).json({ detail: "Catégorie introuvable." });
+    return null;
+  }
+  if (!estSuperAdmin(demandeur) && cat.departement_id !== demandeur.departement_id) {
+    res.status(403).json({ detail: "Cette catégorie appartient à un autre département." });
+    return null;
+  }
+  return cat;
+}
+
+// GET /categories — celles du département de l'utilisateur (toutes pour le super admin).
+categoriesRouter.get("/", async (req, res) => {
+  const where = estSuperAdmin(req.user) ? {} : { departement_id: req.user.departement_id ?? -1 };
+  const cats = await Categorie.findAll({
+    where,
+    order: [["ordre", "ASC"], ["nom", "ASC"]],
+  });
   res.json(cats.map(serialiser));
 });
 
-// --- À partir d'ici : ADMIN uniquement ---
-categoriesRouter.use(requireAdmin);
+// --- À partir d'ici : droit « Gérer les catégories et rubriques » ---
+categoriesRouter.use(requirePermission("CATEGORIES_GERER"));
 
-// POST /categories
+// POST /categories — créée dans le département du demandeur.
 categoriesRouter.post("/", async (req, res) => {
   const v = valider(categorieCreateSchema, req.body, res);
   if (!v.ok) return;
+
+  // Le super admin peut viser un département précis ; l'admin crée dans le sien.
+  const depId = estSuperAdmin(req.user)
+    ? v.data.departement_id ?? null
+    : req.user.departement_id;
+  if (!depId) {
+    return res.status(400).json({ detail: "Le département de la catégorie est requis." });
+  }
+
   const code = await genererCode(v.data.nom);
-  const dernier = await Categorie.max("ordre");
+  const dernier = await Categorie.max("ordre", { where: { departement_id: depId } });
   const cat = await Categorie.create({
     code,
     nom: v.data.nom,
@@ -67,24 +96,27 @@ categoriesRouter.post("/", async (req, res) => {
     rubriques: v.data.rubriques,
     ordre: (Number.isFinite(dernier) ? dernier : 0) + 1,
     actif: true,
+    departement_id: depId,
   });
   res.status(201).json(serialiser(cat));
 });
 
 // PUT /categories/:id — modifie nom, couleur, rubriques, actif, ordre (pas le code).
 categoriesRouter.put("/:id", async (req, res) => {
-  const cat = await Categorie.findByPk(Number(req.params.id));
-  if (!cat) return res.status(404).json({ detail: "Catégorie introuvable." });
+  const cat = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!cat) return;
   const v = valider(categorieUpdateSchema, req.body, res);
   if (!v.ok) return;
-  await cat.update(v.data);
+  const donnees = { ...v.data };
+  if (!estSuperAdmin(req.user)) delete donnees.departement_id; // un admin ne déplace pas une catégorie
+  await cat.update(donnees);
   res.json(serialiser(cat));
 });
 
 // DELETE /categories/:id — supprime si inutilisée, sinon désactive (préserve l'historique).
 categoriesRouter.delete("/:id", async (req, res) => {
-  const cat = await Categorie.findByPk(Number(req.params.id));
-  if (!cat) return res.status(404).json({ detail: "Catégorie introuvable." });
+  const cat = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!cat) return;
 
   const utilisations = await Activite.count({ where: { categorie: cat.code } });
   if (utilisations > 0) {

@@ -12,6 +12,7 @@ import { usersRouter } from "./routes/users.js";
 import { rapportsRouter } from "./routes/rapports.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { categoriesRouter } from "./routes/categories.js";
+import { departementsRouter } from "./routes/departements.js";
 
 // Emplacement du build du frontend (généré par `npm run build` côté frontend).
 // Résolu depuis ce fichier (et non depuis cwd) : robuste quel que soit le
@@ -42,6 +43,7 @@ export function creerApp() {
   app.use("/api/rapports", rapportsRouter);
   app.use("/api/notifications", notificationsRouter);
   app.use("/api/categories", categoriesRouter);
+  app.use("/api/departements", departementsRouter);
 
   // 404 des routes API (avant le fallback SPA).
   app.use("/api", (_req, res) => res.status(404).json({ detail: "Ressource introuvable." }));

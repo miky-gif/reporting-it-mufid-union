@@ -225,7 +225,7 @@ export async function rapportHebdoWord(rap) {
 }
 
 // Bloc-titre commun aux rapports (centré).
-function blocTitre({ sousTitre, ligne }) {
+function blocTitre({ sousTitre, ligne, departement }) {
   return [
     new Paragraph({
       alignment: AlignmentType.CENTER,
@@ -241,7 +241,8 @@ function blocTitre({ sousTitre, ligne }) {
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: ligne ? 60 : 240 },
-      children: [new TextRun({ text: "Département de l'Exploitation Informatique", size: 22, color: GRIS })],
+      // Département dynamique (Infrastructure, Exploitation Système…).
+      children: [new TextRun({ text: departement, size: 22, color: GRIS })],
     }),
     ...(ligne
       ? [
@@ -363,6 +364,7 @@ export async function rapportConsolideHebdoWord(rap) {
           ...blocTitre({
             sousTitre: `Rapport consolidé — Du ${rap.debut_court} au ${rap.fin_court}`,
             ligne: `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
+            departement: rap.departement,
           }),
           tableau,
           new Paragraph({

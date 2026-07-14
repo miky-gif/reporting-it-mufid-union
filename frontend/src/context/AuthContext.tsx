@@ -8,14 +8,19 @@ import {
   type ReactNode,
 } from "react";
 import { api, getToken, setToken } from "@/lib/api";
-import type { User } from "@/types";
+import type { Permission, User } from "@/types";
 
 interface AuthContextValue {
   user: User | null;
   chargement: boolean;
   connexion: (email: string, motDePasse: string) => Promise<void>;
   deconnexion: () => void;
+  /** Administration : admin de département OU super admin. */
   estAdmin: boolean;
+  /** Super administrateur : voit tout, gère les départements et les admins. */
+  estSuperAdmin: boolean;
+  /** Vrai si l'utilisateur détient ce droit (le super admin les a tous). */
+  peut: (droit: Permission) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -49,10 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ user, chargement, connexion, deconnexion, estAdmin: user?.role === "ADMIN" }),
-    [user, chargement, connexion, deconnexion],
-  );
+  const value = useMemo<AuthContextValue>(() => {
+    const estSuperAdmin = user?.role === "SUPER_ADMIN";
+    const estAdmin = estSuperAdmin || user?.role === "ADMIN";
+    // Le super admin détient implicitement tous les droits.
+    const peut = (droit: Permission) =>
+      estSuperAdmin || (user?.permissions ?? []).includes(droit);
+    return { user, chargement, connexion, deconnexion, estAdmin, estSuperAdmin, peut };
+  }, [user, chargement, connexion, deconnexion]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

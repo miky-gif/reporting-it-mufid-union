@@ -1,11 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, Lightbulb, Loader2, Lock } from "lucide-react";
+import { ArrowLeft, Check, Lightbulb, Loader2, Lock, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LISTE_PRIORITES, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, STATUTS } from "@/lib/constants";
+import { LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, STATUTS } from "@/lib/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
 import type { Activite, Categorie, Priorite, Statut } from "@/types";
@@ -16,6 +17,7 @@ import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointe
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
   titre: z.string().min(2, "La rubrique est requise.").max(200), // stocke la rubrique choisie
+  consignes: z.string().max(2000).optional(), // consigne de départ (admin uniquement)
   description: z.string().max(2000).optional(), // état d'exécution
   livrable: z.string().max(1000).optional(),
   activites_a_mener: z.string().max(1000).optional(),
@@ -35,14 +37,18 @@ export default function ActivityForm() {
   const { id } = useParams();
   const editionId = id ? Number(id) : null;
   const navigate = useNavigate();
+  const { estAdmin } = useAuth();
   const { actives, rubriquesOf, chargement: catChargement } = useCategories();
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargementInitial, setChargementInitial] = useState(!!editionId);
   const [initFait, setInitFait] = useState(false);
-  // Tâche affectée par l'admin : l'employé ne peut en changer que le statut/l'état.
-  const [verrouille, setVerrouille] = useState(false);
+  // Tâche affectée par l'admin : l'EMPLOYÉ ne peut en changer que le statut/l'état.
+  // L'admin, lui, garde la main sur tout (durée, période, consignes, statut…).
+  const [assignee, setAssignee] = useState(false);
   const [consignes, setConsignes] = useState<string | null>(null);
   const [pending, setPending] = useState<File[]>([]);
+  // Trace de réaffectation (motif + date), affichée sur la tâche.
+  const [reaff, setReaff] = useState<{ motif: string | null; date: string | null } | null>(null);
 
   const {
     register,
@@ -56,6 +62,7 @@ export default function ActivityForm() {
     defaultValues: {
       categorie: "",
       titre: "",
+      consignes: "",
       description: "",
       livrable: "",
       activites_a_mener: "",
@@ -90,6 +97,7 @@ export default function ActivityForm() {
         reset({
           categorie: a.categorie,
           titre: a.titre,
+          consignes: a.consignes ?? "",
           description: a.description ?? "",
           livrable: a.livrable ?? "",
           activites_a_mener: a.activites_a_mener ?? "",
@@ -108,8 +116,9 @@ export default function ActivityForm() {
           setUnite("MIN");
           setDureeSaisie(String(a.duree_minutes));
         }
-        setVerrouille(a.assignee_par_admin);
+        setAssignee(a.assignee_par_admin);
         setConsignes(a.consignes ?? null);
+        setReaff(a.reaffectee ? { motif: a.motif_reaffectation, date: a.date_reaffectation } : null);
         setInitFait(true);
       })
       .catch(() => setErreur("Activité introuvable."))
@@ -135,11 +144,18 @@ export default function ActivityForm() {
   // Statuts proposés : « À faire » réservé à l'admin ; on l'affiche seulement s'il
   // s'agit d'une tâche déjà « À faire » (affectée par l'admin) que l'on modifie.
   const statutsDisponibles = useMemo<Statut[]>(() => {
+    if (estAdmin) return LISTE_STATUTS; // l'admin dispose de tous les statuts (dont Clôturé)
     if (editionId && val.statut === "CLOTURE") return ["CLOTURE"]; // clôturé par l'admin
     if (editionId && val.statut === "A_FAIRE") return ["A_FAIRE", ...LISTE_STATUTS_EMPLOYE];
     return LISTE_STATUTS_EMPLOYE;
-  }, [editionId, val.statut]);
-  const cloturee = val.statut === "CLOTURE";
+  }, [estAdmin, editionId, val.statut]);
+
+  // Règles de verrouillage — l'admin garde TOUJOURS la main sur tout.
+  // • verrouille : cadrage (catégorie, rubrique, priorité, durée, période, consignes)
+  // • gel        : tâche clôturée -> lecture seule (pour l'employé uniquement)
+  const verrouille = !estAdmin && assignee;
+  const gel = !estAdmin && val.statut === "CLOTURE";
+  const retour = estAdmin ? "/admin/activites" : "/activites";
 
   // Quand la catégorie change, on cale la rubrique sur une valeur valide.
   function changerCategorie(cat: Categorie) {
@@ -158,7 +174,7 @@ export default function ActivityForm() {
         const r = await api.post<Activite>("/activites", valeurs);
         if (pending.length) await televerserEnAttente(r.data.id, pending);
       }
-      navigate("/activites");
+      navigate(retour);
     } catch (err) {
       setErreur(messageErreur(err, "Enregistrement impossible."));
     }
@@ -168,12 +184,16 @@ export default function ActivityForm() {
 
   return (
     <>
-      <Link to="/activites" className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-gris hover:text-ardoise">
-        <ArrowLeft size={17} /> Retour à mes activités
+      <Link to={retour} className="mb-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-gris hover:text-ardoise">
+        <ArrowLeft size={17} /> {estAdmin ? "Retour à la gestion des activités" : "Retour à mes activités"}
       </Link>
       <EnteteSection
         titre={editionId ? "Modifier l'activité" : "Nouvelle activité"}
-        sousTitre="Renseignez les informations de la tâche réalisée ou planifiée."
+        sousTitre={
+          estAdmin
+            ? "En tant qu'administrateur, vous pouvez ajuster tous les champs (durée, période, statut, consignes)."
+            : "Renseignez les informations de la tâche réalisée ou planifiée."
+        }
       />
 
       {erreur && (
@@ -192,7 +212,7 @@ export default function ActivityForm() {
           </span>
         </div>
       )}
-      {cloturee && (
+      {gel && (
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#B7DEC9] bg-succes/5 px-3 py-2.5 text-[13px] text-succes">
           <Lock size={16} className="mt-0.5 flex-none" />
           <span>Cette tâche a été <strong>clôturée par l'administrateur</strong> : elle n'est plus modifiable.</span>
@@ -201,19 +221,52 @@ export default function ActivityForm() {
 
       <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_340px]">
         <div className="carte p-[26px_28px]">
-          {/* Consigne de départ donnée par l'admin (lecture seule côté employé) */}
-          {consignes && (
-            <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50 px-3.5 py-3">
-              <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-petrole-600">
-                Consigne de départ (administrateur)
+          {/* Tâche reprise d'un autre agent : motif de la réaffectation */}
+          {reaff && (
+            <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-surface px-3.5 py-3">
+              <div className="mb-1 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-wide text-petrole-600">
+                <Repeat2 size={14} /> Tâche réaffectée
+                {reaff.date && (
+                  <span className="font-normal normal-case tracking-normal text-grisdoux">
+                    · le {new Date(reaff.date).toLocaleDateString("fr-FR")}
+                  </span>
+                )}
               </div>
-              <div className="whitespace-pre-wrap text-[13px] leading-snug text-ardoise">{consignes}</div>
+              <div className="text-[13px] leading-snug text-ardoise">
+                <span className="text-grisdoux">Motif : </span>
+                {reaff.motif ? (
+                  <span className="whitespace-pre-wrap font-medium">{reaff.motif}</span>
+                ) : (
+                  <span className="italic text-grisdoux">non précisé</span>
+                )}
+              </div>
             </div>
+          )}
+
+          {/* Consigne de départ : modifiable par l'admin, lecture seule pour l'IT */}
+          {estAdmin ? (
+            <Champ label="Consigne de départ">
+              <textarea
+                rows={2}
+                className="champ resize-y"
+                placeholder="Instructions / attentes pour l'agent (non modifiables par lui)…"
+                {...register("consignes")}
+              />
+            </Champ>
+          ) : (
+            consignes && (
+              <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50 px-3.5 py-3">
+                <div className="mb-1 text-[11.5px] font-semibold uppercase tracking-wide text-petrole-600">
+                  Consigne de départ (administrateur)
+                </div>
+                <div className="whitespace-pre-wrap text-[13px] leading-snug text-ardoise">{consignes}</div>
+              </div>
+            )
           )}
 
           {/* Catégorie — premier champ */}
           <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
-            <select className="champ" value={val.categorie} disabled={verrouille || cloturee} onChange={(e) => changerCategorie(e.target.value)}>
+            <select className="champ" value={val.categorie} disabled={verrouille || gel} onChange={(e) => changerCategorie(e.target.value)}>
               {actives.map((c) => (
                 <option key={c.code} value={c.code}>{c.nom}</option>
               ))}
@@ -222,7 +275,7 @@ export default function ActivityForm() {
 
           {/* Rubrique — dépend de la catégorie, remplace le titre */}
           <Champ label="Rubrique" requis erreur={errors.titre?.message}>
-            <select className="champ" disabled={verrouille || cloturee} {...register("titre")}>
+            <select className="champ" disabled={verrouille || gel} {...register("titre")}>
               {rubriques.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
@@ -233,7 +286,7 @@ export default function ActivityForm() {
             <textarea
               rows={3}
               className="champ resize-y"
-              disabled={cloturee}
+              disabled={gel}
               placeholder="Détaillez les actions menées, une par ligne (repris en puces dans le rapport)…"
               {...register("description")}
             />
@@ -244,7 +297,7 @@ export default function ActivityForm() {
               <textarea
                 rows={2}
                 className="champ resize-y"
-                disabled={cloturee}
+                disabled={gel}
                 placeholder="Ex. Fichier des incidents, rapport produit…"
                 {...register("livrable")}
               />
@@ -253,7 +306,7 @@ export default function ActivityForm() {
               <textarea
                 rows={2}
                 className="champ resize-y"
-                disabled={cloturee}
+                disabled={gel}
                 placeholder="Ce qu'il reste à faire / prochaines étapes…"
                 {...register("activites_a_mener")}
               />
@@ -262,10 +315,10 @@ export default function ActivityForm() {
 
           <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Champ label="Début" requis erreur={errors.date_debut?.message}>
-              <input type="date" className="champ font-mono" disabled={verrouille || cloturee} {...register("date_debut")} />
+              <input type="date" className="champ font-mono" disabled={verrouille || gel} {...register("date_debut")} />
             </Champ>
             <Champ label="Fin (échéance)" requis erreur={errors.date_fin?.message}>
-              <input type="date" className="champ font-mono" disabled={verrouille || cloturee} {...register("date_fin")} />
+              <input type="date" className="champ font-mono" disabled={verrouille || gel} {...register("date_fin")} />
             </Champ>
             <Champ label="Durée" requis erreur={errors.duree_minutes?.message}>
               <div className="flex gap-2">
@@ -274,13 +327,13 @@ export default function ActivityForm() {
                   step={unite === "H" ? "0.25" : "1"}
                   min="0"
                   className="champ flex-1 font-mono"
-                  disabled={verrouille || cloturee}
+                  disabled={verrouille || gel}
                   value={dureeSaisie}
                   onChange={(e) => setDureeSaisie(e.target.value)}
                 />
                 <select
                   className="champ w-[104px]"
-                  disabled={verrouille || cloturee}
+                  disabled={verrouille || gel}
                   value={unite}
                   onChange={(e) => setUnite(e.target.value as "MIN" | "H")}
                 >
@@ -295,7 +348,7 @@ export default function ActivityForm() {
           <Champ label="Priorité" requis>
             <div className="flex flex-wrap gap-2">
               {LISTE_PRIORITES.map((p) => (
-                <BoutonChoix key={p} actif={val.priorite === p} disabled={verrouille || cloturee} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
+                <BoutonChoix key={p} actif={val.priorite === p} disabled={verrouille || gel} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
                   {PRIORITES[p].libelle}
                 </BoutonChoix>
               ))}
@@ -308,7 +361,7 @@ export default function ActivityForm() {
                 <BoutonChoix
                   key={s}
                   actif={val.statut === s}
-                  disabled={cloturee}
+                  disabled={gel}
                   couleur={STATUTS[s].couleur}
                   fond={STATUTS[s].fond}
                   onClick={() => {
@@ -331,7 +384,7 @@ export default function ActivityForm() {
                 max="100"
                 step="5"
                 className="flex-1 accent-[#0E5E7C]"
-                disabled={cloturee}
+                disabled={gel}
                 value={val.pourcentage ?? 0}
                 onChange={(e) => setValue("pourcentage", Number(e.target.value))}
               />
@@ -340,7 +393,7 @@ export default function ActivityForm() {
                 min="0"
                 max="100"
                 className="champ w-[86px] font-mono"
-                disabled={cloturee}
+                disabled={gel}
                 {...register("pourcentage")}
               />
               <span className="text-[13px] font-semibold text-petrole-600">%</span>
@@ -353,7 +406,7 @@ export default function ActivityForm() {
 
           <div className="mt-5 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
             <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
-            <button type="submit" disabled={isSubmitting || cloturee} className="btn-primaire">
+            <button type="submit" disabled={isSubmitting || gel} className="btn-primaire">
               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
               {editionId ? "Enregistrer les modifications" : "Enregistrer l'activité"}
             </button>

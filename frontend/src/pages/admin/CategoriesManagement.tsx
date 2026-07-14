@@ -1,16 +1,28 @@
-import { Eye, EyeOff, Pencil, Plus, Tags, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Building2, Eye, EyeOff, Pencil, Plus, Tags, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
-import type { CategorieDef } from "@/types";
+import type { CategorieDef, Departement } from "@/types";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { CategorieModal } from "./CategorieModal";
 
 export default function CategoriesManagement() {
+  const { estSuperAdmin, user } = useAuth();
   const { categories, chargement, recharger } = useCategories();
   const [modal, setModal] = useState<{ ouvert: boolean; cat?: CategorieDef }>({ ouvert: false });
   const [aSupprimer, setASupprimer] = useState<CategorieDef | null>(null);
+
+  // Le super admin voit les catégories de TOUS les départements : on affiche
+  // à quel département chacune appartient, sinon la liste est incompréhensible.
+  const [deps, setDeps] = useState<Record<number, Departement>>({});
+  useEffect(() => {
+    if (!estSuperAdmin) return;
+    api.get<Departement[]>("/departements").then((r) => {
+      setDeps(Object.fromEntries(r.data.map((d) => [d.id, d])));
+    });
+  }, [estSuperAdmin]);
 
   async function basculerActif(cat: CategorieDef) {
     await api.put(`/categories/${cat.id}`, { actif: !cat.actif }).catch((e) => alert(messageErreur(e)));
@@ -35,7 +47,11 @@ export default function CategoriesManagement() {
     <>
       <EnteteSection
         titre="Catégories & rubriques"
-        sousTitre="Gérez les catégories d'activités et leurs rubriques. Elles alimentent les formulaires de saisie."
+        sousTitre={
+          estSuperAdmin
+            ? "Référentiel de chaque département. Une catégorie n'est visible que par le département auquel elle est rattachée."
+            : `Référentiel de votre département${user?.departement ? ` (${user.departement.nom})` : ""}. Ces catégories alimentent les formulaires de saisie.`
+        }
         action={
           <button className="btn-primaire" onClick={() => setModal({ ouvert: true })}>
             <Plus size={18} /> Nouvelle catégorie
@@ -62,7 +78,20 @@ export default function CategoriesManagement() {
                   <span className="h-4 w-4 rounded" style={{ background: cat.couleur }} />
                   <div>
                     <div className="text-[15px] font-semibold text-encre">{cat.nom}</div>
-                    <div className="font-mono text-[11px] text-grisdoux">{cat.code}</div>
+                    {/* Département propriétaire (utile au super admin qui voit tout) */}
+                    {estSuperAdmin && cat.departement_id && deps[cat.departement_id] ? (
+                      <div
+                        className="mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10.5px] font-semibold"
+                        style={{
+                          background: deps[cat.departement_id].couleur + "1F",
+                          color: deps[cat.departement_id].couleur,
+                        }}
+                      >
+                        <Building2 size={11} /> {deps[cat.departement_id].nom}
+                      </div>
+                    ) : (
+                      <div className="font-mono text-[11px] text-grisdoux">{cat.code}</div>
+                    )}
                   </div>
                 </div>
                 {!cat.actif && (

@@ -1,6 +1,6 @@
 // Schémas de validation zod (entrées API) + helper de validation.
 import { z } from "zod";
-import { PRIORITES, ROLES, STATUTS } from "./models/index.js";
+import { CODES_PERMISSIONS, PRIORITES, ROLES, STATUTS } from "./models/index.js";
 
 const email = z.string().email("Adresse e-mail invalide.");
 
@@ -49,11 +49,47 @@ export const activiteUpdateSchema = activiteBase
   .refine(periodeCoherente, messagePeriode);
 
 // Réaffectation d'une tâche à un autre agent (admin).
-export const reaffecterSchema = z.object({
-  user_id: z.coerce.number().int().positive("Sélectionnez l'agent destinataire."),
-  motif: z.string().max(500).optional().nullable(),
-  // Repartir de zéro : statut « À faire » et 0 % pour le nouvel agent.
-  reinitialiser: z.coerce.boolean().default(true),
+// La période et la durée peuvent être redéfinies : sans quoi une tâche déjà
+// en retard chez l'agent précédent resterait en retard chez le nouveau.
+export const reaffecterSchema = z
+  .object({
+    user_id: z.coerce.number().int().positive("Sélectionnez l'agent destinataire."),
+    motif: z.string().max(500).optional().nullable(),
+    // Repartir de zéro : statut « À faire » et 0 % pour le nouvel agent.
+    reinitialiser: z.coerce.boolean().default(true),
+    // Nouvelle période / durée (facultatives : si absentes, on garde l'existant).
+    date_debut: z.string().regex(dateRe, "Date de début invalide (AAAA-MM-JJ).").optional(),
+    date_fin: z.string().regex(dateRe, "Date de fin invalide (AAAA-MM-JJ).").optional(),
+    duree_minutes: z.coerce.number().int().min(1).max(1440).optional(),
+  })
+  .refine(periodeCoherente, messagePeriode);
+
+/* ---- Départements (super admin) ------------------------------------ */
+const couleurHexDep = z
+  .string()
+  .regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/, "Couleur hexadécimale invalide (ex. #0E5E7C).");
+
+export const departementCreateSchema = z.object({
+  nom: z.string().min(2, "Nom du département requis.").max(120),
+  description: z.string().max(255).optional().nullable(),
+  couleur: couleurHexDep.default("#0E5E7C"),
+});
+
+export const departementUpdateSchema = z.object({
+  nom: z.string().min(2).max(120).optional(),
+  description: z.string().max(255).optional().nullable(),
+  couleur: couleurHexDep.optional(),
+  actif: z.boolean().optional(),
+});
+
+// Boîte d'envoi SMTP propre au département (mot de passe vide = inchangé).
+export const smtpSchema = z.object({
+  smtp_host: z.string().max(150).optional().nullable(),
+  smtp_port: z.coerce.number().int().min(1).max(65535).optional().nullable(),
+  smtp_user: z.string().max(150).optional().nullable(),
+  smtp_pass: z.string().max(255).optional().nullable(),
+  smtp_tls_insecure: z.coerce.boolean().default(false),
+  mail_from: z.string().max(200).optional().nullable(),
 });
 
 export const userCreateSchema = z.object({
@@ -63,6 +99,9 @@ export const userCreateSchema = z.object({
   role: z.enum(ROLES).default("EMPLOYE"),
   actif: z.boolean().default(true),
   mot_de_passe: z.string().min(6, "6 caractères minimum."),
+  // Rattachement + droits (contrôlés côté route selon le rôle du demandeur).
+  departement_id: z.coerce.number().int().positive().optional().nullable(),
+  permissions: z.array(z.enum(CODES_PERMISSIONS)).optional(),
 });
 
 export const userUpdateSchema = z.object({
@@ -72,6 +111,8 @@ export const userUpdateSchema = z.object({
   role: z.enum(ROLES).optional(),
   actif: z.boolean().optional(),
   mot_de_passe: z.string().min(6).optional(),
+  departement_id: z.coerce.number().int().positive().optional().nullable(),
+  permissions: z.array(z.enum(CODES_PERMISSIONS)).optional(),
 });
 
 const couleurHex = z
@@ -82,6 +123,8 @@ export const categorieCreateSchema = z.object({
   nom: z.string().min(2, "Nom de catégorie requis.").max(80),
   couleur: couleurHex.default("#64757D"),
   rubriques: z.array(z.string().min(1).max(120)).default([]),
+  // Département cible (le super admin peut le choisir ; un admin crée dans le sien).
+  departement_id: z.coerce.number().int().positive().optional().nullable(),
 });
 
 export const categorieUpdateSchema = z.object({
@@ -90,6 +133,7 @@ export const categorieUpdateSchema = z.object({
   rubriques: z.array(z.string().min(1).max(120)).optional(),
   actif: z.boolean().optional(),
   ordre: z.number().int().optional(),
+  departement_id: z.coerce.number().int().positive().optional().nullable(),
 });
 
 // Valide `data` contre `schema` ; renvoie { ok, data } ou envoie une 422.

@@ -1,7 +1,8 @@
-import { GripVertical, Loader2, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { Building2, GripVertical, Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
-import type { CategorieDef } from "@/types";
+import { useAuth } from "@/context/AuthContext";
+import type { CategorieDef, Departement } from "@/types";
 
 const COULEURS_SUGGEREES = [
   "#0E5E7C", "#2F6FE0", "#7E57C2", "#1F9D74", "#D08A21", "#C0392B", "#14708F", "#64757D",
@@ -16,6 +17,7 @@ export function CategorieModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { estSuperAdmin, user } = useAuth();
   const edition = !!categorie;
   const [nom, setNom] = useState(categorie?.nom ?? "");
   const [couleur, setCouleur] = useState(categorie?.couleur ?? "#0E5E7C");
@@ -23,6 +25,17 @@ export function CategorieModal({
   const [nouvelle, setNouvelle] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+
+  // Rattachement au département : le super admin choisit, un admin crée dans le sien.
+  const [deps, setDeps] = useState<Departement[]>([]);
+  const [departementId, setDepartementId] = useState<number | "">(
+    categorie?.departement_id ?? (estSuperAdmin ? "" : user?.departement_id ?? ""),
+  );
+
+  useEffect(() => {
+    if (!estSuperAdmin) return;
+    api.get<Departement[]>("/departements").then((r) => setDeps(r.data.filter((d) => d.actif)));
+  }, [estSuperAdmin]);
 
   function ajouterRubrique() {
     const r = nouvelle.trim();
@@ -42,10 +55,15 @@ export function CategorieModal({
   async function soumettre(e: React.FormEvent) {
     e.preventDefault();
     setErreur(null);
+    if (estSuperAdmin && !departementId) {
+      return setErreur("Sélectionnez le département auquel rattacher cette catégorie.");
+    }
     const rubNettoyees = rubriques.map((r) => r.trim()).filter(Boolean);
     setEnCours(true);
     try {
-      const corps = { nom, couleur, rubriques: rubNettoyees };
+      const corps: Record<string, unknown> = { nom, couleur, rubriques: rubNettoyees };
+      // Seul le super admin peut choisir/déplacer le département.
+      if (estSuperAdmin) corps.departement_id = departementId;
       if (edition) await api.put(`/categories/${categorie!.id}`, corps);
       else await api.post("/categories", corps);
       onSaved();
@@ -76,6 +94,31 @@ export function CategorieModal({
           {erreur && (
             <div className="mb-4 rounded-lg border border-[#EBC7C1] bg-danger/5 px-3 py-2.5 text-[13px] text-danger">
               {erreur}
+            </div>
+          )}
+
+          {/* Département de rattachement : chaque département a son référentiel */}
+          {estSuperAdmin ? (
+            <div className="mb-4">
+              <label className="label">Département <span className="text-danger">*</span></label>
+              <select
+                className="champ"
+                value={departementId}
+                onChange={(e) => setDepartementId(e.target.value ? Number(e.target.value) : "")}
+              >
+                <option value="">— Sélectionnez un département —</option>
+                {deps.map((d) => (
+                  <option key={d.id} value={d.id}>{d.nom}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11.5px] text-grisdoux">
+                Cette catégorie et ses rubriques ne seront visibles que par ce département.
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-[#DCE9ED] bg-petrole-50 px-3 py-2.5 text-[12.5px] text-ardoise">
+              <Building2 size={16} className="flex-none text-petrole-600" />
+              Rattachée à votre département : <strong>{user?.departement?.nom ?? "—"}</strong>
             </div>
           )}
 

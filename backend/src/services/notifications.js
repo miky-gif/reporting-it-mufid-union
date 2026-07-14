@@ -1,15 +1,32 @@
 // Service de notifications : notifications internes (plateforme) et e-mails.
 // Chaque fonction d'événement crée les notifications internes nécessaires et
 // déclenche les e-mails (best-effort : jamais bloquant pour l'action métier).
-import { Notification, User } from "../models/index.js";
+import { Op } from "sequelize";
+import { Departement, Notification, User } from "../models/index.js";
 import { libelleCategorie, libellePriorite, libelleStatut } from "../utils.js";
 import { envoyerEmail } from "./mailer.js";
 
 const dateFr = (iso) => String(iso).split("-").reverse().join("/");
 
-/** Liste des administrateurs actifs (destinataires des alertes de supervision). */
-async function listerAdmins() {
-  return User.findAll({ where: { role: "ADMIN", actif: true } });
+/**
+ * Département d'un utilisateur : détermine la boîte d'envoi utilisée.
+ * Les agents d'un département reçoivent leurs mails depuis SA boîte
+ * (repli sur la configuration globale si le département n'en a pas).
+ */
+async function departementDe(user) {
+  if (!user?.departement_id) return null;
+  if (user.departement) return user.departement; // déjà chargé
+  return Departement.findByPk(user.departement_id);
+}
+
+/**
+ * Administrateurs à alerter pour un département donné :
+ * les ADMIN de ce département + tous les SUPER_ADMIN (qui supervisent tout).
+ */
+async function listerAdmins(departementId = null) {
+  const ou = [{ role: "SUPER_ADMIN" }];
+  if (departementId) ou.push({ role: "ADMIN", departement_id: departementId });
+  return User.findAll({ where: { actif: true, [Op.or]: ou } });
 }
 
 /** Crée une notification interne pour un utilisateur. */
@@ -94,6 +111,7 @@ export async function notifierBienvenue({ user, motDePasse, admin }) {
   };
   await envoyerEmail({
     to: user.email,
+    departement: await departementDe(user), // boîte d'envoi du département
     subject: "MUFID UNION — Bienvenue, votre compte est prêt",
     text: texteDepuis(contenu),
     html: emailHtml(contenu),
@@ -112,6 +130,7 @@ export async function notifierDesactivationCompte({ user }) {
   };
   await envoyerEmail({
     to: user.email,
+    departement: await departementDe(user),
     subject: "MUFID UNION — Désactivation de votre compte",
     text: texteDepuis(contenu),
     html: emailHtml(contenu),
@@ -145,22 +164,42 @@ export async function notifierAffectation({ destinataire, admin, activite }) {
   };
   await envoyerEmail({
     to: destinataire.email,
+    departement: await departementDe(destinataire),
     subject: "MUFID UNION — Nouvelle tâche vous a été affectée",
     text: texteDepuis(contenu),
     html: emailHtml(contenu),
   });
 }
 
+// Durée lisible (« 1 h 30 », « 45 min ») à partir des minutes.
+function dureeFr(minutes) {
+  const m = Math.max(0, Math.round(minutes || 0));
+  const h = Math.floor(m / 60);
+  const r = m % 60;
+  if (h === 0) return `${r} min`;
+  return r === 0 ? `${h} h` : `${h} h ${String(r).padStart(2, "0")}`;
+}
+
 /** Tâche RÉAFFECTÉE : le nouvel agent est prévenu (interne + e-mail). */
 export async function notifierReaffectation({ destinataire, ancien, admin, activite, motif }) {
+  const periode =
+    activite.date_debut && activite.date_fin
+      ? `du ${dateFr(activite.date_debut)} au ${dateFr(activite.date_fin)}`
+      : dateFr(activite.date_activite);
+
   const lignes = [
     { label: "Intitulé", valeur: activite.titre },
     { label: "Catégorie", valeur: libelleCategorie(activite.categorie) },
     { label: "Priorité", valeur: libellePriorite(activite.priorite) },
+    { label: "Période", valeur: periode },
     { label: "Échéance", valeur: dateFr(activite.date_activite) },
+    { label: "Durée prévue", valeur: dureeFr(activite.duree_minutes) },
     { label: "Précédemment affectée à", valeur: ancien ? ancien.nom_complet : "—" },
-    ...(motif ? [{ label: "Motif de la réaffectation", valeur: motif }] : []),
+    // Le motif est un élément clé : il explique à l'agent pourquoi la tâche lui revient.
+    { label: "Motif de la réaffectation", valeur: motif || "Non précisé" },
+    ...(activite.consignes ? [{ label: "Consignes", valeur: activite.consignes }] : []),
   ];
+
   await creerNotif({
     userId: destinataire.id,
     type: "REAFFECTATION",
@@ -168,7 +207,7 @@ export async function notifierReaffectation({ destinataire, ancien, admin, activ
     message:
       `${admin.nom_complet} vous a réaffecté « ${activite.titre} »` +
       `${ancien ? ` (précédemment confiée à ${ancien.nom_complet})` : ""}` +
-      `${motif ? ` — motif : ${motif}` : ""}.`,
+      ` — motif : ${motif || "non précisé"}. Échéance : ${dateFr(activite.date_activite)}.`,
     activiteId: activite.id,
   });
 
@@ -176,11 +215,12 @@ export async function notifierReaffectation({ destinataire, ancien, admin, activ
     titre: "Une tâche vous a été réaffectée",
     salutation: `Bonjour ${destinataire.nom_complet},`,
     intro: `${admin.nom_complet} (${admin.poste || "Administration"}) vous confie une tâche jusque-là suivie par un autre agent :`,
-    lignes: activite.consignes ? [...lignes, { label: "Consignes", valeur: activite.consignes }] : lignes,
+    lignes,
     conclusion: "Connectez-vous à la plateforme pour la prendre en charge.",
   };
   await envoyerEmail({
     to: destinataire.email,
+    departement: await departementDe(destinataire),
     subject: "MUFID UNION — Une tâche vous a été réaffectée",
     text: texteDepuis(contenu),
     html: emailHtml(contenu),
@@ -196,13 +236,14 @@ export async function notifierRetraitTache({ destinataire, nouveau, admin, activ
     message:
       `${admin.nom_complet} a réaffecté « ${activite.titre} »` +
       `${nouveau ? ` à ${nouveau.nom_complet}` : ""}` +
-      `${motif ? ` — motif : ${motif}` : ""}. Elle ne figure plus dans vos activités.`,
+      ` — motif : ${motif || "non précisé"}. Elle ne figure plus dans vos activités.`,
   });
 }
 
 /** Un employé a créé une tâche : alerte de tous les admins (interne + e-mail). */
 export async function notifierNouvelleTacheEmploye({ auteur, activite }) {
-  const admins = await listerAdmins();
+  const dep = await departementDe(auteur);
+  const admins = await listerAdmins(auteur.departement_id); // admins du département + super admins
   const message = `${auteur.nom_complet} a enregistré une nouvelle activité : « ${activite.titre} » (${libelleStatut(
     activite.statut,
   )}).`;
@@ -234,6 +275,7 @@ export async function notifierNouvelleTacheEmploye({ auteur, activite }) {
     admins.map((a) =>
       envoyerEmail({
         to: a.email,
+        departement: dep,
         subject: `MUFID UNION — Nouvelle activité de ${auteur.nom_complet}`,
         text: texteDepuis({ salutation: `Bonjour ${a.nom_complet},`, ...contenu }),
         html: emailHtml({ salutation: `Bonjour ${a.nom_complet},`, ...contenu }),
@@ -247,7 +289,8 @@ export async function notifierNouvelleTacheEmploye({ auteur, activite }) {
  * e-mail seulement pour les jalons importants (Terminé / Bloqué).
  */
 export async function notifierChangementStatut({ auteur, activite, ancienStatut, nouveauStatut }) {
-  const admins = await listerAdmins();
+  const dep = await departementDe(auteur);
+  const admins = await listerAdmins(auteur.departement_id);
   const message = `${auteur.nom_complet} a fait passer « ${activite.titre} » de ${libelleStatut(
     ancienStatut,
   )} à ${libelleStatut(nouveauStatut)}.`;
@@ -283,6 +326,7 @@ export async function notifierChangementStatut({ auteur, activite, ancienStatut,
     admins.map((a) =>
       envoyerEmail({
         to: a.email,
+        departement: dep,
         subject: `MUFID UNION — ${contenu.titre} (${auteur.nom_complet})`,
         text: texteDepuis({ salutation: `Bonjour ${a.nom_complet},`, ...contenu }),
         html: emailHtml({ salutation: `Bonjour ${a.nom_complet},`, ...contenu }),

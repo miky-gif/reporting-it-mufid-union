@@ -21,7 +21,7 @@ function couleurStatutArgb(statut) {
 const BORDURE = { style: "thin", color: { argb: "FFC6D2D7" } };
 const BORDS = { top: BORDURE, left: BORDURE, bottom: BORDURE, right: BORDURE };
 
-function blocTitre(ws, span, sousTitre, ligne) {
+function blocTitre(ws, span, sousTitre, ligne, departement) {
   ws.mergeCells(1, 1, 1, span);
   const c1 = ws.getCell(1, 1);
   c1.value = "RAPPORT D'ACTIVITÉS";
@@ -36,7 +36,8 @@ function blocTitre(ws, span, sousTitre, ligne) {
 
   ws.mergeCells(3, 1, 3, span);
   const c3 = ws.getCell(3, 1);
-  c3.value = "Département de l'Exploitation Informatique";
+  // Département dynamique (Infrastructure, Exploitation Système…).
+  c3.value = departement || "Direction des Systèmes d'Information";
   c3.font = { size: 10, color: { argb: GRIS } };
   c3.alignment = { horizontal: "center" };
 
@@ -86,6 +87,7 @@ export async function rapportHebdoExcel(rap) {
     7,
     `Du ${rap.debut_court} au ${rap.fin_court}`,
     `${rap.user.nom_complet.toUpperCase()}${rap.user.poste ? "  —  " + rap.user.poste : ""}`,
+    rap.departement,
   );
 
   r = enteteTableau(ws, r, [
@@ -132,6 +134,7 @@ export async function rapportConsolideHebdoExcel(rap) {
     8,
     `Rapport consolidé — Du ${rap.debut_court} au ${rap.fin_court}`,
     `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
+    rap.departement,
   );
 
   r = enteteTableau(ws, r, [

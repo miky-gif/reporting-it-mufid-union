@@ -117,9 +117,14 @@ export async function statsEmploye(userId) {
   };
 }
 
-export async function statsAdmin() {
-  const activites = await Activite.findAll({ raw: true });
-  const users = await User.findAll({ raw: true });
+/**
+ * Statistiques d'administration.
+ * `departementId` : limite au département (admin) ; null = tout (super admin).
+ */
+export async function statsAdmin(departementId = null) {
+  const filtreDep = departementId ? { departement_id: departementId } : {};
+  const activites = await Activite.findAll({ where: filtreDep, raw: true });
+  const users = await User.findAll({ where: filtreDep, raw: true });
   const mapCat = await chargerMapCategories();
   const total = activites.length;
 

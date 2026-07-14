@@ -1,7 +1,14 @@
 // Agrégation des données pour les rapports individuels et consolidés.
 import { Op } from "sequelize";
-import { Activite, User } from "../models/index.js";
-import { libelleCategorie, libellePriorite, libelleStatut, pourcentageEffectif, referenceActivite } from "../utils.js";
+import { Activite, Departement, User } from "../models/index.js";
+import {
+  libelleCategorie,
+  libelleDepartement,
+  libellePriorite,
+  libelleStatut,
+  pourcentageEffectif,
+  referenceActivite,
+} from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
 
 const MOIS_FR = [
@@ -13,8 +20,15 @@ const MOIS_COURT = [
   "Juil", "Août", "Sep", "Oct", "Nov", "Déc",
 ];
 
-// Département affiché en en-tête du rapport (aligné sur le modèle métier).
-export const DEPARTEMENT = "Département de l'Exploitation Informatique";
+// En-tête de rapport quand aucun département n'est déterminé (repli).
+export const DEPARTEMENT_DEFAUT = "Direction des Systèmes d'Information";
+
+/** Libellé d'en-tête du département d'un agent (dynamique). */
+async function enteteDepartementDe(user) {
+  if (!user?.departement_id) return DEPARTEMENT_DEFAUT;
+  const dep = user.departement ?? (await Departement.findByPk(user.departement_id));
+  return dep ? libelleDepartement(dep.nom) : DEPARTEMENT_DEFAUT;
+}
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const fmtJJMMAAAA = (iso) => iso.split("-").reverse().join("/");
@@ -38,9 +52,10 @@ function repartition(compte, total) {
     .sort((a, b) => b.total - a.total);
 }
 
-async function activitesPeriode(debut, fin, userId) {
+async function activitesPeriode(debut, fin, userId, departementId = null) {
   const where = { date_activite: { [Op.gte]: debut, [Op.lte]: fin } };
   if (userId) where.user_id = userId;
+  if (departementId) where.departement_id = departementId; // cloisonnement
   return Activite.findAll({
     where,
     include: { model: User, as: "user" },
@@ -139,7 +154,8 @@ export async function rapportHebdo(user, debut, fin) {
     debut,
     fin,
     periode: periodeLibelle(debut, fin),
-    departement: DEPARTEMENT,
+    // En-tête dynamique : le département de l'agent concerné.
+    departement: await enteteDepartementDe(user),
     reference: `RAP-HEB-${fin.slice(0, 7)}-${String(user.id).padStart(2, "0")}`,
     debut_court: fmtCourt(debut),
     fin_court: fmtCourt(fin),
@@ -150,9 +166,24 @@ export async function rapportHebdo(user, debut, fin) {
 
 // Rapport consolidé au même format que l'individuel, mais pour tout le personnel :
 // une grille unique où chaque agent (employé) regroupe ses propres Rubriques.
-export async function rapportConsolideHebdo(debut, fin) {
-  const activites = await activitesPeriode(debut, fin, null);
+export async function rapportConsolideHebdo(debut, fin, departementId = null) {
+  const activites = await activitesPeriode(debut, fin, null, departementId);
   const mapCat = await chargerMapCategories();
+
+  // En-tête : le département consolidé, ou « tous les départements » (super admin).
+  let entete = DEPARTEMENT_DEFAUT;
+  if (departementId) {
+    const dep = await Departement.findByPk(departementId);
+    if (dep) entete = libelleDepartement(dep.nom);
+  } else {
+    const noms = await Departement.findAll({ where: { actif: true }, order: [["nom", "ASC"]] });
+    entete =
+      noms.length > 1
+        ? `Tous les départements — ${noms.map((d) => d.nom).join(", ")}`
+        : noms.length === 1
+        ? libelleDepartement(noms[0].nom)
+        : DEPARTEMENT_DEFAUT;
+  }
 
   // Regroupement par agent (employé).
   const parUser = new Map();
@@ -174,7 +205,7 @@ export async function rapportConsolideHebdo(debut, fin) {
     debut,
     fin,
     periode: periodeLibelle(debut, fin),
-    departement: DEPARTEMENT,
+    departement: entete,
     reference: `RAP-CONS-${fin.slice(0, 7)}`,
     debut_court: fmtCourt(debut),
     fin_court: fmtCourt(fin),

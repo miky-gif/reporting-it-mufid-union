@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Building2,
   ClipboardList,
   FilePlus2,
   FileText,
@@ -29,25 +30,38 @@ const LIENS_EMPLOYE: Lien[] = [
   { to: "/activites", label: "Mes activités", icone: ListChecks },
 ];
 
-const LIENS_ADMIN: Lien[] = [
-  { to: "/admin", label: "Tableau de bord", icone: LayoutDashboard },
-  { to: "/admin/statistiques", label: "Statistiques", icone: PieChart },
-  { to: "/admin/activites", label: "Gestion des activités", icone: ClipboardList },
-  { to: "/admin/taches/nouvelle", label: "Affecter une tâche", icone: SendHorizonal },
-  { to: "/admin/rapports/individuel", label: "Rapports individuels", icone: FileText },
-  { to: "/admin/rapports/consolide", label: "Rapports consolidés", icone: BarChart3 },
-];
-
 export function Sidebar() {
-  const { estAdmin } = useAuth();
-  const liens = estAdmin ? LIENS_ADMIN : LIENS_EMPLOYE;
-  const fond = estAdmin ? "bg-petrole-800" : "bg-petrole-700";
+  const { estAdmin, estSuperAdmin, peut, user } = useAuth();
+
+  // La navigation d'administration s'adapte aux droits accordés.
+  const liensAdmin: Lien[] = [
+    { to: "/admin", label: "Tableau de bord", icone: LayoutDashboard },
+    ...(peut("STATISTIQUES_VOIR") ? [{ to: "/admin/statistiques", label: "Statistiques", icone: PieChart }] : []),
+    { to: "/admin/activites", label: "Gestion des activités", icone: ClipboardList },
+    ...(peut("TACHES_AFFECTER")
+      ? [{ to: "/admin/taches/nouvelle", label: "Affecter une tâche", icone: SendHorizonal }]
+      : []),
+    ...(peut("RAPPORTS_EXPORTER")
+      ? [
+          { to: "/admin/rapports/individuel", label: "Rapports individuels", icone: FileText },
+          { to: "/admin/rapports/consolide", label: "Rapports consolidés", icone: BarChart3 },
+        ]
+      : []),
+  ];
+
+  const liens = estAdmin ? liensAdmin : LIENS_EMPLOYE;
+  const fond = estSuperAdmin ? "bg-petrole-900" : estAdmin ? "bg-petrole-800" : "bg-petrole-700";
 
   return (
     <aside className={clsx("flex w-[238px] flex-none flex-col self-stretch p-[20px_14px]", fond)}>
-      <div className="px-3 pb-3.5 pt-1 font-mono text-[10px] font-semibold tracking-[0.13em] text-[#5E93A4]">
-        {estAdmin ? "ADMINISTRATION" : "ESPACE IT"}
+      <div className="px-3 pb-1 pt-1 font-mono text-[10px] font-semibold tracking-[0.13em] text-[#5E93A4]">
+        {estSuperAdmin ? "SUPER ADMINISTRATION" : estAdmin ? "ADMINISTRATION" : "ESPACE IT"}
       </div>
+      {/* Département de rattachement (l'admin et l'IT sont cloisonnés) */}
+      {user?.departement && (
+        <div className="mb-3 truncate px-3 text-[11px] text-[#8FB2BF]">{user.departement.nom}</div>
+      )}
+      {estSuperAdmin && <div className="mb-3 px-3 text-[11px] text-[#8FB2BF]">Tous les départements</div>}
 
       {liens.map((l) => (
         <LienNav key={l.to} lien={l} exact={l.to === "/" || l.to === "/admin"} />
@@ -57,8 +71,17 @@ export function Sidebar() {
 
       {estAdmin ? (
         <>
-          <LienNav lien={{ to: "/admin/categories", label: "Catégories & rubriques", icone: Tags }} />
-          <LienNav lien={{ to: "/admin/utilisateurs", label: "Utilisateurs", icone: Users }} />
+          {/* Réservé au super administrateur */}
+          {estSuperAdmin && (
+            <LienNav lien={{ to: "/admin/departements", label: "Départements", icone: Building2 }} />
+          )}
+          {peut("CATEGORIES_GERER") && (
+            <LienNav lien={{ to: "/admin/categories", label: "Catégories & rubriques", icone: Tags }} />
+          )}
+          {(peut("IT_CREER") || peut("IT_MODIFIER") || estSuperAdmin) && (
+            <LienNav lien={{ to: "/admin/utilisateurs", label: "Utilisateurs", icone: Users }} />
+          )}
+          <LienNav lien={{ to: "/profil", label: "Mon profil", icone: UserCircle }} />
         </>
       ) : (
         <LienNav lien={{ to: "/profil", label: "Mon profil", icone: UserCircle }} />

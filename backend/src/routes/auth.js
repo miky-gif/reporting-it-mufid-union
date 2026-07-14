@@ -1,6 +1,6 @@
 // Routes d'authentification.
 import { Router } from "express";
-import { User } from "../models/index.js";
+import { Departement, User } from "../models/index.js";
 import { creerToken, hacherMotDePasse, verifierMotDePasse } from "../security.js";
 import { requireAuth } from "../middleware/auth.js";
 import { limiterConnexion } from "../middleware/limiter.js";
@@ -14,7 +14,11 @@ authRouter.post("/login", limiterConnexion(), async (req, res) => {
   const v = valider(loginSchema, req.body, res);
   if (!v.ok) return;
 
-  const user = await User.findOne({ where: { email: v.data.email } });
+  // On charge le département : le frontend en a besoin (cloisonnement, affichage).
+  const user = await User.findOne({
+    where: { email: v.data.email },
+    include: { model: Departement, as: "departement" },
+  });
   if (!user || !(await verifierMotDePasse(v.data.mot_de_passe, user.mot_de_passe))) {
     return res.status(401).json({ detail: "E-mail ou mot de passe incorrect." });
   }

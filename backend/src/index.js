@@ -1,7 +1,7 @@
 // Point d'entrée : contrôles de production, synchronisation base, serveur HTTP.
 import os from "os";
 import { config } from "./config.js";
-import { ensureColonnes, ensureDatabase, sequelize } from "./db.js";
+import { assurerDepartements, ensureColonnes, ensureDatabase, sequelize } from "./db.js";
 import "./models/index.js";
 import { creerApp } from "./app.js";
 import { assurerCategoriesParDefaut } from "./services/categoriesStore.js";
@@ -33,9 +33,12 @@ async function demarrer() {
   try {
     await ensureDatabase(); // crée la base si nécessaire
     await sequelize.authenticate();
-    await sequelize.sync(); // crée les tables manquantes (non destructif)
+    // L'ordre compte : les colonnes d'abord (sync() crée les index et échouerait
+    // sur une colonne absente), puis sync() crée les tables manquantes.
     await ensureColonnes(); // migrations de colonnes / ENUM (idempotent)
+    await sequelize.sync(); // crée les tables manquantes (non destructif)
     await assurerCategoriesParDefaut(); // catégories par défaut si table vide
+    await assurerDepartements(); // départements, rattachements, super admin
     console.log("✔ Base de données connectée et synchronisée.");
   } catch (e) {
     console.error("✖ Impossible de se connecter à la base de données :", e.message);
