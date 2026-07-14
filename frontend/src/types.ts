@@ -65,6 +65,10 @@ export interface Activite {
   en_retard: boolean;
   date_cloture: string | null;
   cloture_par: number | null;
+  reaffectee: boolean;
+  reaffectee_de: number | null;
+  date_reaffectation: string | null;
+  motif_reaffectation: string | null;
   date_creation: string;
   date_modification: string;
   user?: { id: number; nom_complet: string; poste: string | null } | null;
@@ -150,6 +154,77 @@ export interface Notification {
 export interface NotificationsReponse {
   items: Notification[];
   non_lues: number;
+}
+
+/* ---- Écran « Statistiques » (admin) --------------------------------- */
+export interface RepartitionStat {
+  cle: string;
+  libelle: string;
+  couleur?: string;
+  total: number;
+  minutes: number;
+  heures: number;
+  points: number;
+  pourcentage: number;
+}
+
+export interface AgentStat {
+  user_id: number;
+  nom_complet: string;
+  poste: string;
+  total: number;
+  cloturees: number;
+  en_retard: number;
+  minutes: number;
+  heures: number;
+  minutes_realisees: number;
+  points: number;
+  taux_cloture: number;
+}
+
+export interface RetardStat {
+  id: number;
+  reference: string;
+  titre: string;
+  agent: string;
+  categorie: string;
+  priorite: string;
+  statut: string;
+  echeance: string;
+  jours_retard: number;
+  pourcentage: number;
+}
+
+export interface StatsAvancees {
+  debut: string;
+  fin: string;
+  periode: string;
+  debut_court: string;
+  fin_court: string;
+  synthese: {
+    total_activites: number;
+    cloturees: number;
+    terminees: number;
+    en_cours: number;
+    standby: number;
+    a_faire: number;
+    en_retard: number;
+    nb_agents: number;
+    minutes_total: number;
+    minutes_realisees: number;
+    heures_total: number;
+    heures_realisees: number;
+    points_total: number;
+    taux_cloture: number;
+    taux_retard: number;
+    duree_moyenne_minutes: number;
+  };
+  repartition_statut: RepartitionStat[];
+  repartition_priorite: RepartitionStat[];
+  repartition_categorie: RepartitionStat[];
+  par_agent: AgentStat[];
+  activites_en_retard: RetardStat[];
+  evolution_mensuelle: { mois: string; total: number; cloturees: number; en_retard: number }[];
 }
 
 export interface StatsAdmin {

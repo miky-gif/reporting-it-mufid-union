@@ -14,6 +14,7 @@ import ActivitiesManagement from "@/pages/admin/ActivitiesManagement";
 import AdminTaskForm from "@/pages/admin/AdminTaskForm";
 import IndividualReports from "@/pages/admin/IndividualReports";
 import ConsolidatedReports from "@/pages/admin/ConsolidatedReports";
+import Statistics from "@/pages/admin/Statistics";
 import UsersPage from "@/pages/admin/Users";
 import CategoriesManagement from "@/pages/admin/CategoriesManagement";
 
@@ -45,6 +46,7 @@ export default function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/activites" element={<ActivitiesManagement />} />
                 <Route path="/admin/taches/nouvelle" element={<AdminTaskForm />} />
+                <Route path="/admin/statistiques" element={<Statistics />} />
                 <Route path="/admin/rapports/individuel" element={<IndividualReports />} />
                 <Route path="/admin/rapports/consolide" element={<ConsolidatedReports />} />
                 <Route path="/admin/categories" element={<CategoriesManagement />} />

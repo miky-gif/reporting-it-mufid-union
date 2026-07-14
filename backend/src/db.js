@@ -56,7 +56,10 @@ export async function ensureColonnes() {
       "ADD COLUMN IF NOT EXISTS `date_fin` DATE NULL, " +
       "ADD COLUMN IF NOT EXISTS `pourcentage` INT NULL, " +
       "ADD COLUMN IF NOT EXISTS `date_cloture` DATETIME NULL, " +
-      "ADD COLUMN IF NOT EXISTS `cloture_par` INT NULL",
+      "ADD COLUMN IF NOT EXISTS `cloture_par` INT NULL, " +
+      "ADD COLUMN IF NOT EXISTS `reaffectee_de` INT NULL, " +
+      "ADD COLUMN IF NOT EXISTS `date_reaffectation` DATETIME NULL, " +
+      "ADD COLUMN IF NOT EXISTS `motif_reaffectation` TEXT NULL",
   );
 
   // 2) Migration de l'ENUM statut : BLOQUE -> STANDBY, ajout de CLOTURE.

@@ -89,6 +89,10 @@ export const Activite = sequelize.define(
     // Validation finale par l'admin (clôture).
     date_cloture: { type: DataTypes.DATE, allowNull: true },
     cloture_par: { type: DataTypes.INTEGER, allowNull: true },
+    // Réaffectation : trace de l'agent précédent, quand et pourquoi.
+    reaffectee_de: { type: DataTypes.INTEGER, allowNull: true },
+    date_reaffectation: { type: DataTypes.DATE, allowNull: true },
+    motif_reaffectation: { type: DataTypes.TEXT, allowNull: true },
     date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     date_modification: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },

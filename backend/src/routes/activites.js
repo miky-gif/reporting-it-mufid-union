@@ -4,14 +4,21 @@ import { randomUUID } from "crypto";
 import { Router } from "express";
 import { Op } from "sequelize";
 import { Activite, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAdmin, requireAuth } from "../middleware/auth.js";
 import { serialiserActivite } from "../utils.js";
-import { activiteCreateSchema, activiteUpdateSchema, valider } from "../validators.js";
+import {
+  activiteCreateSchema,
+  activiteUpdateSchema,
+  reaffecterSchema,
+  valider,
+} from "../validators.js";
 import {
   notifierAffectation,
   notifierChangementStatut,
   notifierModificationTache,
   notifierNouvelleTacheEmploye,
+  notifierReaffectation,
+  notifierRetraitTache,
   notifierSuppressionTache,
 } from "../services/notifications.js";
 import { categorieActiveExiste } from "../services/categoriesStore.js";
@@ -288,6 +295,56 @@ activitesRouter.put("/:id", async (req, res) => {
     await sansErreur(
       notifierModificationTache({ destinataire: proprietaire, admin: req.user, activite: complet }),
       "modification tâche",
+    );
+  }
+
+  res.json(serialiserActivite(complet));
+});
+
+// POST /activites/:id/reaffecter — l'ADMIN confie la tâche à un autre agent
+// (agent indisponible, en retard, ou non compétent sur le sujet).
+activitesRouter.post("/:id/reaffecter", requireAdmin, async (req, res) => {
+  const activite = await chargerOu404(Number(req.params.id), req.user, res);
+  if (!activite) return;
+
+  const v = valider(reaffecterSchema, req.body, res);
+  if (!v.ok) return;
+  const { user_id, motif, reinitialiser } = v.data;
+
+  if (activite.statut === "CLOTURE") {
+    return res.status(400).json({ detail: "Une tâche clôturée ne peut plus être réaffectée." });
+  }
+  if (user_id === activite.user_id) {
+    return res.status(400).json({ detail: "Cette tâche est déjà affectée à cet agent." });
+  }
+
+  const nouveau = await User.findOne({ where: { id: user_id, actif: true } });
+  if (!nouveau) return res.status(404).json({ detail: "Agent destinataire introuvable ou désactivé." });
+
+  const ancien = activite.user; // inclus par chargerOu404
+  const ancienId = activite.user_id;
+
+  await activite.update({
+    user_id: nouveau.id,
+    assignee_par_admin: true, // devient une tâche affectée par l'admin
+    reaffectee_de: ancienId,
+    date_reaffectation: new Date(),
+    motif_reaffectation: motif || null,
+    // Repartir de zéro pour le nouvel agent (par défaut).
+    ...(reinitialiser ? { statut: "A_FAIRE", pourcentage: 0 } : {}),
+  });
+  const complet = await chargerComplet(activite.id);
+
+  // Le nouvel agent est prévenu (plateforme + e-mail).
+  await sansErreur(
+    notifierReaffectation({ destinataire: nouveau, ancien, admin: req.user, activite: complet, motif }),
+    "réaffectation",
+  );
+  // L'ancien agent est informé du retrait (notification interne).
+  if (ancien && ancien.id !== req.user.id) {
+    await sansErreur(
+      notifierRetraitTache({ destinataire: ancien, nouveau, admin: req.user, activite: complet, motif }),
+      "retrait de tâche",
     );
   }
 

@@ -8,6 +8,14 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const MAIL_FROM = process.env.MAIL_FROM || "MUFID UNION <no-reply@mufidunion.cm>";
 
+// Options utiles pour les serveurs de messagerie professionnels :
+// - SMTP_SECURE : force SSL/TLS direct (sinon déduit du port : 465 = oui).
+// - SMTP_TLS_INSECURE=true : accepte un certificat auto-signé (serveur interne).
+const SMTP_SECURE = process.env.SMTP_SECURE
+  ? process.env.SMTP_SECURE === "true"
+  : SMTP_PORT === 465;
+const TLS_INSECURE = process.env.SMTP_TLS_INSECURE === "true";
+
 const smtpConfigure = Boolean(SMTP_HOST);
 
 let transport = null;
@@ -15,9 +23,21 @@ if (smtpConfigure) {
   transport = nodemailer.createTransport({
     host: SMTP_HOST,
     port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
+    secure: SMTP_SECURE, // 465 -> true ; 587/25 -> false (STARTTLS auto)
     auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+    ...(TLS_INSECURE ? { tls: { rejectUnauthorized: false } } : {}),
   });
+}
+
+/** Vérifie la connexion au serveur SMTP (utilisé par le script de test). */
+export async function verifierSmtp() {
+  if (!smtpConfigure) return { ok: false, raison: "SMTP non configuré (SMTP_HOST vide)." };
+  try {
+    await transport.verify();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, raison: e.message };
+  }
 }
 
 /**

@@ -107,6 +107,10 @@ export function serialiserActivite(a) {
     en_retard: estEnRetard(plain.date_activite, plain.statut),
     date_cloture: plain.date_cloture ?? null,
     cloture_par: plain.cloture_par ?? null,
+    reaffectee: !!plain.reaffectee_de,
+    reaffectee_de: plain.reaffectee_de ?? null,
+    date_reaffectation: plain.date_reaffectation ?? null,
+    motif_reaffectation: plain.motif_reaffectation ?? null,
     date_creation: plain.date_creation,
     date_modification: plain.date_modification,
     user: plain.user

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   ListChecks,
   type LucideIcon,
+  PieChart,
   SendHorizonal,
   ShieldCheck,
   Tags,
@@ -30,6 +31,7 @@ const LIENS_EMPLOYE: Lien[] = [
 
 const LIENS_ADMIN: Lien[] = [
   { to: "/admin", label: "Tableau de bord", icone: LayoutDashboard },
+  { to: "/admin/statistiques", label: "Statistiques", icone: PieChart },
   { to: "/admin/activites", label: "Gestion des activités", icone: ClipboardList },
   { to: "/admin/taches/nouvelle", label: "Affecter une tâche", icone: SendHorizonal },
   { to: "/admin/rapports/individuel", label: "Rapports individuels", icone: FileText },

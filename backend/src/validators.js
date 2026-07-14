@@ -48,6 +48,14 @@ export const activiteUpdateSchema = activiteBase
   .omit({ user_id: true, user_ids: true })
   .refine(periodeCoherente, messagePeriode);
 
+// Réaffectation d'une tâche à un autre agent (admin).
+export const reaffecterSchema = z.object({
+  user_id: z.coerce.number().int().positive("Sélectionnez l'agent destinataire."),
+  motif: z.string().max(500).optional().nullable(),
+  // Repartir de zéro : statut « À faire » et 0 % pour le nouvel agent.
+  reinitialiser: z.coerce.boolean().default(true),
+});
+
 export const userCreateSchema = z.object({
   nom_complet: z.string().min(2, "Nom requis.").max(150),
   email,

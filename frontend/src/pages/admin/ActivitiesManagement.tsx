@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, CheckCheck, Filter, Loader2, Pencil, Search, SendHorizonal } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCheck, Filter, Loader2, Pencil, Repeat2, Search, SendHorizonal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
@@ -10,6 +10,7 @@ import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
 import { Pagination } from "@/components/ui/Pagination";
+import { ReassignModal } from "./ReassignModal";
 import { SearchX } from "lucide-react";
 
 const TAILLE = 9;
@@ -30,6 +31,7 @@ export default function ActivitiesManagement() {
   const [statut, setStatut] = useState<FiltreStatut>("");
   const [priorite, setPriorite] = useState<Priorite | "">("");
   const [ordre, setOrdre] = useState<"asc" | "desc">("desc");
+  const [aReaffecter, setAReaffecter] = useState<Activite | null>(null);
 
   useEffect(() => {
     api.get<UserWithStats[]>("/users").then((r) => setEmployes(r.data));
@@ -163,7 +165,7 @@ export default function ActivitiesManagement() {
                 </thead>
                 <tbody>
                   {donnees!.items.map((a) => (
-                    <LigneActivite key={a.id} a={a} onChange={charger} />
+                    <LigneActivite key={a.id} a={a} onChange={charger} onReaffecter={() => setAReaffecter(a)} />
                   ))}
                 </tbody>
               </table>
@@ -178,11 +180,30 @@ export default function ActivitiesManagement() {
           </>
         )}
       </div>
+
+      {aReaffecter && (
+        <ReassignModal
+          activite={aReaffecter}
+          onFermer={() => setAReaffecter(null)}
+          onSucces={() => {
+            setAReaffecter(null);
+            charger();
+          }}
+        />
+      )}
     </>
   );
 }
 
-function LigneActivite({ a, onChange }: { a: Activite; onChange: () => void }) {
+function LigneActivite({
+  a,
+  onChange,
+  onReaffecter,
+}: {
+  a: Activite;
+  onChange: () => void;
+  onReaffecter: () => void;
+}) {
   const navigate = useNavigate();
   const [enCours, setEnCours] = useState(false);
 
@@ -207,6 +228,14 @@ function LigneActivite({ a, onChange }: { a: Activite; onChange: () => void }) {
         <div className="flex items-center gap-2">
           <Avatar nom={a.user?.nom_complet ?? "?"} id={a.user_id} taille={26} />
           <span className="truncate text-[12.5px] text-ardoise">{abreger(a.user?.nom_complet)}</span>
+          {a.reaffectee && (
+            <span
+              title={`Réaffectée${a.motif_reaffectation ? ` — ${a.motif_reaffectation}` : ""}`}
+              className="flex-none rounded bg-petrole-100 px-1.5 py-0.5 text-[10px] font-semibold text-petrole-700"
+            >
+              ↻ réaff.
+            </span>
+          )}
         </div>
       </td>
       <td className="py-3"><PrioriteBadge priorite={a.priorite} /></td>
@@ -229,6 +258,15 @@ function LigneActivite({ a, onChange }: { a: Activite; onChange: () => void }) {
           >
             <Pencil size={17} />
           </button>
+          {a.statut !== "CLOTURE" && (
+            <button
+              onClick={onReaffecter}
+              title="Réaffecter à un autre agent"
+              className="text-grisdoux hover:text-petrole-600"
+            >
+              <Repeat2 size={17} />
+            </button>
+          )}
           {a.statut !== "CLOTURE" ? (
             <button
               onClick={cloturer}

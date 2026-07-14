@@ -151,6 +151,55 @@ export async function notifierAffectation({ destinataire, admin, activite }) {
   });
 }
 
+/** Tâche RÉAFFECTÉE : le nouvel agent est prévenu (interne + e-mail). */
+export async function notifierReaffectation({ destinataire, ancien, admin, activite, motif }) {
+  const lignes = [
+    { label: "Intitulé", valeur: activite.titre },
+    { label: "Catégorie", valeur: libelleCategorie(activite.categorie) },
+    { label: "Priorité", valeur: libellePriorite(activite.priorite) },
+    { label: "Échéance", valeur: dateFr(activite.date_activite) },
+    { label: "Précédemment affectée à", valeur: ancien ? ancien.nom_complet : "—" },
+    ...(motif ? [{ label: "Motif de la réaffectation", valeur: motif }] : []),
+  ];
+  await creerNotif({
+    userId: destinataire.id,
+    type: "REAFFECTATION",
+    titre: "Tâche réaffectée : elle vous revient",
+    message:
+      `${admin.nom_complet} vous a réaffecté « ${activite.titre} »` +
+      `${ancien ? ` (précédemment confiée à ${ancien.nom_complet})` : ""}` +
+      `${motif ? ` — motif : ${motif}` : ""}.`,
+    activiteId: activite.id,
+  });
+
+  const contenu = {
+    titre: "Une tâche vous a été réaffectée",
+    salutation: `Bonjour ${destinataire.nom_complet},`,
+    intro: `${admin.nom_complet} (${admin.poste || "Administration"}) vous confie une tâche jusque-là suivie par un autre agent :`,
+    lignes: activite.consignes ? [...lignes, { label: "Consignes", valeur: activite.consignes }] : lignes,
+    conclusion: "Connectez-vous à la plateforme pour la prendre en charge.",
+  };
+  await envoyerEmail({
+    to: destinataire.email,
+    subject: "MUFID UNION — Une tâche vous a été réaffectée",
+    text: texteDepuis(contenu),
+    html: emailHtml(contenu),
+  });
+}
+
+/** Tâche retirée à un agent (réaffectée à un autre) : notification interne. */
+export async function notifierRetraitTache({ destinataire, nouveau, admin, activite, motif }) {
+  await creerNotif({
+    userId: destinataire.id,
+    type: "RETRAIT_TACHE",
+    titre: "Une de vos tâches a été réaffectée",
+    message:
+      `${admin.nom_complet} a réaffecté « ${activite.titre} »` +
+      `${nouveau ? ` à ${nouveau.nom_complet}` : ""}` +
+      `${motif ? ` — motif : ${motif}` : ""}. Elle ne figure plus dans vos activités.`,
+  });
+}
+
 /** Un employé a créé une tâche : alerte de tous les admins (interne + e-mail). */
 export async function notifierNouvelleTacheEmploye({ auteur, activite }) {
   const admins = await listerAdmins();
