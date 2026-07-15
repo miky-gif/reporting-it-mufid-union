@@ -1,6 +1,6 @@
 // Schémas de validation zod (entrées API) + helper de validation.
 import { z } from "zod";
-import { CODES_PERMISSIONS, PRIORITES, ROLES, STATUTS } from "./models/index.js";
+import { CODES_PERMISSIONS, PRIORITES, RECURRENCES, ROLES, STATUTS } from "./models/index.js";
 
 const email = z.string().email("Adresse e-mail invalide.");
 
@@ -32,6 +32,9 @@ const activiteBase = z.object({
   date_fin: z.string().regex(dateRe, "Date de fin invalide (AAAA-MM-JJ)."),
   // Durée libre en minutes (granularité fine). 1 min à 24 h (1440 min).
   duree_minutes: z.coerce.number().int().min(1, "Durée requise (en minutes).").max(1440),
+  // Récurrence : régénère automatiquement de nouvelles occurrences.
+  recurrence: z.enum(RECURRENCES).default("AUCUNE"),
+  recurrence_fin: z.string().regex(dateRe, "Date de fin de récurrence invalide.").optional().nullable(),
   user_id: z.coerce.number().int().positive().optional(),
   // Affectation multiple : liste d'agents destinataires (admin).
   user_ids: z.array(z.coerce.number().int().positive()).optional(),

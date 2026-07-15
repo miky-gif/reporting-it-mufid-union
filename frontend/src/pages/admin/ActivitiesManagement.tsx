@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, CheckCheck, Filter, Loader2, Pencil, Repeat2, Searc
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
-import { LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
+import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDate, formatDuree } from "@/lib/format";
 import type { Activite, Categorie, PageActivites, Priorite, Statut, UserWithStats } from "@/types";
@@ -234,6 +234,14 @@ function LigneActivite({
               className="flex-none rounded bg-petrole-100 px-1.5 py-0.5 text-[10px] font-semibold text-petrole-700"
             >
               ↻ réaff.
+            </span>
+          )}
+          {a.recurrence !== "AUCUNE" && (
+            <span
+              title={`Tâche récurrente (${LIBELLE_RECURRENCE[a.recurrence]})`}
+              className="flex-none rounded bg-[#EAE3F5] px-1.5 py-0.5 text-[10px] font-semibold text-[#7E57C2]"
+            >
+              ↻ {LIBELLE_RECURRENCE[a.recurrence].toLowerCase()}
             </span>
           )}
         </div>

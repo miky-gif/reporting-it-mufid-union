@@ -5,6 +5,7 @@ import { assurerDepartements, ensureColonnes, ensureDatabase, sequelize } from "
 import "./models/index.js";
 import { creerApp } from "./app.js";
 import { assurerCategoriesParDefaut } from "./services/categoriesStore.js";
+import { demarrerPlanificateur } from "./services/recurrence.js";
 
 // Simple avertissement si le secret JWT est celui de développement.
 // (Non bloquant : la plateforme reste utilisable pour les tests internes.)
@@ -45,6 +46,9 @@ async function demarrer() {
     console.error("  Vérifiez DATABASE_URL dans backend/.env et que MySQL/MariaDB est démarré.");
     process.exit(1);
   }
+
+  // Planificateur des tâches récurrentes (génère les occurrences dues + rattrapage).
+  demarrerPlanificateur();
 
   const app = creerApp();
   // 0.0.0.0 : accessible depuis les autres postes du réseau local.

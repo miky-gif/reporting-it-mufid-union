@@ -12,7 +12,7 @@ import {
   requireAuth,
   requirePermission,
 } from "../middleware/auth.js";
-import { serialiserActivite } from "../utils.js";
+import { ajouterIntervalle, serialiserActivite } from "../utils.js";
 import {
   activiteCreateSchema,
   activiteUpdateSchema,
@@ -64,6 +64,20 @@ function synchroniserDuree(donnees) {
 // L'échéance (date_activite) suit la fin de période, pour le tri/retard/rapports.
 function synchroniserPeriode(donnees) {
   if (donnees.date_fin) donnees.date_activite = donnees.date_fin;
+  return donnees;
+}
+
+// Prépare les champs de récurrence : calcule la prochaine génération à partir
+// d'une date d'ancrage (le début de la tâche), ou remet à zéro si « Aucune ».
+function initialiserRecurrence(donnees, ancre) {
+  if (donnees.recurrence && donnees.recurrence !== "AUCUNE" && ancre) {
+    donnees.recurrence_prochaine = ajouterIntervalle(ancre, donnees.recurrence, 1);
+    donnees.recurrence_active = true;
+  } else if (donnees.recurrence !== undefined) {
+    donnees.recurrence = "AUCUNE";
+    donnees.recurrence_prochaine = null;
+    donnees.recurrence_fin = null;
+  }
   return donnees;
 }
 
@@ -176,6 +190,7 @@ activitesRouter.post("/", async (req, res) => {
   const { user_id, user_ids, ...donnees } = v.data;
   synchroniserDuree(donnees);
   synchroniserPeriode(donnees);
+  initialiserRecurrence(donnees, donnees.date_debut);
 
   // La catégorie doit correspondre à une catégorie active.
   if (!(await categorieActiveExiste(donnees.categorie))) {
@@ -300,6 +315,21 @@ activitesRouter.put("/:id", async (req, res) => {
   }
   synchroniserDuree(donnees);
   synchroniserPeriode(donnees);
+
+  // Modification de la récurrence : recalcule la prochaine génération.
+  if (donnees.recurrence !== undefined) {
+    if (donnees.recurrence === "AUCUNE") {
+      donnees.recurrence = "AUCUNE";
+      donnees.recurrence_prochaine = null;
+    } else {
+      const ancre = donnees.date_debut || activite.date_debut || activite.date_activite;
+      // On (re)démarre le compteur seulement si la fréquence change ou n'existait pas.
+      if (activite.recurrence !== donnees.recurrence || !activite.recurrence_prochaine) {
+        donnees.recurrence_prochaine = ajouterIntervalle(ancre, donnees.recurrence, 1);
+      }
+      donnees.recurrence_active = true;
+    }
+  }
 
   // Gestion de la clôture (date + auteur) côté admin.
   const ancienStatut = activite.statut;

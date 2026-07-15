@@ -1,11 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, Loader2, Send, Users } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Repeat, Send, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_PAR_STATUT, PRIORITES, STATUTS } from "@/lib/constants";
+import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
 import type { Activite, Categorie, Priorite, Statut, UserWithStats } from "@/types";
@@ -27,6 +27,8 @@ const schema = z.object({
   date_debut: z.string().min(1, "La date de début est requise."),
   date_fin: z.string().min(1, "La date de fin est requise."),
   duree_minutes: z.coerce.number().int().min(1, "Durée requise (en minutes).").max(1440),
+  recurrence: z.enum(["AUCUNE", "JOUR", "SEMAINE", "MOIS"]).default("AUCUNE"),
+  recurrence_fin: z.string().optional(),
 }).refine((d) => !d.date_debut || !d.date_fin || d.date_fin >= d.date_debut, {
   message: "La date de fin doit être postérieure ou égale à la date de début.",
   path: ["date_fin"],
@@ -63,6 +65,8 @@ export default function AdminTaskForm() {
       date_debut: isoDate(new Date()),
       date_fin: isoDate(new Date()),
       duree_minutes: 60,
+      recurrence: "AUCUNE",
+      recurrence_fin: "",
     },
   });
   const val = watch();
@@ -109,7 +113,13 @@ export default function AdminTaskForm() {
       return;
     }
     try {
-      const r = await api.post<Activite>("/activites", { ...valeurs, user_ids: selection });
+      const corps = {
+        ...valeurs,
+        user_ids: selection,
+        // La date de fin de récurrence n'a de sens que si une récurrence est active.
+        recurrence_fin: valeurs.recurrence !== "AUCUNE" && valeurs.recurrence_fin ? valeurs.recurrence_fin : undefined,
+      };
+      const r = await api.post<Activite>("/activites", corps);
       if (pending.length) await televerserEnAttente(r.data.id, pending);
       setSucces(true);
       setTimeout(() => navigate("/admin/activites"), 1200);
@@ -223,6 +233,33 @@ export default function AdminTaskForm() {
               </div>
               <p className="mt-1 text-[11.5px] text-grisdoux">= {formatDuree(val.duree_minutes ?? 0)}</p>
             </Champ>
+          </div>
+
+          {/* Récurrence : régénère automatiquement la tâche + notifie à chaque fois */}
+          <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
+            <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
+              <Repeat size={15} /> Récurrence
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Champ label="Fréquence">
+                <select className="champ" {...register("recurrence")}>
+                  {RECURRENCES.map((r) => (
+                    <option key={r.valeur} value={r.valeur}>{r.libelle}</option>
+                  ))}
+                </select>
+              </Champ>
+              {val.recurrence !== "AUCUNE" && (
+                <Champ label="Fin de récurrence (facultatif)">
+                  <input type="date" className="champ font-mono" min={val.date_debut} {...register("recurrence_fin")} />
+                </Champ>
+              )}
+            </div>
+            {val.recurrence !== "AUCUNE" && (
+              <p className="mt-1.5 text-[11.5px] text-grisdoux">
+                Une nouvelle occurrence sera créée automatiquement ({LIBELLE_RECURRENCE[val.recurrence].toLowerCase()}) et
+                l'agent sera notifié par e-mail à chaque fois{val.recurrence_fin ? `, jusqu'au ${val.recurrence_fin.split("-").reverse().join("/")}` : " (sans date de fin)"}.
+              </p>
+            )}
           </div>
 
           <Champ label="Priorité" requis>

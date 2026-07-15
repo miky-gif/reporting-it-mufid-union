@@ -1,11 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, Lightbulb, Loader2, Lock, Repeat2 } from "lucide-react";
+import { ArrowLeft, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, STATUTS } from "@/lib/constants";
+import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, STATUTS } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
@@ -27,6 +27,8 @@ const schema = z.object({
   date_debut: z.string().min(1, "La date de début est requise."),
   date_fin: z.string().min(1, "La date de fin est requise."),
   duree_minutes: z.coerce.number().int().min(1, "Durée requise (min. 1 minute).").max(1440, "Maximum 24 h."),
+  recurrence: z.enum(["AUCUNE", "JOUR", "SEMAINE", "MOIS"]).default("AUCUNE"),
+  recurrence_fin: z.string().optional(),
 }).refine((d) => !d.date_debut || !d.date_fin || d.date_fin >= d.date_debut, {
   message: "La date de fin doit être postérieure ou égale à la date de début.",
   path: ["date_fin"],
@@ -72,6 +74,8 @@ export default function ActivityForm() {
       date_debut: isoDate(new Date()),
       date_fin: isoDate(new Date()),
       duree_minutes: 60,
+      recurrence: "AUCUNE",
+      recurrence_fin: "",
     },
   });
 
@@ -107,6 +111,8 @@ export default function ActivityForm() {
           date_debut: a.date_debut ?? a.date_activite,
           date_fin: a.date_fin ?? a.date_activite,
           duree_minutes: a.duree_minutes,
+          recurrence: a.recurrence ?? "AUCUNE",
+          recurrence_fin: a.recurrence_fin ?? "",
         });
         // Réaffiche la durée dans l'unité la plus lisible (heures si multiple de 60).
         if (a.duree_minutes >= 60 && a.duree_minutes % 60 === 0) {
@@ -166,12 +172,16 @@ export default function ActivityForm() {
 
   async function soumettre(valeurs: FormValues) {
     setErreur(null);
+    const corps = {
+      ...valeurs,
+      recurrence_fin: valeurs.recurrence !== "AUCUNE" && valeurs.recurrence_fin ? valeurs.recurrence_fin : undefined,
+    };
     try {
       if (editionId) {
         // Le backend applique les règles de périmètre (état/statut si affectée).
-        await api.put(`/activites/${editionId}`, valeurs);
+        await api.put(`/activites/${editionId}`, corps);
       } else {
-        const r = await api.post<Activite>("/activites", valeurs);
+        const r = await api.post<Activite>("/activites", corps);
         if (pending.length) await televerserEnAttente(r.data.id, pending);
       }
       navigate(retour);
@@ -343,6 +353,33 @@ export default function ActivityForm() {
               </div>
               <p className="mt-1 text-[11.5px] text-grisdoux">= {formatDuree(val.duree_minutes ?? 0)}</p>
             </Champ>
+          </div>
+
+          {/* Récurrence : régénère automatiquement la tâche (verrouillée si tâche affectée) */}
+          <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
+            <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
+              <Repeat size={15} /> Récurrence
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Champ label="Fréquence">
+                <select className="champ" disabled={verrouille || gel} {...register("recurrence")}>
+                  {RECURRENCES.map((r) => (
+                    <option key={r.valeur} value={r.valeur}>{r.libelle}</option>
+                  ))}
+                </select>
+              </Champ>
+              {val.recurrence !== "AUCUNE" && (
+                <Champ label="Fin de récurrence (facultatif)">
+                  <input type="date" className="champ font-mono" min={val.date_debut} disabled={verrouille || gel} {...register("recurrence_fin")} />
+                </Champ>
+              )}
+            </div>
+            {val.recurrence !== "AUCUNE" && (
+              <p className="mt-1.5 text-[11.5px] text-grisdoux">
+                Une nouvelle occurrence sera créée automatiquement ({LIBELLE_RECURRENCE[val.recurrence].toLowerCase()}), avec
+                notification par e-mail à chaque fois.
+              </p>
+            )}
           </div>
 
           <Champ label="Priorité" requis>

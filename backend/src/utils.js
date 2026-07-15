@@ -59,6 +59,38 @@ export function libelleDepartement(nom) {
   return `Département ${voyelle ? "d'" : "de "}${n}`;
 }
 
+// Libellés des fréquences de récurrence.
+export const LIBELLES_RECURRENCE = {
+  AUCUNE: "Aucune",
+  JOUR: "Quotidienne",
+  SEMAINE: "Hebdomadaire",
+  MOIS: "Mensuelle",
+};
+export const libelleRecurrence = (r) => LIBELLES_RECURRENCE[r] ?? r;
+
+// Ajoute `n` intervalles de récurrence à une date ISO (AAAA-MM-JJ).
+// MOIS : conserve le jour du mois en le bornant à la fin du mois (31 janv -> 28 fév).
+export function ajouterIntervalle(iso, frequence, n = 1) {
+  const [a, m, j] = String(iso).split("-").map(Number);
+  if (frequence === "JOUR") {
+    const d = new Date(Date.UTC(a, m - 1, j + n));
+    return d.toISOString().slice(0, 10);
+  }
+  if (frequence === "SEMAINE") {
+    const d = new Date(Date.UTC(a, m - 1, j + 7 * n));
+    return d.toISOString().slice(0, 10);
+  }
+  if (frequence === "MOIS") {
+    const total = (m - 1) + n;
+    const annee = a + Math.floor(total / 12);
+    const mois = ((total % 12) + 12) % 12;
+    const dernierJour = new Date(Date.UTC(annee, mois + 1, 0)).getUTCDate();
+    const jour = Math.min(j, dernierJour);
+    return new Date(Date.UTC(annee, mois, jour)).toISOString().slice(0, 10);
+  }
+  return iso;
+}
+
 // Points : 40 h = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 export const pointsDepuisMinutes = (min) => Math.round(((min || 0) / MINUTES_PAR_POINT) * 1000) / 1000;
@@ -128,6 +160,11 @@ export function serialiserActivite(a) {
     reaffectee_de: plain.reaffectee_de ?? null,
     date_reaffectation: plain.date_reaffectation ?? null,
     motif_reaffectation: plain.motif_reaffectation ?? null,
+    recurrence: plain.recurrence ?? "AUCUNE",
+    recurrence_fin: plain.recurrence_fin ?? null,
+    recurrence_prochaine: plain.recurrence_prochaine ?? null,
+    recurrence_active: plain.recurrence_active === undefined ? true : !!plain.recurrence_active,
+    recurrence_parent_id: plain.recurrence_parent_id ?? null,
     date_creation: plain.date_creation,
     date_modification: plain.date_modification,
     user: plain.user

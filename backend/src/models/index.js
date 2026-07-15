@@ -51,6 +51,8 @@ export const CATEGORIES_DEFAUT_CODES = [
 ];
 export const PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "TRES_HAUTE", "CRITIQUE"];
 export const STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"];
+// Fréquences de récurrence d'une tâche.
+export const RECURRENCES = ["AUCUNE", "JOUR", "SEMAINE", "MOIS"];
 // Points : référence 40 h de travail = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 
@@ -161,6 +163,14 @@ export const Activite = sequelize.define(
     reaffectee_de: { type: DataTypes.INTEGER, allowNull: true },
     date_reaffectation: { type: DataTypes.DATE, allowNull: true },
     motif_reaffectation: { type: DataTypes.TEXT, allowNull: true },
+    // Récurrence : une tâche « modèle » régénère automatiquement de nouvelles
+    // occurrences (JOUR/SEMAINE/MOIS). Les occurrences générées portent
+    // recurrence = AUCUNE et pointent vers le modèle via recurrence_parent_id.
+    recurrence: { type: DataTypes.STRING(10), allowNull: false, defaultValue: "AUCUNE" },
+    recurrence_fin: { type: DataTypes.DATEONLY, allowNull: true }, // date de fin (facultative)
+    recurrence_prochaine: { type: DataTypes.DATEONLY, allowNull: true }, // prochaine génération
+    recurrence_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    recurrence_parent_id: { type: DataTypes.INTEGER, allowNull: true },
     date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     date_modification: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
@@ -180,6 +190,7 @@ export const Activite = sequelize.define(
       { fields: ["date_activite"] },
       { fields: ["user_id", "categorie"] },
       { fields: ["user_id", "statut"] },
+      { fields: ["recurrence", "recurrence_active", "recurrence_prochaine"] },
     ],
   },
 );

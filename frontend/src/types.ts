@@ -54,6 +54,7 @@ export interface CategorieDef {
 
 export type Priorite = "BASSE" | "MOYENNE" | "HAUTE" | "TRES_HAUTE" | "CRITIQUE";
 export type Statut = "A_FAIRE" | "EN_COURS" | "STANDBY" | "TERMINE" | "CLOTURE";
+export type Recurrence = "AUCUNE" | "JOUR" | "SEMAINE" | "MOIS";
 
 export interface PieceJointe {
   id: number;
@@ -109,6 +110,11 @@ export interface Activite {
   reaffectee_de: number | null;
   date_reaffectation: string | null;
   motif_reaffectation: string | null;
+  recurrence: Recurrence;
+  recurrence_fin: string | null;
+  recurrence_prochaine: string | null;
+  recurrence_active: boolean;
+  recurrence_parent_id: number | null;
   date_creation: string;
   date_modification: string;
   user?: { id: number; nom_complet: string; poste: string | null } | null;

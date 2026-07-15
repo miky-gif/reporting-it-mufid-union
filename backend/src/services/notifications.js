@@ -180,6 +180,48 @@ function dureeFr(minutes) {
   return r === 0 ? `${h} h` : `${h} h ${String(r).padStart(2, "0")}`;
 }
 
+/** Nouvelle occurrence d'une tâche récurrente : l'agent est prévenu (interne + e-mail). */
+export async function notifierOccurrenceRecurrente({ destinataire, activite, frequence }) {
+  const libelle =
+    { JOUR: "quotidienne", SEMAINE: "hebdomadaire", MOIS: "mensuelle" }[frequence] || "récurrente";
+  const periode =
+    activite.date_debut && activite.date_fin
+      ? `du ${dateFr(activite.date_debut)} au ${dateFr(activite.date_fin)}`
+      : dateFr(activite.date_activite);
+
+  await creerNotif({
+    userId: destinataire.id,
+    type: "RECURRENCE",
+    titre: "Nouvelle occurrence d'une tâche récurrente",
+    message:
+      `Tâche ${libelle} « ${activite.titre} » à réaliser : ${periode}. ` +
+      `Échéance le ${dateFr(activite.date_activite)}.`,
+    activiteId: activite.id,
+  });
+
+  const contenu = {
+    titre: "Nouvelle occurrence à réaliser",
+    salutation: `Bonjour ${destinataire.nom_complet},`,
+    intro: `Une nouvelle occurrence de votre tâche ${libelle} vous est attribuée :`,
+    lignes: [
+      { label: "Intitulé", valeur: activite.titre },
+      { label: "Catégorie", valeur: libelleCategorie(activite.categorie) },
+      { label: "Priorité", valeur: libellePriorite(activite.priorite) },
+      { label: "Période", valeur: periode },
+      { label: "Échéance", valeur: dateFr(activite.date_activite) },
+      ...(activite.consignes ? [{ label: "Consignes", valeur: activite.consignes }] : []),
+    ],
+    conclusion: "Connectez-vous à la plateforme pour la prendre en charge.",
+  };
+  await envoyerEmail({
+    to: destinataire.email,
+    subject: `MUFID UNION — Tâche ${libelle} : ${activite.titre}`,
+    text: texteDepuis(contenu),
+    html: emailHtml(contenu),
+    departement: await departementDe(destinataire),
+  });
+}
+
 /** Tâche RÉAFFECTÉE : le nouvel agent est prévenu (interne + e-mail). */
 export async function notifierReaffectation({ destinataire, ancien, admin, activite, motif }) {
   const periode =

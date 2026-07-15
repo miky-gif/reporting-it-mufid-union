@@ -121,6 +121,16 @@ export async function ensureColonnes() {
   await sequelize.query("ALTER TABLE `categories` ADD COLUMN IF NOT EXISTS `departement_id` INT NULL");
   await sequelize.query("ALTER TABLE `activites` ADD COLUMN IF NOT EXISTS `departement_id` INT NULL");
 
+  // Récurrence des tâches.
+  await sequelize.query(
+    "ALTER TABLE `activites` " +
+      "ADD COLUMN IF NOT EXISTS `recurrence` VARCHAR(10) NOT NULL DEFAULT 'AUCUNE', " +
+      "ADD COLUMN IF NOT EXISTS `recurrence_fin` DATE NULL, " +
+      "ADD COLUMN IF NOT EXISTS `recurrence_prochaine` DATE NULL, " +
+      "ADD COLUMN IF NOT EXISTS `recurrence_active` TINYINT(1) NOT NULL DEFAULT 1, " +
+      "ADD COLUMN IF NOT EXISTS `recurrence_parent_id` INT NULL",
+  );
+
   // 7) ENUM des rôles : ajout de SUPER_ADMIN.
   try {
     await sequelize.query(

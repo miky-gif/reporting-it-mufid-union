@@ -90,6 +90,20 @@ export const POURCENTAGE_PAR_STATUT: Record<Statut, number> = {
   CLOTURE: 100,
 };
 
+// Fréquences de récurrence d'une tâche (avec libellé lisible).
+export const RECURRENCES: { valeur: "AUCUNE" | "JOUR" | "SEMAINE" | "MOIS"; libelle: string }[] = [
+  { valeur: "AUCUNE", libelle: "Aucune (tâche ponctuelle)" },
+  { valeur: "JOUR", libelle: "Quotidienne" },
+  { valeur: "SEMAINE", libelle: "Hebdomadaire" },
+  { valeur: "MOIS", libelle: "Mensuelle" },
+];
+export const LIBELLE_RECURRENCE: Record<string, string> = {
+  AUCUNE: "Ponctuelle",
+  JOUR: "Quotidienne",
+  SEMAINE: "Hebdomadaire",
+  MOIS: "Mensuelle",
+};
+
 export const LISTE_CATEGORIES = Object.keys(CATEGORIES) as Categorie[];
 export const LISTE_STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"] as Statut[];
 // Statuts posables par l'admin lors d'une affectation (« Clôturé » vient après coup).
