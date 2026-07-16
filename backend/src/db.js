@@ -128,7 +128,8 @@ export async function ensureColonnes() {
       "ADD COLUMN IF NOT EXISTS `recurrence_fin` DATE NULL, " +
       "ADD COLUMN IF NOT EXISTS `recurrence_prochaine` DATE NULL, " +
       "ADD COLUMN IF NOT EXISTS `recurrence_active` TINYINT(1) NOT NULL DEFAULT 1, " +
-      "ADD COLUMN IF NOT EXISTS `recurrence_parent_id` INT NULL",
+      "ADD COLUMN IF NOT EXISTS `recurrence_parent_id` INT NULL, " +
+      "ADD COLUMN IF NOT EXISTS `points_ajustement` FLOAT NOT NULL DEFAULT 0",
   );
 
   // 7) ENUM des rôles : ajout de SUPER_ADMIN.

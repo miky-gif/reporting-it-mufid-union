@@ -8,7 +8,7 @@ import {
   libelleDepartement,
   libellePriorite,
   libelleStatut,
-  pointsDepuisMinutes,
+  pointsEffectifs,
   referenceActivite,
 } from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
@@ -20,7 +20,8 @@ const MOIS_FR = [
 ];
 
 const minutesOf = (a) => a.duree_minutes || Math.round((a.duree_heures || 0) * 60);
-const pointsOf = (a) => pointsDepuisMinutes(minutesOf(a));
+// Points effectifs = automatiques (durée) + ajustement manuel de l'admin.
+const pointsOf = (a) => pointsEffectifs(a);
 const pct = (part, total) => (total ? Math.round((part / total) * 1000) / 10 : 0);
 const arr2 = (n) => Math.round(n * 100) / 100;
 const fmtJJMMAAAA = (iso) => String(iso).split("-").reverse().join("/");

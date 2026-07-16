@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Check, Loader2, Repeat, Send, Users } from "lucide-react";
+import { AlignLeft, ArrowLeft, CalendarClock, Check, Loader2, Repeat, Send, SlidersHorizontal, Tag, Users, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
 import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointes";
+import { AjustementPoints } from "@/components/ui/AjustementPoints";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
@@ -24,6 +25,7 @@ const schema = z.object({
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
   statut: z.enum(LISTE_STATUTS_ADMIN as [Statut, ...Statut[]]),
   pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),
+  points_ajustement: z.coerce.number().min(-100).max(100).default(0),
   date_debut: z.string().min(1, "La date de début est requise."),
   date_fin: z.string().min(1, "La date de fin est requise."),
   duree_minutes: z.coerce.number().int().min(1, "Durée requise (en minutes).").max(1440),
@@ -62,6 +64,7 @@ export default function AdminTaskForm() {
       priorite: "MOYENNE",
       statut: "A_FAIRE",
       pourcentage: POURCENTAGE_PAR_STATUT.A_FAIRE,
+      points_ajustement: 0,
       date_debut: isoDate(new Date()),
       date_fin: isoDate(new Date()),
       duree_minutes: 60,
@@ -151,11 +154,175 @@ export default function AdminTaskForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_320px]">
-        <div className="carte p-[26px_28px]">
-          {/* Sélection multiple d'agents */}
-          <Champ label={`Agents affectés (${selection.length} sélectionné${selection.length > 1 ? "s" : ""})`} requis>
-            <div className="max-h-[190px] overflow-y-auto rounded-lg border border-bordure">
+      <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_330px]">
+        {/* Colonne principale : configuration organisée en sections */}
+        <div className="carte p-[22px_26px]">
+          <Section titre="Identification" icone={Tag}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
+                <select className="champ" value={val.categorie} onChange={(e) => changerCategorie(e.target.value)}>
+                  {actives.map((c) => (
+                    <option key={c.code} value={c.code}>{c.nom}</option>
+                  ))}
+                </select>
+              </Champ>
+              <Champ label="Rubrique" requis erreur={errors.titre?.message}>
+                <select className="champ" {...register("titre")}>
+                  {rubriques.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </Champ>
+            </div>
+          </Section>
+
+          <Section titre="Consignes & contenu" icone={AlignLeft}>
+            <Champ label="Consigne de départ">
+              <textarea rows={2} className="champ resize-y" placeholder="Instructions / attentes pour l'agent (non modifiable par l'agent)…" {...register("consignes")} />
+            </Champ>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Champ label="Résultat attendu (livrable)">
+                <textarea rows={2} className="champ resize-y" placeholder="Ex. Fichier des incidents, rapport produit…" {...register("livrable")} />
+              </Champ>
+              <Champ label="Activités à mener (semaine suivante)">
+                <textarea rows={2} className="champ resize-y" placeholder="Prochaines étapes / suite à donner…" {...register("activites_a_mener")} />
+              </Champ>
+            </div>
+            <Champ label="État d'exécution (facultatif)">
+              <textarea rows={2} className="champ resize-y" placeholder="À laisser vide en général : l'agent le renseignera." {...register("description")} />
+            </Champ>
+          </Section>
+
+          <Section titre="Planification" icone={CalendarClock}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Champ label="Début" requis erreur={errors.date_debut?.message}>
+                <input type="date" className="champ font-mono" {...register("date_debut")} />
+              </Champ>
+              <Champ label="Fin (échéance)" requis erreur={errors.date_fin?.message}>
+                <input type="date" className="champ font-mono" {...register("date_fin")} />
+              </Champ>
+              <Champ label="Durée estimée" requis erreur={errors.duree_minutes?.message}>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step={unite === "H" ? "0.25" : "1"}
+                    min="0"
+                    className="champ flex-1 font-mono"
+                    value={dureeSaisie}
+                    onChange={(e) => setDureeSaisie(e.target.value)}
+                  />
+                  <select className="champ w-[92px]" value={unite} onChange={(e) => setUnite(e.target.value as "MIN" | "H")}>
+                    <option value="MIN">min</option>
+                    <option value="H">h</option>
+                  </select>
+                </div>
+                <p className="mt-1 text-[11.5px] text-grisdoux">= {formatDuree(val.duree_minutes ?? 0)}</p>
+              </Champ>
+            </div>
+
+            {/* Récurrence : régénère automatiquement la tâche + notifie à chaque fois */}
+            <div className="rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
+              <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
+                <Repeat size={15} /> Récurrence
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Champ label="Fréquence">
+                  <select className="champ" {...register("recurrence")}>
+                    {RECURRENCES.map((r) => (
+                      <option key={r.valeur} value={r.valeur}>{r.libelle}</option>
+                    ))}
+                  </select>
+                </Champ>
+                {val.recurrence !== "AUCUNE" && (
+                  <Champ label="Fin de récurrence (facultatif)">
+                    <input type="date" className="champ font-mono" min={val.date_debut} {...register("recurrence_fin")} />
+                  </Champ>
+                )}
+              </div>
+              {val.recurrence !== "AUCUNE" && (
+                <p className="text-[11.5px] text-grisdoux">
+                  Nouvelle occurrence créée automatiquement ({LIBELLE_RECURRENCE[val.recurrence].toLowerCase()}), avec
+                  notification par e-mail à chaque fois{val.recurrence_fin ? `, jusqu'au ${val.recurrence_fin.split("-").reverse().join("/")}` : " (sans date de fin)"}.
+                </p>
+              )}
+            </div>
+          </Section>
+
+          <Section titre="Suivi & pondération" icone={SlidersHorizontal}>
+            <div className="grid grid-cols-1 gap-x-6 gap-y-0 sm:grid-cols-2">
+              <Champ label="Priorité" requis>
+                <div className="flex flex-wrap gap-2">
+                  {LISTE_PRIORITES.map((p) => (
+                    <BoutonChoix key={p} actif={val.priorite === p} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
+                      {PRIORITES[p].libelle}
+                    </BoutonChoix>
+                  ))}
+                </div>
+              </Champ>
+              <Champ label="Statut initial" requis>
+                <div className="flex flex-wrap gap-2">
+                  {LISTE_STATUTS_ADMIN.map((s) => (
+                    <BoutonChoix
+                      key={s}
+                      actif={val.statut === s}
+                      couleur={STATUTS[s].couleur}
+                      fond={STATUTS[s].fond}
+                      onClick={() => {
+                        setValue("statut", s);
+                        setValue("pourcentage", POURCENTAGE_PAR_STATUT[s]);
+                      }}
+                    >
+                      {STATUTS[s].libelle}
+                    </BoutonChoix>
+                  ))}
+                </div>
+              </Champ>
+            </div>
+
+            <Champ label="% réalisation" requis erreur={errors.pourcentage?.message}>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  className="flex-1 accent-[#0E5E7C]"
+                  value={val.pourcentage ?? 0}
+                  onChange={(e) => setValue("pourcentage", Number(e.target.value))}
+                />
+                <input type="number" min="0" max="100" className="champ w-[86px] font-mono" {...register("pourcentage")} />
+                <span className="text-[13px] font-semibold text-petrole-600">%</span>
+              </div>
+            </Champ>
+
+            <AjustementPoints
+              dureeMinutes={val.duree_minutes ?? 0}
+              ajustement={val.points_ajustement ?? 0}
+              onChange={(n) => setValue("points_ajustement", n)}
+            />
+          </Section>
+
+          <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
+            <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
+            <button type="submit" disabled={isSubmitting || succes} className="btn-primaire">
+              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+              Affecter et notifier
+            </button>
+          </div>
+        </div>
+
+        {/* Colonne latérale collante : à qui, aperçu, pièces jointes */}
+        <div className="flex flex-col gap-4 lg:sticky lg:top-4">
+          {/* Agents affectés */}
+          <div className="carte p-[16px_18px]">
+            <div className="mb-2.5 flex items-center gap-2">
+              <Users size={16} className="text-petrole-600" />
+              <span className="text-[13.5px] font-semibold text-encre">Agents affectés</span>
+              <span className="ml-auto rounded-full bg-petrole-50 px-2 py-0.5 text-[11px] font-semibold text-petrole-600">
+                {selection.length}
+              </span>
+            </div>
+            <div className="max-h-[220px] overflow-y-auto rounded-lg border border-bordure">
               {employes.map((e) => (
                 <label
                   key={e.id}
@@ -166,186 +333,55 @@ export default function AdminTaskForm() {
                 >
                   <input type="checkbox" checked={selection.includes(e.id)} onChange={() => basculer(e.id)} />
                   <Avatar nom={e.nom_complet} id={e.id} taille={26} />
-                  <span className="text-[13px] font-medium text-encre">{e.nom_complet}</span>
-                  <span className="ml-auto text-[11.5px] text-grisdoux">{e.poste}</span>
+                  <span className="min-w-0 truncate text-[13px] font-medium text-encre">{e.nom_complet}</span>
+                  <span className="ml-auto flex-none text-[11px] text-grisdoux">{e.poste}</span>
                 </label>
               ))}
               {employes.length === 0 && (
                 <div className="px-3 py-4 text-center text-[12.5px] text-grisdoux">Aucun agent actif.</div>
               )}
             </div>
-          </Champ>
-
-          <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
-            <select className="champ" value={val.categorie} onChange={(e) => changerCategorie(e.target.value)}>
-              {actives.map((c) => (
-                <option key={c.code} value={c.code}>{c.nom}</option>
-              ))}
-            </select>
-          </Champ>
-
-          <Champ label="Rubrique" requis erreur={errors.titre?.message}>
-            <select className="champ" {...register("titre")}>
-              {rubriques.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </Champ>
-
-          <Champ label="Consigne de départ">
-            <textarea rows={3} className="champ resize-y" placeholder="Instructions / attentes pour l'agent (non modifiable par l'agent)…" {...register("consignes")} />
-          </Champ>
-
-          <Champ label="État d'exécution (facultatif)">
-            <textarea rows={2} className="champ resize-y" placeholder="À laisser vide en général : l'agent le renseignera." {...register("description")} />
-          </Champ>
-
-          <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Champ label="Résultat attendu (livrable)">
-              <textarea rows={2} className="champ resize-y" placeholder="Ex. Fichier des incidents, rapport produit…" {...register("livrable")} />
-            </Champ>
-            <Champ label="Activités à mener (semaine suivante)">
-              <textarea rows={2} className="champ resize-y" placeholder="Prochaines étapes / suite à donner…" {...register("activites_a_mener")} />
-            </Champ>
+            <p className="mt-2 text-[11px] text-grisdoux">Une tâche distincte sera créée pour chaque agent sélectionné.</p>
           </div>
 
-          <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Champ label="Début" requis erreur={errors.date_debut?.message}>
-              <input type="date" className="champ font-mono" {...register("date_debut")} />
-            </Champ>
-            <Champ label="Fin (échéance)" requis erreur={errors.date_fin?.message}>
-              <input type="date" className="champ font-mono" {...register("date_fin")} />
-            </Champ>
-            <Champ label="Durée estimée" requis erreur={errors.duree_minutes?.message}>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  step={unite === "H" ? "0.25" : "1"}
-                  min="0"
-                  className="champ flex-1 font-mono"
-                  value={dureeSaisie}
-                  onChange={(e) => setDureeSaisie(e.target.value)}
-                />
-                <select className="champ w-[104px]" value={unite} onChange={(e) => setUnite(e.target.value as "MIN" | "H")}>
-                  <option value="MIN">minutes</option>
-                  <option value="H">heures</option>
-                </select>
-              </div>
-              <p className="mt-1 text-[11.5px] text-grisdoux">= {formatDuree(val.duree_minutes ?? 0)}</p>
-            </Champ>
+          {/* Aperçu compact */}
+          <div className="carte p-[16px_18px]">
+            <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-grisdoux">Aperçu</div>
+            <div className="mb-3 text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
+            <div className="mb-3.5 flex flex-wrap gap-2">
+              <CategorieTag categorie={val.categorie} />
+              <PrioriteBadge priorite={val.priorite} />
+              <StatutBadge statut={val.statut} />
+            </div>
+            <div className="flex items-center justify-between border-t border-[#EEF2F3] pt-3">
+              <span className="text-[12px] text-grisdoux">
+                {val.date_debut && val.date_fin
+                  ? `du ${val.date_debut.slice(8)}/${val.date_debut.slice(5, 7)} au ${val.date_fin.slice(8)}/${val.date_fin.slice(5, 7)}`
+                  : "—"}
+              </span>
+              <span className="font-mono text-[13px] font-semibold text-petrole-600">{formatDuree(val.duree_minutes ?? 0)}</span>
+            </div>
           </div>
 
-          {/* Récurrence : régénère automatiquement la tâche + notifie à chaque fois */}
-          <div className="mb-[18px] rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
-            <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
-              <Repeat size={15} /> Récurrence
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Champ label="Fréquence">
-                <select className="champ" {...register("recurrence")}>
-                  {RECURRENCES.map((r) => (
-                    <option key={r.valeur} value={r.valeur}>{r.libelle}</option>
-                  ))}
-                </select>
-              </Champ>
-              {val.recurrence !== "AUCUNE" && (
-                <Champ label="Fin de récurrence (facultatif)">
-                  <input type="date" className="champ font-mono" min={val.date_debut} {...register("recurrence_fin")} />
-                </Champ>
-              )}
-            </div>
-            {val.recurrence !== "AUCUNE" && (
-              <p className="mt-1.5 text-[11.5px] text-grisdoux">
-                Une nouvelle occurrence sera créée automatiquement ({LIBELLE_RECURRENCE[val.recurrence].toLowerCase()}) et
-                l'agent sera notifié par e-mail à chaque fois{val.recurrence_fin ? `, jusqu'au ${val.recurrence_fin.split("-").reverse().join("/")}` : " (sans date de fin)"}.
-              </p>
-            )}
-          </div>
-
-          <Champ label="Priorité" requis>
-            <div className="flex flex-wrap gap-2">
-              {LISTE_PRIORITES.map((p) => (
-                <BoutonChoix key={p} actif={val.priorite === p} couleur={PRIORITES[p].couleur} fond={PRIORITES[p].fond} onClick={() => setValue("priorite", p)}>
-                  {PRIORITES[p].libelle}
-                </BoutonChoix>
-              ))}
-            </div>
-          </Champ>
-
-          <Champ label="Statut initial" requis>
-            <div className="flex flex-wrap gap-2">
-              {LISTE_STATUTS_ADMIN.map((s) => (
-                <BoutonChoix
-                  key={s}
-                  actif={val.statut === s}
-                  couleur={STATUTS[s].couleur}
-                  fond={STATUTS[s].fond}
-                  onClick={() => {
-                    setValue("statut", s);
-                    setValue("pourcentage", POURCENTAGE_PAR_STATUT[s]);
-                  }}
-                >
-                  {STATUTS[s].libelle}
-                </BoutonChoix>
-              ))}
-            </div>
-          </Champ>
-
-          <Champ label="% réalisation" requis erreur={errors.pourcentage?.message}>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="0"
-                max="100"
-                step="5"
-                className="flex-1 accent-[#0E5E7C]"
-                value={val.pourcentage ?? 0}
-                onChange={(e) => setValue("pourcentage", Number(e.target.value))}
-              />
-              <input type="number" min="0" max="100" className="champ w-[86px] font-mono" {...register("pourcentage")} />
-              <span className="text-[13px] font-semibold text-petrole-600">%</span>
-            </div>
-          </Champ>
-
-          <div className="mt-[18px] border-t border-[#EEF2F3] pt-[18px]">
+          {/* Pièces jointes */}
+          <div className="carte p-[16px_18px]">
             <PiecesJointes activiteId={null} pending={pending} onPendingChange={setPending} />
-          </div>
-
-          <div className="mt-5 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
-            <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
-            <button type="submit" disabled={isSubmitting || succes} className="btn-primaire">
-              {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-              Affecter et notifier
-            </button>
-          </div>
-        </div>
-
-        {/* Aperçu de l'affectation */}
-        <div className="carte p-[18px_20px]">
-          <div className="mb-3.5 text-xs font-semibold uppercase tracking-wide text-grisdoux">Aperçu de l'affectation</div>
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-bordure bg-surface px-3 py-2.5 text-[12.5px] text-ardoise">
-            <Users size={16} className="text-petrole-600" />
-            {selection.length === 0
-              ? "Aucun agent sélectionné."
-              : `${selection.length} agent(s) — une tâche par agent sera créée.`}
-          </div>
-          <div className="mb-3 text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
-          <div className="mb-3.5 flex flex-wrap gap-2">
-            <CategorieTag categorie={val.categorie} />
-            <PrioriteBadge priorite={val.priorite} />
-            <StatutBadge statut={val.statut} />
-          </div>
-          <div className="flex items-center justify-between border-t border-[#EEF2F3] pt-3">
-            <span className="text-[12px] text-grisdoux">
-              {val.date_debut && val.date_fin
-                ? `du ${val.date_debut.slice(8)}/${val.date_debut.slice(5, 7)} au ${val.date_fin.slice(8)}/${val.date_fin.slice(5, 7)}`
-                : "—"}
-            </span>
-            <span className="font-mono text-[13px] font-semibold text-petrole-600">{formatDuree(val.duree_minutes ?? 0)}</span>
           </div>
         </div>
       </form>
     </>
+  );
+}
+
+function Section({ titre, icone: Icone, children }: { titre: string; icone: LucideIcon; children: React.ReactNode }) {
+  return (
+    <section className="mt-6 border-t border-[#EEF2F3] pt-5 first:mt-0 first:border-0 first:pt-0">
+      <div className="mb-4 flex items-center gap-2">
+        <Icone size={16} className="text-petrole-600" />
+        <h3 className="text-[13.5px] font-semibold text-encre">{titre}</h3>
+      </div>
+      {children}
+    </section>
   );
 }
 

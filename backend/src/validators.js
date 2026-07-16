@@ -27,6 +27,8 @@ const activiteBase = z.object({
   statut: z.enum(STATUTS).default("A_FAIRE"),
   // % de réalisation (0-100). Si absent, déduit du statut.
   pourcentage: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  // Ajustement manuel des points par l'admin (bonus/malus). -100 à +100.
+  points_ajustement: z.coerce.number().min(-100).max(100).optional(),
   // Période de réalisation (début -> fin). L'échéance = date_fin (calculée côté route).
   date_debut: z.string().regex(dateRe, "Date de début invalide (AAAA-MM-JJ)."),
   date_fin: z.string().regex(dateRe, "Date de fin invalide (AAAA-MM-JJ)."),

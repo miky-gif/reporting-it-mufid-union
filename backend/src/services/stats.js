@@ -6,7 +6,7 @@ import {
   libelleCategorie,
   libellePriorite,
   libelleStatut,
-  pointsDepuisMinutes,
+  pointsEffectifs,
 } from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
 
@@ -17,7 +17,8 @@ const ORDRE_STATUT = ["CLOTURE", "TERMINE", "EN_COURS", "STANDBY", "A_FAIRE"];
 const pct = (part, total) => (total ? Math.round((part / total) * 1000) / 10 : 0);
 const isoJour = (d) => d.toISOString().slice(0, 10);
 const minutesOf = (a) => a.duree_minutes || Math.round((a.duree_heures || 0) * 60);
-const pointsOf = (a) => pointsDepuisMinutes(minutesOf(a));
+// Points effectifs = automatiques (durée) + ajustement manuel de l'admin.
+const pointsOf = (a) => pointsEffectifs(a);
 const arr1 = (n) => Math.round(n * 10) / 10;
 const arr2 = (n) => Math.round(n * 100) / 100;
 

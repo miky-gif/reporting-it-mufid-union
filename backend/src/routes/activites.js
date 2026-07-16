@@ -191,6 +191,8 @@ activitesRouter.post("/", async (req, res) => {
   synchroniserDuree(donnees);
   synchroniserPeriode(donnees);
   initialiserRecurrence(donnees, donnees.date_debut);
+  // L'ajustement de points (bonus/malus) est une prérogative de l'administration.
+  if (!estAdministration(req.user)) delete donnees.points_ajustement;
 
   // La catégorie doit correspondre à une catégorie active.
   if (!(await categorieActiveExiste(donnees.categorie))) {
@@ -311,6 +313,7 @@ activitesRouter.put("/:id", async (req, res) => {
     } else {
       // Tâche personnelle : l'employé ne peut jamais poser « À faire »/« Clôturé ».
       delete donnees.consignes; // les consignes restent l'apanage de l'admin
+      delete donnees.points_ajustement; // ajustement réservé à l'administration
     }
   }
   synchroniserDuree(donnees);

@@ -96,6 +96,8 @@ export interface Activite {
   priorite: Priorite;
   statut: Statut;
   pourcentage: number; // % réalisation (0-100)
+  points_base: number; // points automatiques (durée)
+  points_ajustement: number; // bonus/malus décidé par l'admin
   date_activite: string; // échéance (= date_fin)
   date_debut: string;
   date_fin: string;

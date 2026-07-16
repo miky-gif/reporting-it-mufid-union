@@ -95,6 +95,16 @@ export function ajouterIntervalle(iso, frequence, n = 1) {
 export const MINUTES_PAR_POINT = 480;
 export const pointsDepuisMinutes = (min) => Math.round(((min || 0) / MINUTES_PAR_POINT) * 1000) / 1000;
 
+// Minutes d'une activité (source de vérité : duree_minutes, repli sur les heures).
+export const minutesActivite = (a) => a.duree_minutes || Math.round((a.duree_heures || 0) * 60);
+// Points AUTOMATIQUES calculés sur la durée.
+export const pointsBase = (a) => pointsDepuisMinutes(minutesActivite(a));
+// Points EFFECTIFS = automatiques + ajustement manuel de l'admin, borné à 0.
+export function pointsEffectifs(a) {
+  const total = pointsBase(a) + Number(a.points_ajustement || 0);
+  return Math.max(0, Math.round(total * 1000) / 1000);
+}
+
 // Une tâche est en retard si l'échéance est passée et qu'elle n'est ni terminée ni clôturée.
 export function estEnRetard(dateActivite, statut) {
   if (statut === "TERMINE" || statut === "CLOTURE") return false;
@@ -148,11 +158,10 @@ export function serialiserActivite(a) {
     date_fin: plain.date_fin ?? plain.date_activite,
     duree_minutes: plain.duree_minutes ?? Math.round((plain.duree_heures || 0) * 60),
     duree_heures: plain.duree_heures,
-    points: pointsDepuisMinutes(plain.duree_minutes ?? (plain.duree_heures || 0) * 60),
-    points_acquis:
-      plain.statut === "CLOTURE"
-        ? pointsDepuisMinutes(plain.duree_minutes ?? (plain.duree_heures || 0) * 60)
-        : 0,
+    points_base: pointsBase(plain), // calcul automatique (durée)
+    points_ajustement: Number(plain.points_ajustement || 0), // bonus/malus admin
+    points: pointsEffectifs(plain), // total effectif (base + ajustement)
+    points_acquis: plain.statut === "CLOTURE" ? pointsEffectifs(plain) : 0,
     en_retard: estEnRetard(plain.date_activite, plain.statut),
     date_cloture: plain.date_cloture ?? null,
     cloture_par: plain.cloture_par ?? null,

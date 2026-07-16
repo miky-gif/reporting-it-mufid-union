@@ -147,6 +147,9 @@ export const Activite = sequelize.define(
     statut: { type: DataTypes.ENUM(...STATUTS), allowNull: false, defaultValue: "A_FAIRE" },
     // Pourcentage de réalisation (0-100). Si null -> déduit du statut.
     pourcentage: { type: DataTypes.INTEGER, allowNull: true },
+    // Ajustement manuel des points par l'admin (bonus si +, malus si -).
+    // Le score final = points automatiques (durée) + cet ajustement, borné à 0.
+    points_ajustement: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
     // Échéance (= fin de période) — conservée pour compatibilité (tri, retard, rapports).
     date_activite: { type: DataTypes.DATEONLY, allowNull: false },
     // Période de réalisation de la tâche (début -> fin).
