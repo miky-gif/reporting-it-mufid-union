@@ -12,7 +12,6 @@ interface LigneRapport {
   livrable: string;
   pourcentage: string;
   statut: string;
-  aMener: string;
 }
 interface GroupeRapport {
   code: string;
@@ -30,13 +29,19 @@ interface EmployeRapport {
 }
 interface Apercu {
   periode: string;
+  type_label: string;
+  suivant_label: string;
   reference: string;
   departement: string;
   debut_court: string;
   fin_court: string;
+  debut_suivant_court: string;
+  fin_suivant_court: string;
   nb_activites: number;
+  nb_a_mener: number;
   nb_employes: number;
   employes: EmployeRapport[];
+  employes_a_mener: EmployeRapport[];
 }
 
 export default function ConsolidatedReports() {
@@ -67,10 +72,11 @@ export default function ConsolidatedReports() {
   }
 
   const periodeCol = apercu ? `du ${apercu.debut_court} au ${apercu.fin_court}` : "";
+  const periodeSuiv = apercu ? `du ${apercu.debut_suivant_court} au ${apercu.fin_suivant_court}` : "";
 
   return (
     <>
-      <EnteteSection titre="Rapports consolidés" sousTitre="Rapport de l'ensemble du personnel IT, au format du modèle métier." />
+      <EnteteSection titre="Rapports consolidés" sousTitre="Ensemble du personnel. Le type (hebdo, mensuel, annuel) est détecté d'après la période." />
 
       <div className="carte mb-5 flex flex-wrap items-end gap-4 p-[16px_18px]">
         <div>
@@ -104,9 +110,11 @@ export default function ConsolidatedReports() {
         <Spinner />
       ) : (
         <div className="rounded-md border border-bordure bg-white p-6 shadow-popover sm:p-9">
-          {/* En-tête */}
+          {/* En-tête avec le type détecté */}
           <div className="mb-6 text-center">
-            <div className="text-xl font-bold tracking-tight text-encre">RAPPORT D'ACTIVITÉS CONSOLIDÉ</div>
+            <div className="text-xl font-bold tracking-tight text-encre">
+              RAPPORT D'ACTIVITÉS {apercu.type_label} — CONSOLIDÉ
+            </div>
             <div className="mt-1 text-[15px] font-semibold text-petrole-600">Du {apercu.debut_court} au {apercu.fin_court}</div>
             <div className="mt-0.5 text-[13px] text-gris">{apercu.departement}</div>
             <div className="mt-2 text-[13px] font-semibold text-encre">
@@ -114,64 +122,15 @@ export default function ConsolidatedReports() {
             </div>
           </div>
 
-          {/* Tableau consolidé : Agent -> Rubriques -> activités */}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px] border-collapse text-[12px]">
-              <thead>
-                <tr className="bg-petrole-800 text-left text-white">
-                  <Th className="text-center">Agent</Th>
-                  <Th>Rubriques</Th>
-                  <Th>Activités programmées {periodeCol}</Th>
-                  <Th>Description de l'activité</Th>
-                  <Th>Résultat attendu (livrable)</Th>
-                  <Th className="text-center">Statut</Th>
-                  <Th className="text-center">% réal.</Th>
-                  <Th>Activités à mener (semaine suivante)</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {apercu.employes.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="border border-[#D8E1E5] py-8 text-center text-grisdoux">
-                      Aucune activité enregistrée sur cette période.
-                    </td>
-                  </tr>
-                )}
-                {apercu.employes.map((emp) => {
-                  const totalRows = emp.groupes.reduce((s, g) => s + g.lignes.length, 0);
-                  return emp.groupes.map((g, gi) =>
-                    g.lignes.map((l, i) => (
-                      <tr key={emp.user_id + "-" + g.code + "-" + i} className="align-top">
-                        {gi === 0 && i === 0 && (
-                          <td
-                            rowSpan={totalRows}
-                            className="border border-[#D8E1E5] bg-[#EEF4F6] px-2.5 py-2 text-center align-middle"
-                          >
-                            <div className="font-semibold uppercase text-encre">{emp.nom_complet}</div>
-                            {emp.poste && <div className="text-[10.5px] font-normal text-grisdoux">{emp.poste}</div>}
-                          </td>
-                        )}
-                        {i === 0 && (
-                          <td
-                            rowSpan={g.lignes.length}
-                            className="border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
-                          >
-                            {g.rubrique}
-                          </td>
-                        )}
-                        <Td>{l.programmee}</Td>
-                        <Td><Multiligne texte={l.etat} /></Td>
-                        <Td><Multiligne texte={l.livrable} /></Td>
-                        <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>
-                        <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold text-ardoise">{l.pourcentage}</td>
-                        <Td><Multiligne texte={l.aMener} /></Td>
-                      </tr>
-                    )),
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Tableau 1 : activités de la période */}
+          <div className="mb-2 text-[13.5px] font-semibold text-encre">Activités de la période — {periodeCol}</div>
+          <TableauConsolide employes={apercu.employes} periodeCol={periodeCol} />
+
+          {/* Tableau 2 : activités à mener (période suivante) */}
+          <div className="mb-2 mt-7 text-[13.5px] font-semibold text-petrole-600">
+            Activités à mener ({apercu.suivant_label}) — {periodeSuiv}
           </div>
+          <TableauConsolide employes={apercu.employes_a_mener} periodeCol={periodeSuiv} />
 
           <div className="mt-4 text-right text-[10.5px] italic text-grisdoux">
             Référence : {apercu.reference} · Document interne · MUFID UNION
@@ -182,10 +141,72 @@ export default function ConsolidatedReports() {
   );
 }
 
+// Tableau consolidé (7 colonnes) : Agent -> Rubriques -> activités. Réutilisé pour les deux tableaux.
+function TableauConsolide({ employes, periodeCol }: { employes: EmployeRapport[]; periodeCol: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[980px] border-collapse text-[12px]">
+        <thead>
+          <tr className="bg-petrole-800 text-left text-white">
+            <Th className="text-center">Agent</Th>
+            <Th>Rubriques</Th>
+            <Th>Activités programmées ({periodeCol})</Th>
+            <Th>Description de l'activité</Th>
+            <Th>Résultat attendu (livrable)</Th>
+            <Th className="text-center">Statut</Th>
+            <Th className="text-center">% réal.</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {employes.length === 0 && (
+            <tr>
+              <td colSpan={7} className="border border-[#D8E1E5] py-6 text-center text-grisdoux">
+                Aucune activité sur cette période.
+              </td>
+            </tr>
+          )}
+          {employes.map((emp) => {
+            const totalRows = emp.groupes.reduce((s, g) => s + g.lignes.length, 0);
+            return emp.groupes.map((g, gi) =>
+              g.lignes.map((l, i) => (
+                <tr key={emp.user_id + "-" + g.code + "-" + i} className="align-top">
+                  {gi === 0 && i === 0 && (
+                    <td
+                      rowSpan={totalRows}
+                      className="border border-[#D8E1E5] bg-[#EEF4F6] px-2.5 py-2 text-center align-middle"
+                    >
+                      <div className="font-semibold uppercase text-encre">{emp.nom_complet}</div>
+                      {emp.poste && <div className="text-[10.5px] font-normal text-grisdoux">{emp.poste}</div>}
+                    </td>
+                  )}
+                  {i === 0 && (
+                    <td
+                      rowSpan={g.lignes.length}
+                      className="border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
+                    >
+                      {g.rubrique}
+                    </td>
+                  )}
+                  <Td>{l.programmee}</Td>
+                  <Td><Multiligne texte={l.etat} /></Td>
+                  <Td><Multiligne texte={l.livrable} /></Td>
+                  <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>
+                  <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold text-ardoise">{l.pourcentage}</td>
+                </tr>
+              )),
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function couleurStatut(statut: string): string {
   if (statut === "Terminé") return "#1B8A4B";
+  if (statut === "Clôturé") return "#0B6E39";
   if (statut === "En cours") return "#0E5E7C";
-  if (statut === "Bloqué") return "#C0392B";
+  if (statut === "Standby") return "#D2691E";
   return "#5E717B"; // À faire / autre
 }
 

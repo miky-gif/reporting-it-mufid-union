@@ -38,6 +38,33 @@ const fmtCourt = (iso) => {
 };
 const libCat = (code, map) => map[code]?.nom ?? libelleCategorie(code);
 
+const joursEntre = (a, b) => Math.round((new Date(`${b}T00:00:00Z`) - new Date(`${a}T00:00:00Z`)) / 86400000);
+const ajouterJours = (iso, n) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+
+/**
+ * Détecte le TYPE de rapport d'après la durée de la période choisie et fournit
+ * le libellé de la période suivante (pour le tableau « Activités à mener »).
+ *   ex. 01/01 -> 02/02 (~33 j) = « Mensuel » / « mois suivant ».
+ */
+export function typePeriode(debut, fin) {
+  const jours = joursEntre(debut, fin) + 1; // nombre de jours inclusifs
+  if (jours <= 10) return { code: "HEBDO", label: "Hebdomadaire", suivant: "semaine suivante" };
+  if (jours <= 45) return { code: "MENSUEL", label: "Mensuel", suivant: "mois suivant" };
+  if (jours <= 100) return { code: "TRIMESTRIEL", label: "Trimestriel", suivant: "trimestre suivant" };
+  if (jours <= 250) return { code: "SEMESTRIEL", label: "Semestriel", suivant: "semestre suivant" };
+  return { code: "ANNUEL", label: "Annuel", suivant: "année suivante" };
+}
+
+// Période immédiatement suivante, de même durée que celle filtrée.
+function periodeSuivante(debut, fin) {
+  const span = joursEntre(debut, fin); // écart en jours
+  const sDebut = ajouterJours(fin, 1);
+  return { debut: sDebut, fin: ajouterJours(sDebut, span) };
+}
 
 export function periodeLibelle(debut, fin) {
   const [ad, md] = debut.split("-");
@@ -108,6 +135,8 @@ export async function rapportIndividuel(user, debut, fin) {
 }
 
 // Transforme une activité en ligne de rapport (colonnes du modèle).
+// La colonne « Activités à mener » a été retirée : elle est remplacée par un
+// second tableau alimenté par les tâches réellement programmées ensuite.
 function ligneActivite(a) {
   return {
     programmee: a.titre,
@@ -116,7 +145,6 @@ function ligneActivite(a) {
     // % réalisation : valeur saisie si présente, sinon déduite du statut.
     pourcentage: `${pourcentageEffectif(a.pourcentage, a.statut)}%`,
     statut: libelleStatut(a.statut),
-    aMener: a.activites_a_mener ?? "",
   };
 }
 
@@ -142,33 +170,66 @@ function grouperParCategorie(activites, mapCat) {
     .sort((x, y) => x.ordre - y.ordre);
 }
 
+// Regroupe une liste d'activités par agent, puis par catégorie (rapport consolidé).
+function grouperParEmploye(activites, mapCat) {
+  const parUser = new Map();
+  for (const a of activites) {
+    if (!parUser.has(a.user_id)) parUser.set(a.user_id, { user: a.user, acts: [] });
+    parUser.get(a.user_id).acts.push(a);
+  }
+  return [...parUser.values()]
+    .map(({ user, acts }) => ({
+      user_id: user ? user.id : 0,
+      nom_complet: user ? user.nom_complet : "—",
+      poste: (user && user.poste) || "",
+      nb_activites: acts.length,
+      groupes: grouperParCategorie(acts, mapCat),
+    }))
+    .sort((a, b) => a.nom_complet.localeCompare(b.nom_complet, "fr"));
+}
+
 // Rapport individuel « hebdomadaire » calqué sur le modèle métier :
 // tableau à 6 colonnes groupé par Rubriques (= catégorie), chaque activité
 // devenant une ligne (rubrique = titre, état = description, livrable, %, à mener).
 export async function rapportHebdo(user, debut, fin) {
-  const activites = await activitesPeriode(debut, fin, user.id);
   const mapCat = await chargerMapCategories();
+  const type = typePeriode(debut, fin);
+  const suiv = periodeSuivante(debut, fin);
+
+  const activites = await activitesPeriode(debut, fin, user.id);
+  // Activités à mener = tâches programmées dans la période suivante (même durée).
+  const activitesAMener = await activitesPeriode(suiv.debut, suiv.fin, user.id);
 
   return {
     user,
     debut,
     fin,
     periode: periodeLibelle(debut, fin),
+    type_label: type.label, // Hebdomadaire / Mensuel / Annuel…
+    suivant_label: type.suivant, // « mois suivant », « année suivante »…
     // En-tête dynamique : le département de l'agent concerné.
     departement: await enteteDepartementDe(user),
     reference: `RAP-HEB-${fin.slice(0, 7)}-${String(user.id).padStart(2, "0")}`,
     debut_court: fmtCourt(debut),
     fin_court: fmtCourt(fin),
+    debut_suivant_court: fmtCourt(suiv.debut),
+    fin_suivant_court: fmtCourt(suiv.fin),
     nb_activites: activites.length,
+    nb_a_mener: activitesAMener.length,
     groupes: grouperParCategorie(activites, mapCat),
+    groupes_a_mener: grouperParCategorie(activitesAMener, mapCat),
   };
 }
 
 // Rapport consolidé au même format que l'individuel, mais pour tout le personnel :
 // une grille unique où chaque agent (employé) regroupe ses propres Rubriques.
 export async function rapportConsolideHebdo(debut, fin, departementId = null) {
-  const activites = await activitesPeriode(debut, fin, null, departementId);
   const mapCat = await chargerMapCategories();
+  const type = typePeriode(debut, fin);
+  const suiv = periodeSuivante(debut, fin);
+
+  const activites = await activitesPeriode(debut, fin, null, departementId);
+  const activitesAMener = await activitesPeriode(suiv.debut, suiv.fin, null, departementId);
 
   // En-tête : le département consolidé, ou « tous les départements » (super admin).
   let entete = DEPARTEMENT_DEFAUT;
@@ -185,33 +246,26 @@ export async function rapportConsolideHebdo(debut, fin, departementId = null) {
         : DEPARTEMENT_DEFAUT;
   }
 
-  // Regroupement par agent (employé).
-  const parUser = new Map();
-  for (const a of activites) {
-    if (!parUser.has(a.user_id)) parUser.set(a.user_id, { user: a.user, acts: [] });
-    parUser.get(a.user_id).acts.push(a);
-  }
-  const employes = [...parUser.values()]
-    .map(({ user, acts }) => ({
-      user_id: user ? user.id : 0,
-      nom_complet: user ? user.nom_complet : "—",
-      poste: (user && user.poste) || "",
-      nb_activites: acts.length,
-      groupes: grouperParCategorie(acts, mapCat),
-    }))
-    .sort((a, b) => a.nom_complet.localeCompare(b.nom_complet, "fr"));
+  const employes = grouperParEmploye(activites, mapCat);
+  const employesAMener = grouperParEmploye(activitesAMener, mapCat);
 
   return {
     debut,
     fin,
     periode: periodeLibelle(debut, fin),
+    type_label: type.label,
+    suivant_label: type.suivant,
     departement: entete,
     reference: `RAP-CONS-${fin.slice(0, 7)}`,
     debut_court: fmtCourt(debut),
     fin_court: fmtCourt(fin),
+    debut_suivant_court: fmtCourt(suiv.debut),
+    fin_suivant_court: fmtCourt(suiv.fin),
     nb_activites: activites.length,
-    nb_employes: parUser.size,
+    nb_a_mener: activitesAMener.length,
+    nb_employes: employes.length,
     employes,
+    employes_a_mener: employesAMener,
   };
 }
 

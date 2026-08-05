@@ -21,7 +21,6 @@ const schema = z.object({
   consignes: z.string().max(2000).optional(), // consigne de départ (admin uniquement)
   description: z.string().max(2000).optional(), // état d'exécution
   livrable: z.string().max(1000).optional(),
-  activites_a_mener: z.string().max(1000).optional(),
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
   statut: z.enum(["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"] as [Statut, ...Statut[]]),
   pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),
@@ -69,7 +68,6 @@ export default function ActivityForm() {
       consignes: "",
       description: "",
       livrable: "",
-      activites_a_mener: "",
       priorite: "MOYENNE",
       statut: "EN_COURS",
       pourcentage: POURCENTAGE_PAR_STATUT.EN_COURS,
@@ -107,7 +105,6 @@ export default function ActivityForm() {
           consignes: a.consignes ?? "",
           description: a.description ?? "",
           livrable: a.livrable ?? "",
-          activites_a_mener: a.activites_a_mener ?? "",
           priorite: a.priorite,
           statut: a.statut,
           pourcentage: a.pourcentage,
@@ -308,26 +305,15 @@ export default function ActivityForm() {
                 {...register("description")}
               />
             </Champ>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Champ label="Résultat attendu (livrable)">
-                <textarea
-                  rows={2}
-                  className="champ resize-y"
-                  disabled={gel}
-                  placeholder="Ex. Fichier des incidents, rapport produit…"
-                  {...register("livrable")}
-                />
-              </Champ>
-              <Champ label="Activités à mener (semaine suivante)">
-                <textarea
-                  rows={2}
-                  className="champ resize-y"
-                  disabled={gel}
-                  placeholder="Ce qu'il reste à faire / prochaines étapes…"
-                  {...register("activites_a_mener")}
-                />
-              </Champ>
-            </div>
+            <Champ label="Résultat attendu (livrable)">
+              <textarea
+                rows={2}
+                className="champ resize-y"
+                disabled={gel}
+                placeholder="Ex. Fichier des incidents, rapport produit…"
+                {...register("livrable")}
+              />
+            </Champ>
           </Section>
 
           <Section titre="Planification" icone={CalendarClock}>

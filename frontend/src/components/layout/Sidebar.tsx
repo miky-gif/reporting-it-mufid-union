@@ -9,7 +9,6 @@ import {
   type LucideIcon,
   PieChart,
   SendHorizonal,
-  ShieldCheck,
   Tags,
   UserCircle,
   Users,
@@ -88,16 +87,7 @@ export function Sidebar() {
       )}
 
       <div className="mt-auto px-3 pt-3.5">
-        {estAdmin ? (
-          <div className="flex items-center gap-2 rounded-lg border border-[rgba(31,157,116,.28)] bg-[rgba(31,157,116,.14)] px-3 py-2.5">
-            <ShieldCheck size={18} className="text-[#5FBB84]" />
-            <div className="text-[11px] leading-tight text-[#B7DEC9]">
-              Conforme COBAC
-              <br />
-              <span className="text-[#6E9DAB]">Traçabilité activée</span>
-            </div>
-          </div>
-        ) : (
+        {!estAdmin && (
           <div className="rounded-xl2 border border-white/10 bg-white/[0.06] p-3.5">
             <div className="mb-1 text-xs font-semibold text-white">Besoin d'aide ?</div>
             <div className="text-[11px] leading-snug text-[#8FB2BF]">

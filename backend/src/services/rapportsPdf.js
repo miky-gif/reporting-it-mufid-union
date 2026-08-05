@@ -181,7 +181,7 @@ export function rapportIndividuelPdf(rap) {
 // ===========================================================================
 
 const ML = 28; // marge du rapport paysage
-const LARGEURS_PCT = [12, 17, 21, 14, 9, 8, 19]; // 7 colonnes, somme = 100
+const LARGEURS_PCT = [14, 24, 28, 16, 8, 10]; // 6 colonnes, somme = 100
 
 function rendrePaysage(construire) {
   return new Promise((resolve, reject) => {
@@ -243,79 +243,84 @@ function dessinerLigne(doc, infos, rowH, colX, widths, y, header) {
   return y + rowH;
 }
 
+// Intitulé au-dessus d'un tableau (paysage).
+function sousTitrePdf(doc, texte, usableW, couleur) {
+  doc.moveDown(0.6);
+  doc.fillColor(couleur).font("Helvetica-Bold").fontSize(11).text(texte, ML, doc.y, { width: usableW });
+  doc.moveDown(0.3);
+}
+
+// Dessine un tableau individuel (6 colonnes) et renvoie le y final.
+function dessinerTableauInd(doc, groupes, colX, widths, faireEntete, bas) {
+  let y = faireEntete(doc.y);
+  const totalW = widths.reduce((a, b) => a + b, 0);
+  if (groupes.length === 0) {
+    doc.fillColor(GRIS).font("Helvetica").fontSize(9)
+      .text("Aucune activité sur cette période.", ML, y + 8, { width: totalW, align: "center" });
+    return y + 24;
+  }
+  for (const groupe of groupes) {
+    groupe.lignes.forEach((l, i) => {
+      const cells = [
+        { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center" },
+        { text: l.programmee },
+        { text: l.etat },
+        { text: l.livrable },
+        { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut) },
+        { text: l.pourcentage, align: "center", bold: true },
+      ];
+      const { infos, rowH } = mesurerLigne(doc, cells, widths, false);
+      if (y + rowH > bas) { doc.addPage(); y = faireEntete(ML); }
+      y = dessinerLigne(doc, infos, rowH, colX, widths, y, false);
+    });
+  }
+  return y;
+}
+
 export function rapportHebdoPdf(rap) {
   return rendrePaysage((doc) => {
     const usableW = doc.page.width - 2 * ML;
     const widths = LARGEURS_PCT.map((p) => (usableW * p) / 100);
     const colX = [];
     let acc = ML;
-    for (const w of widths) {
-      colX.push(acc);
-      acc += w;
-    }
+    for (const w of widths) { colX.push(acc); acc += w; }
     const bas = doc.page.height - ML;
 
-    // Bloc-titre centré.
+    // Bloc-titre centré (avec le type détecté : Hebdomadaire / Mensuel / Annuel).
     doc.fillColor(ENCRE).font("Helvetica-Bold").fontSize(17)
-      .text("RAPPORT D'ACTIVITÉS", ML, ML, { width: usableW, align: "center" });
+      .text(`RAPPORT D'ACTIVITÉS ${rap.type_label || ""}`.trim(), ML, ML, { width: usableW, align: "center" });
     doc.fillColor(BLEU).font("Helvetica-Bold").fontSize(12)
       .text(`Du ${rap.debut_court} au ${rap.fin_court}`, { width: usableW, align: "center" });
-    doc.fillColor(GRIS).font("Helvetica").fontSize(10)
-      .text(rap.departement, { width: usableW, align: "center" });
+    doc.fillColor(GRIS).font("Helvetica").fontSize(10).text(rap.departement, { width: usableW, align: "center" });
     doc.fillColor(ENCRE).font("Helvetica-Bold").fontSize(12)
-      .text(rap.user.nom_complet.toUpperCase() + (rap.user.poste ? `  —  ${rap.user.poste}` : ""), {
-        width: usableW,
-        align: "center",
-      });
-    doc.moveDown(0.8);
+      .text(rap.user.nom_complet.toUpperCase() + (rap.user.poste ? `  —  ${rap.user.poste}` : ""), { width: usableW, align: "center" });
 
     const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
-    const entetes = [
+    const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+    const entetesDe = (pc) => [
       { text: "Rubriques" },
-      { text: `Activités programmées de la semaine ${periodeCol}` },
+      { text: `Activités programmées (${pc})` },
       { text: "Description de l'activité" },
       { text: "Résultat attendu (livrable)" },
       { text: "Statut" },
       { text: "% réal." },
-      { text: "Activités à mener au cours de la semaine suivante" },
     ];
-    const dessinerEntete = (y) => {
+    const faireEntete = (entetes) => (yy) => {
       const { infos, rowH } = mesurerLigne(doc, entetes, widths, true);
-      return dessinerLigne(doc, infos, rowH, colX, widths, y, true);
+      return dessinerLigne(doc, infos, rowH, colX, widths, yy, true);
     };
 
-    let y = dessinerEntete(doc.y);
+    // Tableau 1 : activités de la période.
+    sousTitrePdf(doc, `Activités de la période — ${periodeCol}`, usableW, ENCRE);
+    doc.y = dessinerTableauInd(doc, rap.groupes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
 
-    if (rap.groupes.length === 0) {
-      doc.fillColor(GRIS).font("Helvetica").fontSize(10)
-        .text("Aucune activité enregistrée sur cette période.", ML, y + 14, { width: usableW, align: "center" });
-    }
-
-    for (const groupe of rap.groupes) {
-      groupe.lignes.forEach((l, i) => {
-        const cells = [
-          { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center" },
-          { text: l.programmee },
-          { text: l.etat },
-          { text: l.livrable },
-          { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut) },
-          { text: l.pourcentage, align: "center", bold: true },
-          { text: l.aMener },
-        ];
-        const { infos, rowH } = mesurerLigne(doc, cells, widths, false);
-        if (y + rowH > bas) {
-          doc.addPage();
-          y = dessinerEntete(ML);
-        }
-        y = dessinerLigne(doc, infos, rowH, colX, widths, y, false);
-      });
-    }
+    // Tableau 2 : activités à mener (période suivante).
+    if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
+    sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
+    const y = dessinerTableauInd(doc, rap.groupes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
 
     doc.fillColor(GRIS).font("Helvetica-Oblique").fontSize(8)
-      .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), {
-        width: usableW,
-        align: "right",
-      });
+      .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), { width: usableW, align: "right" });
   });
 }
 
@@ -325,7 +330,7 @@ export function rapportHebdoPdf(rap) {
 // par cellule et en omettant le trait supérieur des cellules « continuation ».
 // ---------------------------------------------------------------------------
 
-const LARGEURS_CONS_PCT = [11, 11, 15, 18, 12, 8, 7, 18]; // 8 colonnes, somme = 100
+const LARGEURS_CONS_PCT = [12, 12, 20, 24, 14, 8, 10]; // 7 colonnes, somme = 100
 
 // Mesure une ligne du tableau consolidé (les colonnes `multi` passent en puces).
 function mesurerLigneCons(doc, cells, widths) {
@@ -366,93 +371,90 @@ function dessinerLigneCons(doc, infos, rowH, colX, widths, y) {
   return y + rowH;
 }
 
+// Dessine un tableau consolidé (7 colonnes) et renvoie le y final.
+function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
+  let y = faireEntete(doc.y);
+  const totalW = widths.reduce((a, b) => a + b, 0);
+  if (employes.length === 0) {
+    doc.fillColor(GRIS).font("Helvetica").fontSize(9)
+      .text("Aucune activité sur cette période.", ML, y + 8, { width: totalW, align: "center" });
+    return y + 24;
+  }
+  for (const emp of employes) {
+    const agentTexte = emp.nom_complet.toUpperCase() + (emp.poste ? `\n${emp.poste}` : "");
+    let premiereEmp = true;
+    for (const groupe of emp.groupes) {
+      groupe.lignes.forEach((l, i) => {
+        const cells = [
+          { text: premiereEmp ? agentTexte : "", fill: PETROLE_TRES_CLAIR, bold: true, color: ENCRE, align: "center", topBorder: premiereEmp },
+          { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center", topBorder: i === 0 },
+          { text: l.programmee, topBorder: true },
+          { text: l.etat, multi: true, topBorder: true },
+          { text: l.livrable, multi: true, topBorder: true },
+          { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut), topBorder: true },
+          { text: l.pourcentage, align: "center", bold: true, topBorder: true },
+        ];
+        let mesure = mesurerLigneCons(doc, cells, widths);
+        if (y + mesure.rowH > bas) {
+          doc.addPage();
+          y = faireEntete(ML);
+          cells[0].text = agentTexte; cells[0].topBorder = true;
+          cells[1].text = groupe.rubrique; cells[1].topBorder = true;
+          mesure = mesurerLigneCons(doc, cells, widths);
+        }
+        y = dessinerLigneCons(doc, mesure.infos, mesure.rowH, colX, widths, y);
+        premiereEmp = false;
+      });
+    }
+  }
+  return y;
+}
+
 export function rapportConsolideHebdoPdf(rap) {
   return rendrePaysage((doc) => {
     const usableW = doc.page.width - 2 * ML;
     const widths = LARGEURS_CONS_PCT.map((p) => (usableW * p) / 100);
     const colX = [];
     let acc = ML;
-    for (const w of widths) {
-      colX.push(acc);
-      acc += w;
-    }
+    for (const w of widths) { colX.push(acc); acc += w; }
     const bas = doc.page.height - ML;
 
-    // Bloc-titre.
+    // Bloc-titre (avec le type détecté).
     doc.fillColor(ENCRE).font("Helvetica-Bold").fontSize(17)
-      .text("RAPPORT D'ACTIVITÉS CONSOLIDÉ", ML, ML, { width: usableW, align: "center" });
+      .text(`RAPPORT D'ACTIVITÉS ${rap.type_label || ""} — CONSOLIDÉ`.replace(/\s+—/, " —"), ML, ML, { width: usableW, align: "center" });
     doc.fillColor(BLEU).font("Helvetica-Bold").fontSize(12)
       .text(`Du ${rap.debut_court} au ${rap.fin_court}`, { width: usableW, align: "center" });
-    doc.fillColor(GRIS).font("Helvetica").fontSize(10)
-      .text(rap.departement, { width: usableW, align: "center" });
+    doc.fillColor(GRIS).font("Helvetica").fontSize(10).text(rap.departement, { width: usableW, align: "center" });
     doc.fillColor(ENCRE).font("Helvetica-Bold").fontSize(10)
-      .text(`Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`, {
-        width: usableW,
-        align: "center",
-      });
-    doc.moveDown(0.8);
+      .text(`Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`, { width: usableW, align: "center" });
 
     const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
-    const entetes = [
+    const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+    const entetesDe = (pc) => [
       { text: "Agent" },
       { text: "Rubriques" },
-      { text: `Activités programmées de la semaine ${periodeCol}` },
+      { text: `Activités programmées (${pc})` },
       { text: "Description de l'activité" },
       { text: "Résultat attendu (livrable)" },
       { text: "Statut" },
       { text: "% réal." },
-      { text: "Activités à mener au cours de la semaine suivante" },
     ];
-    const dessinerEntete = (yy) => {
+    const faireEntete = (entetes) => (yy) => {
       const { infos, rowH } = mesurerLigne(doc, entetes, widths, true);
       return dessinerLigne(doc, infos, rowH, colX, widths, yy, true);
     };
 
-    let y = dessinerEntete(doc.y);
+    // Tableau 1 : activités de la période.
+    sousTitrePdf(doc, `Activités de la période — ${periodeCol}`, usableW, ENCRE);
+    doc.y = dessinerTableauCons(doc, rap.employes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
 
-    if (rap.employes.length === 0) {
-      doc.fillColor(GRIS).font("Helvetica").fontSize(10)
-        .text("Aucune activité enregistrée sur cette période.", ML, y + 14, { width: usableW, align: "center" });
-      return;
-    }
-
-    for (const emp of rap.employes) {
-      const agentTexte = emp.nom_complet.toUpperCase() + (emp.poste ? `\n${emp.poste}` : "");
-      let premiereEmp = true;
-      for (const groupe of emp.groupes) {
-        groupe.lignes.forEach((l, i) => {
-          const cells = [
-            { text: premiereEmp ? agentTexte : "", fill: PETROLE_TRES_CLAIR, bold: true, color: ENCRE, align: "center", topBorder: premiereEmp },
-            { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center", topBorder: i === 0 },
-            { text: l.programmee, topBorder: true },
-            { text: l.etat, multi: true, topBorder: true },
-            { text: l.livrable, multi: true, topBorder: true },
-            { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut), topBorder: true },
-            { text: l.pourcentage, align: "center", bold: true, topBorder: true },
-            { text: l.aMener, multi: true, topBorder: true },
-          ];
-          let mesure = mesurerLigneCons(doc, cells, widths);
-          if (y + mesure.rowH > bas) {
-            doc.addPage();
-            y = dessinerEntete(ML);
-            // Réaffiche les libellés Agent/Rubriques en haut de la nouvelle page.
-            cells[0].text = agentTexte;
-            cells[0].topBorder = true;
-            cells[1].text = groupe.rubrique;
-            cells[1].topBorder = true;
-            mesure = mesurerLigneCons(doc, cells, widths);
-          }
-          y = dessinerLigneCons(doc, mesure.infos, mesure.rowH, colX, widths, y);
-          premiereEmp = false;
-        });
-      }
-    }
+    // Tableau 2 : activités à mener (période suivante).
+    if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
+    sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
+    const y = dessinerTableauCons(doc, rap.employes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
 
     doc.fillColor(GRIS).font("Helvetica-Oblique").fontSize(8)
-      .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), {
-        width: usableW,
-        align: "right",
-      });
+      .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), { width: usableW, align: "right" });
   });
 }
 

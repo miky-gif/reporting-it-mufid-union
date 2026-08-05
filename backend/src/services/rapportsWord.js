@@ -1,5 +1,6 @@
-// Génération du rapport individuel au format Word (.docx), calqué sur le
-// modèle métier : tableau à 6 colonnes groupé par Rubriques (= catégorie).
+// Génération des rapports Word (.docx) calqués sur le modèle métier.
+// Deux tableaux : les activités de la période, puis les activités à mener
+// (période suivante). Le type (Hebdomadaire/Mensuel/Annuel) est déduit de la période.
 import {
   AlignmentType,
   BorderStyle,
@@ -28,20 +29,18 @@ const BORDURE = "C6D2D7";
 const BORD = { style: BorderStyle.SINGLE, size: 4, color: BORDURE };
 const BORDS_CELLULE = { top: BORD, bottom: BORD, left: BORD, right: BORD };
 
-// Largeurs relatives des 7 colonnes (en pourcentage, somme = 100).
-const LARGEURS = [13, 17, 21, 14, 9, 8, 18];
-// Rapport consolidé : 8 colonnes (Agent en tête). Somme = 100.
-const LARGEURS_CONS = [11, 11, 15, 18, 12, 8, 7, 18];
+// Largeurs relatives (somme = 100). La colonne « Activités à mener » a été retirée.
+const LARGEURS_IND = [16, 20, 24, 16, 12, 12]; // 6 colonnes
+const LARGEURS_CONS = [13, 13, 17, 20, 14, 11, 12]; // 7 colonnes (Agent en tête)
 
-// Couleur (hex sans #) associée au libellé de statut.
 function couleurStatutHex(statut) {
   if (statut === "Terminé") return "1B8A4B";
+  if (statut === "Clôturé") return "0B6E39";
   if (statut === "En cours") return "0E5E7C";
-  if (statut === "Bloqué") return "C0392B";
+  if (statut === "Standby") return "D2691E";
   return "5E717B"; // À faire / autre
 }
 
-// Un paragraphe simple (une ligne de texte dans une cellule).
 function ligneTexte(texte, { bold = false, color = ENCRE, size = 18, align = AlignmentType.LEFT } = {}) {
   return new Paragraph({
     alignment: align,
@@ -50,7 +49,6 @@ function ligneTexte(texte, { bold = false, color = ENCRE, size = 18, align = Ali
   });
 }
 
-// Contenu multi-lignes : chaque ligne (séparée par \n) devient une puce.
 function contenuMultiligne(texte, { size = 18 } = {}) {
   const lignes = String(texte || "")
     .split(/\r?\n/)
@@ -89,193 +87,81 @@ function cellule(children, { fill, merge, align } = {}) {
   return new TableCell(opts);
 }
 
-export async function rapportHebdoWord(rap) {
-  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+// Les 3 cellules communes (description, résultat, statut, %) d'une ligne.
+function cellulesCommunes(l) {
+  return [
+    cellule(contenuMultiligne(l.etat)),
+    cellule(contenuMultiligne(l.livrable)),
+    cellule(
+      [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
+      { align: "center" },
+    ),
+    cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
+  ];
+}
 
-  // En-tête du tableau.
+// -------------------------------------------------------------------------
+// Tableau INDIVIDUEL (groupé par Rubriques)
+// -------------------------------------------------------------------------
+function tableauIndividuel(groupes, periodeCol) {
   const enTete = new TableRow({
     tableHeader: true,
     children: [
       celluleEntete("Rubriques"),
-      celluleEntete(`Activités programmées de la semaine ${periodeCol}`),
+      celluleEntete(`Activités programmées (${periodeCol})`),
       celluleEntete("Description de l'activité"),
       celluleEntete("Résultat attendu (livrable)"),
       celluleEntete("Statut"),
       celluleEntete("% réalisation"),
-      celluleEntete("Activités à mener au cours de la semaine suivante"),
     ],
   });
 
-  // Lignes de données, groupées par Rubriques (catégorie) avec fusion verticale.
   const lignes = [];
-  for (const groupe of rap.groupes) {
+  for (const groupe of groupes) {
     groupe.lignes.forEach((l, i) => {
       const premiere = i === 0;
       lignes.push(
         new TableRow({
           children: [
-            // Colonne Rubriques : fusionnée verticalement sur tout le groupe.
             cellule(
-              premiere
-                ? [ligneTexte(groupe.rubrique, { bold: true, color: PETROLE, size: 18 })]
-                : [new Paragraph({ children: [] })],
-              {
-                fill: PETROLE_CLAIR,
-                merge: premiere ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE,
-                align: "center",
-              },
+              premiere ? [ligneTexte(groupe.rubrique, { bold: true, color: PETROLE, size: 18 })] : [new Paragraph({ children: [] })],
+              { fill: PETROLE_CLAIR, merge: premiere ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE, align: "center" },
             ),
             cellule([ligneTexte(l.programmee, { size: 18 })]),
-            cellule(contenuMultiligne(l.etat)),
-            cellule(contenuMultiligne(l.livrable)),
-            cellule(
-              [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
-              { align: "center" },
-            ),
-            cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
-            cellule(contenuMultiligne(l.aMener)),
+            ...cellulesCommunes(l),
           ],
         }),
       );
     });
   }
+  if (lignes.length === 0) lignes.push(ligneVide(6));
 
-  if (lignes.length === 0) {
-    lignes.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 7,
-            borders: BORDS_CELLULE,
-            margins: { top: 80, bottom: 80, left: 80, right: 80 },
-            children: [
-              ligneTexte("Aucune activité enregistrée sur cette période.", {
-                color: GRIS,
-                align: AlignmentType.CENTER,
-              }),
-            ],
-          }),
-        ],
-      }),
-    );
-  }
-
-  const tableau = new Table({
+  return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: LARGEURS.map((p) => Math.round((p / 100) * 15000)),
+    columnWidths: LARGEURS_IND.map((p) => Math.round((p / 100) * 15000)),
     rows: [enTete, ...lignes],
   });
-
-  const doc = new Document({
-    styles: { default: { document: { run: { font: "Calibri", size: 20 } } } },
-    sections: [
-      {
-        properties: {
-          page: {
-            size: { orientation: PageOrientation.LANDSCAPE },
-            margin: { top: 720, bottom: 720, left: 720, right: 720 },
-          },
-        },
-        children: [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            heading: HeadingLevel.HEADING_1,
-            spacing: { after: 60 },
-            children: [new TextRun({ text: "RAPPORT D'ACTIVITÉS", bold: true, size: 32, color: ENCRE })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
-            children: [
-              new TextRun({ text: `Du ${rap.debut_court} au ${rap.fin_court}`, bold: true, size: 24, color: PETROLE }),
-            ],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 60 },
-            children: [new TextRun({ text: rap.departement, size: 22, color: GRIS })],
-          }),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 240 },
-            children: [
-              new TextRun({ text: rap.user.nom_complet.toUpperCase(), bold: true, size: 24, color: ENCRE }),
-              ...(rap.user.poste ? [new TextRun({ text: `  —  ${rap.user.poste}`, size: 22, color: GRIS })] : []),
-            ],
-          }),
-          tableau,
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            spacing: { before: 200 },
-            children: [
-              new TextRun({
-                text: `Référence : ${rap.reference} · Document interne · MUFID UNION`,
-                italics: true,
-                size: 16,
-                color: GRIS,
-              }),
-            ],
-          }),
-        ],
-      },
-    ],
-  });
-
-  return Packer.toBuffer(doc);
 }
 
-// Bloc-titre commun aux rapports (centré).
-function blocTitre({ sousTitre, ligne, departement }) {
-  return [
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      heading: HeadingLevel.HEADING_1,
-      spacing: { after: 60 },
-      children: [new TextRun({ text: "RAPPORT D'ACTIVITÉS", bold: true, size: 32, color: ENCRE })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 60 },
-      children: [new TextRun({ text: sousTitre, bold: true, size: 24, color: BLEU })],
-    }),
-    new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: ligne ? 60 : 240 },
-      // Département dynamique (Infrastructure, Exploitation Système…).
-      children: [new TextRun({ text: departement, size: 22, color: GRIS })],
-    }),
-    ...(ligne
-      ? [
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 240 },
-            children: [new TextRun({ text: ligne, bold: true, size: 22, color: ENCRE })],
-          }),
-        ]
-      : []),
-  ];
-}
-
-export async function rapportConsolideHebdoWord(rap) {
-  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
-
+// -------------------------------------------------------------------------
+// Tableau CONSOLIDÉ (Agent -> Rubriques)
+// -------------------------------------------------------------------------
+function tableauConsolide(employes, periodeCol) {
   const enTete = new TableRow({
     tableHeader: true,
     children: [
       celluleEntete("Agent"),
       celluleEntete("Rubriques"),
-      celluleEntete(`Activités programmées de la semaine ${periodeCol}`),
+      celluleEntete(`Activités programmées (${periodeCol})`),
       celluleEntete("Description de l'activité"),
       celluleEntete("Résultat attendu (livrable)"),
       celluleEntete("Statut"),
       celluleEntete("% réalisation"),
-      celluleEntete("Activités à mener au cours de la semaine suivante"),
     ],
   });
 
   const lignes = [];
-  for (const emp of rap.employes) {
-    // Nombre total de lignes de l'agent (pour la fusion verticale).
+  for (const emp of employes) {
     let premiereEmp = true;
     for (const groupe of emp.groupes) {
       groupe.lignes.forEach((l, i) => {
@@ -288,101 +174,152 @@ export async function rapportConsolideHebdoWord(rap) {
               ],
               { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.RESTART, align: "center" },
             )
-          : cellule([new Paragraph({ children: [] })], {
-              fill: PETROLE_TRES_CLAIR,
-              merge: VerticalMergeType.CONTINUE,
-              align: "center",
-            });
+          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center" });
         const celluleRubrique = premiereCat
           ? cellule([ligneTexte(groupe.rubrique, { bold: true, color: BLEU, size: 18 })], {
-              fill: PETROLE_CLAIR,
-              merge: VerticalMergeType.RESTART,
-              align: "center",
+              fill: PETROLE_CLAIR, merge: VerticalMergeType.RESTART, align: "center",
             })
-          : cellule([new Paragraph({ children: [] })], {
-              fill: PETROLE_CLAIR,
-              merge: VerticalMergeType.CONTINUE,
-              align: "center",
-            });
+          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center" });
 
         lignes.push(
           new TableRow({
-            children: [
-              celluleAgent,
-              celluleRubrique,
-              cellule([ligneTexte(l.programmee, { size: 18 })]),
-              cellule(contenuMultiligne(l.etat)),
-              cellule(contenuMultiligne(l.livrable)),
-              cellule(
-                [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
-                { align: "center" },
-              ),
-              cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
-              cellule(contenuMultiligne(l.aMener)),
-            ],
+            children: [celluleAgent, celluleRubrique, cellule([ligneTexte(l.programmee, { size: 18 })]), ...cellulesCommunes(l)],
           }),
         );
         premiereEmp = false;
       });
     }
   }
+  if (lignes.length === 0) lignes.push(ligneVide(7));
 
-  if (lignes.length === 0) {
-    lignes.push(
-      new TableRow({
-        children: [
-          new TableCell({
-            columnSpan: 8,
-            borders: BORDS_CELLULE,
-            margins: { top: 80, bottom: 80, left: 80, right: 80 },
-            children: [
-              ligneTexte("Aucune activité enregistrée sur cette période.", { color: GRIS, align: AlignmentType.CENTER }),
-            ],
-          }),
-        ],
-      }),
-    );
-  }
-
-  const tableau = new Table({
+  return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     columnWidths: LARGEURS_CONS.map((p) => Math.round((p / 100) * 15000)),
     rows: [enTete, ...lignes],
   });
+}
 
-  const doc = new Document({
+function ligneVide(span) {
+  return new TableRow({
+    children: [
+      new TableCell({
+        columnSpan: span,
+        borders: BORDS_CELLULE,
+        margins: { top: 80, bottom: 80, left: 80, right: 80 },
+        children: [ligneTexte("Aucune activité sur cette période.", { color: GRIS, align: AlignmentType.CENTER })],
+      }),
+    ],
+  });
+}
+
+// En-tête du document (titre + type détecté + période + département + ligne).
+function enTeteDocument({ typeLabel, debut_court, fin_court, departement, ligne }) {
+  return [
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      heading: HeadingLevel.HEADING_1,
+      spacing: { after: 40 },
+      children: [new TextRun({ text: `RAPPORT D'ACTIVITÉS ${typeLabel || ""}`.trim(), bold: true, size: 32, color: ENCRE })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: `Du ${debut_court} au ${fin_court}`, bold: true, size: 24, color: BLEU })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 60 },
+      children: [new TextRun({ text: departement, size: 22, color: GRIS })],
+    }),
+    new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 220 },
+      children: [ligne],
+    }),
+  ];
+}
+
+// Intitulé au-dessus d'un tableau.
+function titreTableau(texte, couleur = ENCRE) {
+  return new Paragraph({
+    spacing: { before: 220, after: 100 },
+    children: [new TextRun({ text: texte, bold: true, size: 22, color: couleur })],
+  });
+}
+
+function pied(reference) {
+  return new Paragraph({
+    alignment: AlignmentType.RIGHT,
+    spacing: { before: 200 },
+    children: [
+      new TextRun({ text: `Référence : ${reference} · Document interne · MUFID UNION`, italics: true, size: 16, color: GRIS }),
+    ],
+  });
+}
+
+const docPaysage = (children) =>
+  new Document({
     styles: { default: { document: { run: { font: "Calibri", size: 20 } } } },
     sections: [
       {
         properties: {
-          page: {
-            size: { orientation: PageOrientation.LANDSCAPE },
-            margin: { top: 720, bottom: 720, left: 720, right: 720 },
-          },
+          page: { size: { orientation: PageOrientation.LANDSCAPE }, margin: { top: 720, bottom: 720, left: 720, right: 720 } },
         },
-        children: [
-          ...blocTitre({
-            sousTitre: `Rapport consolidé — Du ${rap.debut_court} au ${rap.fin_court}`,
-            ligne: `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
-            departement: rap.departement,
-          }),
-          tableau,
-          new Paragraph({
-            alignment: AlignmentType.RIGHT,
-            spacing: { before: 200 },
-            children: [
-              new TextRun({
-                text: `Référence : ${rap.reference} · Document interne · MUFID UNION`,
-                italics: true,
-                size: 16,
-                color: GRIS,
-              }),
-            ],
-          }),
-        ],
+        children,
       },
     ],
   });
+
+export async function rapportHebdoWord(rap) {
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+  const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+
+  const doc = docPaysage([
+    ...enTeteDocument({
+      typeLabel: rap.type_label,
+      debut_court: rap.debut_court,
+      fin_court: rap.fin_court,
+      departement: rap.departement,
+      ligne: new TextRun({
+        text: rap.user.nom_complet.toUpperCase() + (rap.user.poste ? `  —  ${rap.user.poste}` : ""),
+        bold: true,
+        size: 24,
+        color: ENCRE,
+      }),
+    }),
+    titreTableau(`Activités de la période — ${periodeCol}`),
+    tableauIndividuel(rap.groupes, periodeCol),
+    titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
+    tableauIndividuel(rap.groupes_a_mener, periodeSuiv),
+    pied(rap.reference),
+  ]);
+
+  return Packer.toBuffer(doc);
+}
+
+export async function rapportConsolideHebdoWord(rap) {
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+  const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+
+  const doc = docPaysage([
+    ...enTeteDocument({
+      typeLabel: `${rap.type_label} — consolidé`,
+      debut_court: rap.debut_court,
+      fin_court: rap.fin_court,
+      departement: rap.departement,
+      ligne: new TextRun({
+        text: `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
+        bold: true,
+        size: 22,
+        color: ENCRE,
+      }),
+    }),
+    titreTableau(`Activités de la période — ${periodeCol}`),
+    tableauConsolide(rap.employes, periodeCol),
+    titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
+    tableauConsolide(rap.employes_a_mener, periodeSuiv),
+    pied(rap.reference),
+  ]);
 
   return Packer.toBuffer(doc);
 }

@@ -105,12 +105,18 @@ rapportsRouter.get("/individuel/apercu", requirePermission("RAPPORTS_EXPORTER"),
   res.json({
     user: { id: user.id, nom_complet: user.nom_complet, poste: user.poste, email: user.email },
     periode: rap.periode,
+    type_label: rap.type_label,
+    suivant_label: rap.suivant_label,
     reference: rap.reference,
     departement: rap.departement,
     debut_court: rap.debut_court,
     fin_court: rap.fin_court,
+    debut_suivant_court: rap.debut_suivant_court,
+    fin_suivant_court: rap.fin_suivant_court,
     nb_activites: rap.nb_activites,
+    nb_a_mener: rap.nb_a_mener,
     groupes: rap.groupes,
+    groupes_a_mener: rap.groupes_a_mener,
   });
 });
 
@@ -123,12 +129,18 @@ rapportsRouter.get("/consolide/apercu", requirePermission("RAPPORTS_EXPORTER"), 
   const rap = await rapportConsolideHebdo(date_debut, date_fin, perimetreDepartement(req.user));
   res.json({
     periode: rap.periode,
+    type_label: rap.type_label,
+    suivant_label: rap.suivant_label,
     reference: rap.reference,
     departement: rap.departement,
     debut_court: rap.debut_court,
     fin_court: rap.fin_court,
+    debut_suivant_court: rap.debut_suivant_court,
+    fin_suivant_court: rap.fin_suivant_court,
     nb_activites: rap.nb_activites,
+    nb_a_mener: rap.nb_a_mener,
     nb_employes: rap.nb_employes,
     employes: rap.employes,
+    employes_a_mener: rap.employes_a_mener,
   });
 });

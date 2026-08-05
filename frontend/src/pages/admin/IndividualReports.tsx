@@ -13,7 +13,6 @@ interface LigneRapport {
   livrable: string;
   pourcentage: string;
   statut: string;
-  aMener: string;
 }
 interface GroupeRapport {
   code: string;
@@ -25,12 +24,18 @@ interface GroupeRapport {
 interface Apercu {
   user: { id: number; nom_complet: string; poste: string | null; email: string };
   periode: string;
+  type_label: string;
+  suivant_label: string;
   reference: string;
   departement: string;
   debut_court: string;
   fin_court: string;
+  debut_suivant_court: string;
+  fin_suivant_court: string;
   nb_activites: number;
+  nb_a_mener: number;
   groupes: GroupeRapport[];
+  groupes_a_mener: GroupeRapport[];
 }
 
 export default function IndividualReports() {
@@ -71,10 +76,11 @@ export default function IndividualReports() {
   }
 
   const periodeCol = apercu ? `du ${apercu.debut_court} au ${apercu.fin_court}` : "";
+  const periodeSuiv = apercu ? `du ${apercu.debut_suivant_court} au ${apercu.fin_suivant_court}` : "";
 
   return (
     <>
-      <EnteteSection titre="Rapports individuels" sousTitre="Générez le rapport d'activités d'un employé, au format du modèle métier." />
+      <EnteteSection titre="Rapports individuels" sousTitre="Le type (hebdomadaire, mensuel, annuel) est détecté d'après la période." />
 
       {/* Barre de configuration */}
       <div className="carte mb-5 flex flex-wrap items-end gap-4 p-[16px_18px]">
@@ -116,9 +122,11 @@ export default function IndividualReports() {
         <Spinner />
       ) : (
         <div className="rounded-md border border-bordure bg-white p-6 shadow-popover sm:p-9">
-          {/* En-tête calqué sur le modèle */}
+          {/* En-tête calqué sur le modèle, avec le type détecté */}
           <div className="mb-6 text-center">
-            <div className="text-xl font-bold tracking-tight text-encre">RAPPORT D'ACTIVITÉS</div>
+            <div className="text-xl font-bold tracking-tight text-encre">
+              RAPPORT D'ACTIVITÉS {apercu.type_label}
+            </div>
             <div className="mt-1 text-[15px] font-semibold text-petrole-600">Du {apercu.debut_court} au {apercu.fin_court}</div>
             <div className="mt-0.5 text-[13px] text-gris">{apercu.departement}</div>
             <div className="mt-2 text-[15px] font-semibold uppercase text-encre">
@@ -127,51 +135,15 @@ export default function IndividualReports() {
             </div>
           </div>
 
-          {/* Tableau à 6 colonnes, groupé par Rubriques (catégorie) */}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse text-[12px]">
-              <thead>
-                <tr className="bg-petrole-800 text-left text-white">
-                  <Th>Rubriques</Th>
-                  <Th>Activités programmées de la semaine {periodeCol}</Th>
-                  <Th>Description de l'activité</Th>
-                  <Th>Résultat attendu (livrable)</Th>
-                  <Th className="text-center">Statut</Th>
-                  <Th className="text-center">% réal.</Th>
-                  <Th>Activités à mener (semaine suivante)</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {apercu.groupes.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="border border-[#D8E1E5] py-8 text-center text-grisdoux">
-                      Aucune activité enregistrée sur cette période.
-                    </td>
-                  </tr>
-                )}
-                {apercu.groupes.map((g) =>
-                  g.lignes.map((l, i) => (
-                    <tr key={g.code + i} className="align-top">
-                      {i === 0 && (
-                        <td
-                          rowSpan={g.lignes.length}
-                          className="border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
-                        >
-                          {g.rubrique}
-                        </td>
-                      )}
-                      <Td>{l.programmee}</Td>
-                      <Td><Multiligne texte={l.etat} /></Td>
-                      <Td><Multiligne texte={l.livrable} /></Td>
-                      <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>
-                      <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold text-ardoise">{l.pourcentage}</td>
-                      <Td><Multiligne texte={l.aMener} /></Td>
-                    </tr>
-                  )),
-                )}
-              </tbody>
-            </table>
+          {/* Tableau 1 : activités de la période */}
+          <div className="mb-2 text-[13.5px] font-semibold text-encre">Activités de la période — {periodeCol}</div>
+          <TableauRapport groupes={apercu.groupes} periodeCol={periodeCol} />
+
+          {/* Tableau 2 : activités à mener (période suivante) */}
+          <div className="mb-2 mt-7 text-[13.5px] font-semibold text-petrole-600">
+            Activités à mener ({apercu.suivant_label}) — {periodeSuiv}
           </div>
+          <TableauRapport groupes={apercu.groupes_a_mener} periodeCol={periodeSuiv} />
 
           <div className="mt-4 text-right text-[10.5px] italic text-grisdoux">
             Référence : {apercu.reference} · Document interne · MUFID UNION
@@ -182,10 +154,59 @@ export default function IndividualReports() {
   );
 }
 
+// Tableau du rapport (6 colonnes), groupé par Rubriques. Réutilisé pour les deux tableaux.
+function TableauRapport({ groupes, periodeCol }: { groupes: GroupeRapport[]; periodeCol: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[820px] border-collapse text-[12px]">
+        <thead>
+          <tr className="bg-petrole-800 text-left text-white">
+            <Th>Rubriques</Th>
+            <Th>Activités programmées ({periodeCol})</Th>
+            <Th>Description de l'activité</Th>
+            <Th>Résultat attendu (livrable)</Th>
+            <Th className="text-center">Statut</Th>
+            <Th className="text-center">% réal.</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {groupes.length === 0 && (
+            <tr>
+              <td colSpan={6} className="border border-[#D8E1E5] py-6 text-center text-grisdoux">
+                Aucune activité sur cette période.
+              </td>
+            </tr>
+          )}
+          {groupes.map((g) =>
+            g.lignes.map((l, i) => (
+              <tr key={g.code + i} className="align-top">
+                {i === 0 && (
+                  <td
+                    rowSpan={g.lignes.length}
+                    className="border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
+                  >
+                    {g.rubrique}
+                  </td>
+                )}
+                <Td>{l.programmee}</Td>
+                <Td><Multiligne texte={l.etat} /></Td>
+                <Td><Multiligne texte={l.livrable} /></Td>
+                <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>
+                <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold text-ardoise">{l.pourcentage}</td>
+              </tr>
+            )),
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function couleurStatut(statut: string): string {
   if (statut === "Terminé") return "#1B8A4B";
+  if (statut === "Clôturé") return "#0B6E39";
   if (statut === "En cours") return "#0E5E7C";
-  if (statut === "Bloqué") return "#C0392B";
+  if (statut === "Standby") return "#D2691E";
   return "#5E717B"; // À faire / autre
 }
 
@@ -197,7 +218,6 @@ function Td({ children }: { children: React.ReactNode }) {
   return <td className="border border-[#D8E1E5] px-2.5 py-2 text-ardoise">{children}</td>;
 }
 
-// Affiche un texte multi-lignes en liste à puces (ou tel quel si une seule ligne).
 function Multiligne({ texte }: { texte: string }) {
   const lignes = (texte || "")
     .split(/\r?\n/)

@@ -21,7 +21,6 @@ const schema = z.object({
   consignes: z.string().max(2000).optional(), // consigne de départ
   description: z.string().max(2000).optional(), // état d'exécution (facultatif à l'affectation)
   livrable: z.string().max(1000).optional(),
-  activites_a_mener: z.string().max(1000).optional(),
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
   statut: z.enum(LISTE_STATUTS_ADMIN as [Statut, ...Statut[]]),
   pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),
@@ -60,7 +59,6 @@ export default function AdminTaskForm() {
       consignes: "",
       description: "",
       livrable: "",
-      activites_a_mener: "",
       priorite: "MOYENNE",
       statut: "A_FAIRE",
       pourcentage: POURCENTAGE_PAR_STATUT.A_FAIRE,
@@ -180,14 +178,9 @@ export default function AdminTaskForm() {
             <Champ label="Consigne de départ">
               <textarea rows={2} className="champ resize-y" placeholder="Instructions / attentes pour l'agent (non modifiable par l'agent)…" {...register("consignes")} />
             </Champ>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Champ label="Résultat attendu (livrable)">
-                <textarea rows={2} className="champ resize-y" placeholder="Ex. Fichier des incidents, rapport produit…" {...register("livrable")} />
-              </Champ>
-              <Champ label="Activités à mener (semaine suivante)">
-                <textarea rows={2} className="champ resize-y" placeholder="Prochaines étapes / suite à donner…" {...register("activites_a_mener")} />
-              </Champ>
-            </div>
+            <Champ label="Résultat attendu (livrable)">
+              <textarea rows={2} className="champ resize-y" placeholder="Ex. Fichier des incidents, rapport produit…" {...register("livrable")} />
+            </Champ>
             <Champ label="État d'exécution (facultatif)">
               <textarea rows={2} className="champ resize-y" placeholder="À laisser vide en général : l'agent le renseignera." {...register("description")} />
             </Champ>

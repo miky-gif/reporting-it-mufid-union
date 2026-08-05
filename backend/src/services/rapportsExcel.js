@@ -77,30 +77,32 @@ function fusion(ws, col, debut, fin) {
   if (fin > debut) ws.mergeCells(debut, col, fin, col);
 }
 
-export async function rapportHebdoExcel(rap) {
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Rapport individuel");
-  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+// Titre d'une section (au-dessus d'un tableau).
+function titreSection(ws, r, texte, span, couleur = "FF16262E") {
+  ws.mergeCells(r, 1, r, span);
+  const c = ws.getCell(r, 1);
+  c.value = texte;
+  c.font = { bold: true, size: 11, color: { argb: couleur } };
+  ws.getRow(r).height = 18;
+  return r + 1;
+}
 
-  let r = blocTitre(
-    ws,
-    7,
-    `Du ${rap.debut_court} au ${rap.fin_court}`,
-    `${rap.user.nom_complet.toUpperCase()}${rap.user.poste ? "  —  " + rap.user.poste : ""}`,
-    rap.departement,
-  );
-
+// Remplit un tableau individuel (6 colonnes) à partir de `groupes`.
+function tableauInd(ws, r, groupes, periodeCol) {
   r = enteteTableau(ws, r, [
     "Rubriques",
-    `Activités programmées de la semaine ${periodeCol}`,
+    `Activités programmées (${periodeCol})`,
     "Description de l'activité",
     "Résultat attendu (livrable)",
     "Statut",
     "% réalisation",
-    "Activités à mener (semaine suivante)",
   ]);
-
-  for (const g of rap.groupes) {
+  if (groupes.length === 0) {
+    ws.mergeCells(r, 1, r, 6);
+    ecrireCellule(ws, r, 1, "Aucune activité sur cette période.", { align: "center", color: GRIS });
+    return r + 1;
+  }
+  for (const g of groupes) {
     const debut = r;
     for (const l of g.lignes) {
       ecrireCellule(ws, r, 1, g.rubrique, { bold: true, color: "FF0E5E7C", align: "center", fill: PETROLE_CLAIR });
@@ -109,46 +111,30 @@ export async function rapportHebdoExcel(rap) {
       ecrireCellule(ws, r, 4, l.livrable, { wrap: true });
       ecrireCellule(ws, r, 5, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
       ecrireCellule(ws, r, 6, l.pourcentage, { bold: true, align: "center" });
-      ecrireCellule(ws, r, 7, l.aMener, { wrap: true });
       r += 1;
     }
     fusion(ws, 1, debut, r - 1);
   }
-  if (rap.groupes.length === 0) {
-    ws.mergeCells(r, 1, r, 7);
-    ecrireCellule(ws, r, 1, "Aucune activité enregistrée sur cette période.", { align: "center", color: GRIS });
-  }
-
-  ws.columns = [{ width: 22 }, { width: 30 }, { width: 38 }, { width: 24 }, { width: 13 }, { width: 12 }, { width: 32 }];
-  ws.views = [{ state: "frozen", ySplit: 6 }];
-  return Buffer.from(await wb.xlsx.writeBuffer());
+  return r;
 }
 
-export async function rapportConsolideHebdoExcel(rap) {
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Rapport consolidé");
-  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
-
-  let r = blocTitre(
-    ws,
-    8,
-    `Rapport consolidé — Du ${rap.debut_court} au ${rap.fin_court}`,
-    `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
-    rap.departement,
-  );
-
+// Remplit un tableau consolidé (7 colonnes) à partir de `employes`.
+function tableauCons(ws, r, employes, periodeCol) {
   r = enteteTableau(ws, r, [
     "Agent",
     "Rubriques",
-    `Activités programmées de la semaine ${periodeCol}`,
+    `Activités programmées (${periodeCol})`,
     "Description de l'activité",
     "Résultat attendu (livrable)",
     "Statut",
     "% réalisation",
-    "Activités à mener (semaine suivante)",
   ]);
-
-  for (const emp of rap.employes) {
+  if (employes.length === 0) {
+    ws.mergeCells(r, 1, r, 7);
+    ecrireCellule(ws, r, 1, "Aucune activité sur cette période.", { align: "center", color: GRIS });
+    return r + 1;
+  }
+  for (const emp of employes) {
     const debutEmp = r;
     for (const g of emp.groupes) {
       const debutCat = r;
@@ -160,12 +146,10 @@ export async function rapportConsolideHebdoExcel(rap) {
         ecrireCellule(ws, r, 5, l.livrable, { wrap: true });
         ecrireCellule(ws, r, 6, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
         ecrireCellule(ws, r, 7, l.pourcentage, { bold: true, align: "center" });
-        ecrireCellule(ws, r, 8, l.aMener, { wrap: true });
         r += 1;
       }
       fusion(ws, 2, debutCat, r - 1);
     }
-    // Colonne Agent : nom (+ poste) fusionné sur tout le bloc de l'agent.
     const cellAgent = ecrireCellule(
       ws,
       debutEmp,
@@ -176,12 +160,55 @@ export async function rapportConsolideHebdoExcel(rap) {
     cellAgent.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
     fusion(ws, 1, debutEmp, r - 1);
   }
-  if (rap.employes.length === 0) {
-    ws.mergeCells(r, 1, r, 8);
-    ecrireCellule(ws, r, 1, "Aucune activité enregistrée sur cette période.", { align: "center", color: GRIS });
-  }
+  return r;
+}
 
-  ws.columns = [{ width: 22 }, { width: 19 }, { width: 26 }, { width: 32 }, { width: 22 }, { width: 13 }, { width: 12 }, { width: 28 }];
+export async function rapportHebdoExcel(rap) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Rapport individuel");
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+  const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+
+  let r = blocTitre(
+    ws,
+    6,
+    `${rap.type_label} · Du ${rap.debut_court} au ${rap.fin_court}`,
+    `${rap.user.nom_complet.toUpperCase()}${rap.user.poste ? "  —  " + rap.user.poste : ""}`,
+    rap.departement,
+  );
+
+  r = titreSection(ws, r, `Activités de la période — ${periodeCol}`, 6);
+  r = tableauInd(ws, r, rap.groupes, periodeCol);
+  r += 1;
+  r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 6, "FF0E5E7C");
+  r = tableauInd(ws, r, rap.groupes_a_mener, periodeSuiv);
+
+  ws.columns = [{ width: 22 }, { width: 34 }, { width: 40 }, { width: 26 }, { width: 14 }, { width: 13 }];
+  ws.views = [{ state: "frozen", ySplit: 6 }];
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
+export async function rapportConsolideHebdoExcel(rap) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Rapport consolidé");
+  const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
+  const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
+
+  let r = blocTitre(
+    ws,
+    7,
+    `${rap.type_label} — consolidé · Du ${rap.debut_court} au ${rap.fin_court}`,
+    `Ensemble du personnel · ${rap.nb_employes} agent(s) · ${rap.nb_activites} activité(s)`,
+    rap.departement,
+  );
+
+  r = titreSection(ws, r, `Activités de la période — ${periodeCol}`, 7);
+  r = tableauCons(ws, r, rap.employes, periodeCol);
+  r += 1;
+  r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 7, "FF0E5E7C");
+  r = tableauCons(ws, r, rap.employes_a_mener, periodeSuiv);
+
+  ws.columns = [{ width: 22 }, { width: 19 }, { width: 30 }, { width: 34 }, { width: 24 }, { width: 13 }, { width: 12 }];
   ws.views = [{ state: "frozen", ySplit: 6 }];
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
