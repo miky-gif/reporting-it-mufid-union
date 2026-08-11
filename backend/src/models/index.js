@@ -91,7 +91,7 @@ export const Categorie = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     code: { type: DataTypes.STRING(40), allowNull: false, unique: true },
-    nom: { type: DataTypes.STRING(80), allowNull: false },
+    nom: { type: DataTypes.STRING(255), allowNull: false },
     couleur: { type: DataTypes.STRING(9), allowNull: false, defaultValue: "#64757D" },
     // Liste des rubriques (tableau de chaînes) stockée en JSON.
     rubriques: { type: DataTypes.JSON, allowNull: false, defaultValue: [] },
@@ -136,7 +136,11 @@ export const Activite = sequelize.define(
     // Département de l'agent au moment de l'affectation (dénormalisé : permet
     // un cloisonnement simple et rapide des listes, stats et rapports).
     departement_id: { type: DataTypes.INTEGER, allowNull: true },
-    titre: { type: DataTypes.STRING(200), allowNull: false },
+    titre: { type: DataTypes.TEXT, allowNull: false }, // rubrique choisie (texte libre, peut être long)
+    titre: { type: DataTypes.TEXT, allowNull: false },
+
+
+
     description: { type: DataTypes.TEXT, allowNull: true }, // « État d'exécution de l'activité »
     // Consigne de départ (attentes/instructions) — modifiable par l'admin uniquement.
     consignes: { type: DataTypes.TEXT, allowNull: true },

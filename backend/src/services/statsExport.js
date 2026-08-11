@@ -346,12 +346,12 @@ export function statistiquesPdf(st) {
       const margeBasse = doc.page.margins.bottom;
       doc.page.margins.bottom = 0;
       doc.fillColor("#9AA7AD").font("Helvetica-Oblique").fontSize(7.5)
-        .text(
-          `Document interne · MUFID UNION · Zone CEMAC · Régulé COBAC          Page ${i + 1} / ${pages.count}`,
-          M,
-          doc.page.height - 20,
-          { width: W, align: "center", lineBreak: false },
-        );
+        // .text(
+        //   `Document interne · MUFID UNION · Zone CEMAC · Régulé COBAC          Page ${i + 1} / ${pages.count}`,
+        //   M,
+        //   doc.page.height - 20,
+        //   { width: W, align: "center", lineBreak: false },
+        // );
       doc.page.margins.bottom = margeBasse;
     }
 

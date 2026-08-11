@@ -17,11 +17,11 @@ export const changeMotDePasseSchema = z.object({
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
 
 const activiteBase = z.object({
-  titre: z.string().min(2, "Le titre est requis (2 caractères min.).").max(200),
-  description: z.string().max(2000).optional().nullable(), // état d'exécution de l'activité
-  consignes: z.string().max(2000).optional().nullable(), // consigne de départ (admin)
-  livrable: z.string().max(1000).optional().nullable(),
-  activites_a_mener: z.string().max(1000).optional().nullable(),
+  titre: z.string().min(2, "Le titre est requis (2 caractères min.).").max(500),
+  description: z.string().max(5000).optional().nullable(), // état d'exécution de l'activité
+  consignes: z.string().max(5000).optional().nullable(), // consigne de départ (admin)
+  livrable: z.string().max(5000).optional().nullable(),
+  activites_a_mener: z.string().max(5000).optional().nullable(),
   categorie: z.string().min(1, "Catégorie requise.").max(40), // code de catégorie (validé côté route)
   priorite: z.enum(PRIORITES).default("MOYENNE"),
   statut: z.enum(STATUTS).default("A_FAIRE"),
@@ -130,17 +130,17 @@ const couleurHex = z
   .regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/, "Couleur hexadécimale invalide (ex. #0E5E7C).");
 
 export const categorieCreateSchema = z.object({
-  nom: z.string().min(2, "Nom de catégorie requis.").max(80),
+  nom: z.string().min(2, "Nom de catégorie requis.").max(255),
   couleur: couleurHex.default("#64757D"),
-  rubriques: z.array(z.string().min(1).max(120)).default([]),
+  rubriques: z.array(z.string().min(1).max(500)).default([]),
   // Département cible (le super admin peut le choisir ; un admin crée dans le sien).
   departement_id: z.coerce.number().int().positive().optional().nullable(),
 });
 
 export const categorieUpdateSchema = z.object({
-  nom: z.string().min(2).max(80).optional(),
+  nom: z.string().min(2).max(255).optional(),
   couleur: couleurHex.optional(),
-  rubriques: z.array(z.string().min(1).max(120)).optional(),
+  rubriques: z.array(z.string().min(1).max(500)).optional(),
   actif: z.boolean().optional(),
   ordre: z.number().int().optional(),
   departement_id: z.coerce.number().int().positive().optional().nullable(),

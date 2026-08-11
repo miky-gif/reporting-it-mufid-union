@@ -39,16 +39,16 @@ export function CategorieTag({
   const c = infoOf(categorie);
   if (compact) {
     return (
-      <span className="inline-flex items-center gap-1.5 text-[11.5px] text-grisdoux">
-        <span className="h-[7px] w-[7px] rounded-sm" style={{ background: c.couleur }} />
-        {c.nom}
+      <span className="inline-flex max-w-full min-w-0 items-center gap-1.5 text-[11.5px] text-grisdoux">
+        <span className="h-[7px] w-[7px] flex-none rounded-sm" style={{ background: c.couleur }} />
+        <span className="truncate">{c.nom}</span>
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-2 rounded-md border border-[#E8EDEE] bg-surface px-2.5 py-1 text-xs font-medium text-ardoise">
-      <span className="h-2 w-2 rounded-sm" style={{ background: c.couleur }} />
-      {c.nom}
+    <span className="inline-flex max-w-full min-w-0 items-center gap-2 rounded-md border border-[#E8EDEE] bg-surface px-2.5 py-1 text-xs font-medium text-ardoise">
+      <span className="h-2 w-2 flex-none rounded-sm" style={{ background: c.couleur }} />
+      <span className="truncate">{c.nom}</span>
     </span>
   );
 }

@@ -194,7 +194,16 @@ export default function ConsolidatedReports() {
 function TableauConsolide({ employes, periodeCol }: { employes: EmployeRapport[]; periodeCol: string }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[980px] border-collapse text-[12px]">
+      <table className="w-full min-w-[920px] table-fixed border-collapse text-[12px]">
+        <colgroup>
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "19%" }} />
+          <col style={{ width: "25%" }} />
+          <col style={{ width: "14%" }} />
+          <col style={{ width: "9%" }} />
+          <col style={{ width: "9%" }} />
+        </colgroup>
         <thead>
           <tr className="bg-petrole-800 text-left text-white">
             <Th className="text-center">Agent</Th>
@@ -222,7 +231,7 @@ function TableauConsolide({ employes, periodeCol }: { employes: EmployeRapport[]
                   {gi === 0 && i === 0 && (
                     <td
                       rowSpan={totalRows}
-                      className="border border-[#D8E1E5] bg-[#EEF4F6] px-2.5 py-2 text-center align-middle"
+                      className="break-words border border-[#D8E1E5] bg-[#EEF4F6] px-2.5 py-2 text-center align-middle"
                     >
                       <div className="font-semibold uppercase text-encre">{emp.nom_complet}</div>
                       {emp.poste && <div className="text-[10.5px] font-normal text-grisdoux">{emp.poste}</div>}
@@ -231,7 +240,7 @@ function TableauConsolide({ employes, periodeCol }: { employes: EmployeRapport[]
                   {i === 0 && (
                     <td
                       rowSpan={g.lignes.length}
-                      className="border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
+                      className="break-words border border-[#D8E1E5] bg-petrole-50 px-2.5 py-2 text-center align-middle font-semibold text-petrole-700"
                     >
                       {g.rubrique}
                     </td>
@@ -264,7 +273,7 @@ function Th({ children, className = "" }: { children: React.ReactNode; className
 }
 
 function Td({ children }: { children: React.ReactNode }) {
-  return <td className="border border-[#D8E1E5] px-2.5 py-2 text-ardoise">{children}</td>;
+  return <td className="break-words border border-[#D8E1E5] px-2.5 py-2 align-top text-ardoise">{children}</td>;
 }
 
 function Multiligne({ texte }: { texte: string }) {

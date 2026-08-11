@@ -127,7 +127,7 @@ export function CategorieModal({
 
           <div className="mb-4">
             <label className="label">Nom de la catégorie <span className="text-danger">*</span></label>
-            <input className="champ" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex. Base de données" />
+            <input className="champ" required maxLength={255} value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex. Base de données" />
           </div>
 
           <div className="mb-5">
@@ -149,7 +149,7 @@ export function CategorieModal({
               {rubriques.map((r, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <GripVertical size={16} className="flex-none text-[#C6D2D7]" />
-                  <input className="champ flex-1 py-2" value={r} onChange={(e) => modifierRubrique(i, e.target.value)} />
+                  <input className="champ flex-1 py-2" maxLength={500} value={r} onChange={(e) => modifierRubrique(i, e.target.value)} />
                   <button type="button" onClick={() => setRubriques((prev) => prev.filter((_, idx) => idx !== i))} className="flex-none text-grisdoux hover:text-danger" title="Retirer">
                     <X size={18} />
                   </button>
@@ -163,6 +163,7 @@ export function CategorieModal({
             <div className="mt-3 flex items-center gap-2">
               <input
                 className="champ flex-1 py-2"
+                maxLength={500}
                 value={nouvelle}
                 onChange={(e) => setNouvelle(e.target.value)}
                 onKeyDown={(e) => {

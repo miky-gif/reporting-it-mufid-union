@@ -101,6 +101,23 @@ export async function ensureColonnes() {
     console.error("Migration priorité :", e.message);
   }
 
+  // 3bis) Champs texte allongés : titre de tâche en TEXT, nom de catégorie en VARCHAR(255).
+  try {
+    await sequelize.query("ALTER TABLE `activites` MODIFY COLUMN `titre` TEXT NOT NULL");
+    await sequelize.query("ALTER TABLE `categories` MODIFY COLUMN `nom` VARCHAR(255) NOT NULL");
+  } catch (e) {
+    console.error("Migration longueur des champs :", e.message);
+  }
+
+
+  // // Titre libre plus long : VARCHAR(200) -> TEXT
+  // await sequelize.query("ALTER TABLE `activites` MODIFY COLUMN `titre` TEXT NOT NULL");
+
+
+
+
+
+
   // 4) Backfill durée en minutes depuis l'ancienne durée en heures.
   await sequelize.query(
     "UPDATE `activites` SET `duree_minutes` = ROUND(`duree_heures`*60) " +

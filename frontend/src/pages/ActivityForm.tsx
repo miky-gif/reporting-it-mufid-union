@@ -18,10 +18,10 @@ import { AjustementPoints } from "@/components/ui/AjustementPoints";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
-  titre: z.string().min(2, "La rubrique est requise.").max(200), // stocke la rubrique choisie
-  consignes: z.string().max(2000).optional(), // consigne de départ (admin uniquement)
-  description: z.string().max(2000).optional(), // état d'exécution
-  livrable: z.string().max(1000).optional(),
+  titre: z.string().min(2, "La rubrique est requise.").max(500), // stocke la rubrique choisie
+  consignes: z.string().max(5000).optional(), // consigne de départ (admin uniquement)
+  description: z.string().max(5000).optional(), // état d'exécution
+  livrable: z.string().max(5000).optional(),
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
   statut: z.enum(["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"] as [Statut, ...Statut[]]),
   pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),

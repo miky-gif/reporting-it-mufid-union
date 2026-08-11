@@ -73,11 +73,11 @@ export default function CategoriesManagement() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((cat) => (
             <div key={cat.id} className={"carte p-5 " + (cat.actif ? "" : "opacity-60")}>
-              <div className="mb-3 flex items-start justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-4 w-4 rounded" style={{ background: cat.couleur }} />
-                  <div>
-                    <div className="text-[15px] font-semibold text-encre">{cat.nom}</div>
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                  <span className="mt-1 h-4 w-4 flex-none rounded" style={{ background: cat.couleur }} />
+                  <div className="min-w-0">
+                    <div className="break-words text-[15px] font-semibold text-encre">{cat.nom}</div>
                     {/* Département propriétaire (utile au super admin qui voit tout) */}
                     {estSuperAdmin && cat.departement_id && deps[cat.departement_id] ? (
                       <div
@@ -95,7 +95,7 @@ export default function CategoriesManagement() {
                   </div>
                 </div>
                 {!cat.actif && (
-                  <span className="rounded-md bg-[#FBF0DC] px-2 py-0.5 text-[10.5px] font-semibold text-[#B4750E]">Inactive</span>
+                  <span className="flex-none whitespace-nowrap rounded-md bg-[#FBF0DC] px-2 py-0.5 text-[10.5px] font-semibold text-[#B4750E]">Inactive</span>
                 )}
               </div>
 
@@ -104,7 +104,7 @@ export default function CategoriesManagement() {
                   <span className="text-[12px] text-grisdoux">Aucune rubrique</span>
                 ) : (
                   cat.rubriques.map((r) => (
-                    <span key={r} className="rounded-md border border-[#E8EDEE] bg-surface px-2 py-0.5 text-[11.5px] text-ardoise">
+                    <span key={r} className="max-w-full whitespace-normal break-words rounded-md border border-[#E8EDEE] bg-surface px-2 py-0.5 text-[11.5px] text-ardoise">
                       {r}
                     </span>
                   ))

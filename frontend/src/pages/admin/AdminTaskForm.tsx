@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, STATUTS } from "@/lib/constants";
+import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, ROLES, STATUTS } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
@@ -18,10 +18,10 @@ import { AjustementPoints } from "@/components/ui/AjustementPoints";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
-  titre: z.string().min(2, "La rubrique est requise.").max(200),
-  consignes: z.string().max(2000).optional(), // consigne de départ
-  description: z.string().max(2000).optional(), // état d'exécution (facultatif à l'affectation)
-  livrable: z.string().max(1000).optional(),
+  titre: z.string().min(2, "La rubrique est requise.").max(500),
+  consignes: z.string().max(5000).optional(), // consigne de départ
+  description: z.string().max(5000).optional(), // état d'exécution (facultatif à l'affectation)
+  livrable: z.string().max(5000).optional(),
   priorite: z.enum(LISTE_PRIORITES as [Priorite, ...Priorite[]]),
   statut: z.enum(LISTE_STATUTS_ADMIN as [Statut, ...Statut[]]),
   pourcentage: z.coerce.number().int().min(0, "Entre 0 et 100.").max(100, "Entre 0 et 100."),
@@ -40,7 +40,7 @@ type FormValues = z.infer<typeof schema>;
 export default function AdminTaskForm() {
   const navigate = useNavigate();
   const { actives, rubriquesOf, chargement: catChargement } = useCategories();
-  const { estSuperAdmin, estSuperviseur } = useAuth();
+  const { estSuperAdmin, estSuperviseur, user: moi } = useAuth();
   const [employes, setEmployes] = useState<UserWithStats[] | null>(null);
   const [selection, setSelection] = useState<number[]>([]);
   const [pending, setPending] = useState<File[]>([]);
@@ -86,10 +86,12 @@ export default function AdminTaskForm() {
   }, [dureeSaisie, unite, setValue]);
 
   useEffect(() => {
+    // Tous les utilisateurs actifs de mon périmètre, sauf moi-même (les admins
+    // peuvent s'affecter des tâches entre eux ; pour SA propre tâche → « Saisir une activité »).
     api.get<UserWithStats[]>("/users").then((r) => {
-      setEmployes(r.data.filter((u) => u.actif && u.role === "EMPLOYE"));
+      setEmployes(r.data.filter((u) => u.actif && u.id !== moi?.id));
     });
-  }, []);
+  }, [moi?.id]);
 
   useEffect(() => {
     if (val.categorie || catChargement || actives.length === 0) return;
@@ -325,7 +327,7 @@ export default function AdminTaskForm() {
           <div className="carte p-[16px_18px]">
             <div className="mb-2.5 flex items-center gap-2">
               <Users size={16} className="text-petrole-600" />
-              <span className="text-[13.5px] font-semibold text-encre">Agents affectés</span>
+              <span className="text-[13.5px] font-semibold text-encre">Personnes affectées</span>
               <span className="ml-auto rounded-full bg-petrole-50 px-2 py-0.5 text-[11px] font-semibold text-petrole-600">
                 {selection.length}
               </span>
@@ -352,21 +354,30 @@ export default function AdminTaskForm() {
                       <input type="checkbox" checked={selection.includes(e.id)} onChange={() => basculer(e.id)} />
                       <Avatar nom={e.nom_complet} id={e.id} taille={26} />
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-encre">{e.nom_complet}</span>
-                      <span className="flex-none text-[11px] text-grisdoux">{e.poste}</span>
+                      {e.role !== "EMPLOYE" ? (
+                        <span
+                          className="flex-none rounded-md px-1.5 py-0.5 text-[10px] font-semibold"
+                          style={{ background: ROLES[e.role].fond, color: ROLES[e.role].couleur }}
+                        >
+                          {ROLES[e.role].libelle}
+                        </span>
+                      ) : (
+                        <span className="flex-none text-[11px] text-grisdoux">{e.poste}</span>
+                      )}
                     </label>
                   ))}
                 </div>
               ))}
               {employes.length === 0 && (
-                <div className="px-3 py-4 text-center text-[12.5px] text-grisdoux">Aucun agent actif.</div>
+                <div className="px-3 py-4 text-center text-[12.5px] text-grisdoux">Aucun utilisateur.</div>
               )}
             </div>
             <p className="mt-2 text-[11px] text-grisdoux">
-              Une tâche distincte sera créée pour chaque agent sélectionné.
+              Une tâche distincte sera créée pour chaque personne sélectionnée (agents comme responsables).
               {!estSuperAdmin && (
                 <> {estSuperviseur
-                  ? "Seuls les agents de vos départements supervisés sont listés."
-                  : "Seuls les agents de votre département sont listés."}</>
+                  ? " Seuls les utilisateurs de vos départements supervisés sont listés."
+                  : " Seuls les utilisateurs de votre département sont listés."}</>
               )}
             </p>
           </div>
