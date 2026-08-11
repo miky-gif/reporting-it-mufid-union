@@ -46,6 +46,8 @@ export default function IndividualReports() {
   const [apercu, setApercu] = useState<Apercu | null>(null);
   const [chargement, setChargement] = useState(false);
   const [telechargement, setTelechargement] = useState<"pdf" | "word" | "excel" | null>(null);
+  // Par défaut, seul le 1er tableau est exporté ; l'utilisateur peut inclure le 2e.
+  const [inclureAMener, setInclureAMener] = useState(false);
 
   useEffect(() => {
     api.get<UserWithStats[]>("/users").then((r) => {
@@ -67,7 +69,13 @@ export default function IndividualReports() {
   async function exporter(format: "pdf" | "word" | "excel") {
     setTelechargement(format);
     try {
-      await telechargerFichier("/rapports/individuel", { user_id: userId, date_debut: debut, date_fin: fin, format });
+      await telechargerFichier("/rapports/individuel", {
+        user_id: userId,
+        date_debut: debut,
+        date_fin: fin,
+        format,
+        inclure_a_mener: inclureAMener ? "1" : undefined,
+      });
     } catch (err) {
       alert(messageErreur(err, "Export impossible."));
     } finally {
@@ -114,6 +122,10 @@ export default function IndividualReports() {
             PDF
           </button>
         </div>
+        <label className="flex w-full items-center gap-2 border-t border-[#EEF2F3] pt-3 text-[13px] text-ardoise">
+          <input type="checkbox" className="accent-petrole-600" checked={inclureAMener} onChange={(e) => setInclureAMener(e.target.checked)} />
+          Inclure aussi le tableau « Activités à mener » (période suivante) dans l'export
+        </label>
       </div>
 
       <div className="mb-2.5 ml-0.5 font-mono text-[11px] tracking-wide text-grisdoux">APERÇU DU RAPPORT</div>
@@ -139,11 +151,15 @@ export default function IndividualReports() {
           <div className="mb-2 text-[13.5px] font-semibold text-encre">Activités de la période — {periodeCol}</div>
           <TableauRapport groupes={apercu.groupes} periodeCol={periodeCol} />
 
-          {/* Tableau 2 : activités à mener (période suivante) */}
-          <div className="mb-2 mt-7 text-[13.5px] font-semibold text-petrole-600">
-            Activités à mener ({apercu.suivant_label}) — {periodeSuiv}
-          </div>
-          <TableauRapport groupes={apercu.groupes_a_mener} periodeCol={periodeSuiv} />
+          {/* Tableau 2 : activités à mener (période suivante) — seulement si demandé */}
+          {inclureAMener && (
+            <>
+              <div className="mb-2 mt-7 text-[13.5px] font-semibold text-petrole-600">
+                Activités à mener ({apercu.suivant_label}) — {periodeSuiv}
+              </div>
+              <TableauRapport groupes={apercu.groupes_a_mener} periodeCol={periodeSuiv} />
+            </>
+          )}
 
           <div className="mt-4 text-right text-[10.5px] italic text-grisdoux">
             Référence : {apercu.reference} · Document interne · MUFID UNION

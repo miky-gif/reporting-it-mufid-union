@@ -1,9 +1,10 @@
 // Libellés français, couleurs et métadonnées des énumérations (alignés sur la maquette).
 import type { Categorie, Permission, Priorite, Role, Statut } from "@/types";
 
-// Rôles (3 niveaux).
+// Rôles (4 niveaux).
 export const ROLES: Record<Role, { libelle: string; couleur: string; fond: string }> = {
   SUPER_ADMIN: { libelle: "Super admin", couleur: "#7E57C2", fond: "#EFE9F8" },
+  SUPERVISEUR: { libelle: "Superviseur", couleur: "#B4750E", fond: "#FBF0DC" },
   ADMIN: { libelle: "Administrateur", couleur: "#0E5E7C", fond: "#E1EFF4" },
   EMPLOYE: { libelle: "IT", couleur: "#5E717B", fond: "#EDF1F2" },
 };

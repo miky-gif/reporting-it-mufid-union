@@ -17,7 +17,10 @@ export function CategorieModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const { estSuperAdmin, user } = useAuth();
+  const { estSuperAdmin, estSuperviseur, user } = useAuth();
+  // Le super admin choisit librement ; le superviseur choisit parmi SES départements ;
+  // un admin crée dans son unique département.
+  const choisitDepartement = estSuperAdmin || estSuperviseur;
   const edition = !!categorie;
   const [nom, setNom] = useState(categorie?.nom ?? "");
   const [couleur, setCouleur] = useState(categorie?.couleur ?? "#0E5E7C");
@@ -29,13 +32,13 @@ export function CategorieModal({
   // Rattachement au département : le super admin choisit, un admin crée dans le sien.
   const [deps, setDeps] = useState<Departement[]>([]);
   const [departementId, setDepartementId] = useState<number | "">(
-    categorie?.departement_id ?? (estSuperAdmin ? "" : user?.departement_id ?? ""),
+    categorie?.departement_id ?? (choisitDepartement ? "" : user?.departement_id ?? ""),
   );
 
   useEffect(() => {
-    if (!estSuperAdmin) return;
+    if (!choisitDepartement) return;
     api.get<Departement[]>("/departements").then((r) => setDeps(r.data.filter((d) => d.actif)));
-  }, [estSuperAdmin]);
+  }, [choisitDepartement]);
 
   function ajouterRubrique() {
     const r = nouvelle.trim();
@@ -55,15 +58,15 @@ export function CategorieModal({
   async function soumettre(e: React.FormEvent) {
     e.preventDefault();
     setErreur(null);
-    if (estSuperAdmin && !departementId) {
+    if (choisitDepartement && !departementId) {
       return setErreur("Sélectionnez le département auquel rattacher cette catégorie.");
     }
     const rubNettoyees = rubriques.map((r) => r.trim()).filter(Boolean);
     setEnCours(true);
     try {
       const corps: Record<string, unknown> = { nom, couleur, rubriques: rubNettoyees };
-      // Seul le super admin peut choisir/déplacer le département.
-      if (estSuperAdmin) corps.departement_id = departementId;
+      // Super admin et superviseur choisissent le département cible.
+      if (choisitDepartement) corps.departement_id = departementId;
       if (edition) await api.put(`/categories/${categorie!.id}`, corps);
       else await api.post("/categories", corps);
       onSaved();
@@ -98,7 +101,7 @@ export function CategorieModal({
           )}
 
           {/* Département de rattachement : chaque département a son référentiel */}
-          {estSuperAdmin ? (
+          {choisitDepartement ? (
             <div className="mb-4">
               <label className="label">Département <span className="text-danger">*</span></label>
               <select

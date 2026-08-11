@@ -3,7 +3,13 @@
 // propre référentiel métier. Un admin ne gère que celles de son département.
 import { Router } from "express";
 import { Activite, Categorie } from "../models/index.js";
-import { estSuperAdmin, requireAuth, requirePermission } from "../middleware/auth.js";
+import {
+  accedeDepartement,
+  estSuperAdmin,
+  perimetreDepartement,
+  requireAuth,
+  requirePermission,
+} from "../middleware/auth.js";
 import { categorieCreateSchema, categorieUpdateSchema, valider } from "../validators.js";
 import { slugAscii } from "../utils.js";
 
@@ -54,16 +60,17 @@ async function chargerOu404(id, demandeur, res) {
     res.status(404).json({ detail: "Catégorie introuvable." });
     return null;
   }
-  if (!estSuperAdmin(demandeur) && cat.departement_id !== demandeur.departement_id) {
+  if (!estSuperAdmin(demandeur) && !accedeDepartement(demandeur, cat.departement_id)) {
     res.status(403).json({ detail: "Cette catégorie appartient à un autre département." });
     return null;
   }
   return cat;
 }
 
-// GET /categories — celles du département de l'utilisateur (toutes pour le super admin).
+// GET /categories — celles du périmètre de l'utilisateur (toutes pour le super admin).
 categoriesRouter.get("/", async (req, res) => {
-  const where = estSuperAdmin(req.user) ? {} : { departement_id: req.user.departement_id ?? -1 };
+  const p = perimetreDepartement(req.user); // null (tout) ou liste d'ids
+  const where = p === null ? {} : { departement_id: p };
   const cats = await Categorie.findAll({
     where,
     order: [["ordre", "ASC"], ["nom", "ASC"]],
@@ -79,12 +86,16 @@ categoriesRouter.post("/", async (req, res) => {
   const v = valider(categorieCreateSchema, req.body, res);
   if (!v.ok) return;
 
-  // Le super admin peut viser un département précis ; l'admin crée dans le sien.
+  // Le super admin vise un département précis ; l'admin/superviseur crée dans son périmètre.
   const depId = estSuperAdmin(req.user)
     ? v.data.departement_id ?? null
-    : req.user.departement_id;
+    : v.data.departement_id ?? req.user.departement_id;
   if (!depId) {
     return res.status(400).json({ detail: "Le département de la catégorie est requis." });
+  }
+  // Un admin/superviseur ne crée que dans un département de son périmètre.
+  if (!estSuperAdmin(req.user) && !accedeDepartement(req.user, depId)) {
+    return res.status(403).json({ detail: "Ce département n'appartient pas à votre périmètre." });
   }
 
   const code = await genererCode(v.data.nom);

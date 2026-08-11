@@ -270,11 +270,13 @@ const docPaysage = (children) =>
     ],
   });
 
-export async function rapportHebdoWord(rap) {
+// `inclureAMener` : ajoute le 2e tableau (activités à mener). Par défaut, seul le
+// premier tableau (activités de la période) est exporté.
+export async function rapportHebdoWord(rap, inclureAMener = false) {
   const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
   const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
 
-  const doc = docPaysage([
+  const children = [
     ...enTeteDocument({
       typeLabel: rap.type_label,
       debut_court: rap.debut_court,
@@ -289,19 +291,23 @@ export async function rapportHebdoWord(rap) {
     }),
     titreTableau(`Activités de la période — ${periodeCol}`),
     tableauIndividuel(rap.groupes, periodeCol),
-    titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
-    tableauIndividuel(rap.groupes_a_mener, periodeSuiv),
-    pied(rap.reference),
-  ]);
+  ];
+  if (inclureAMener) {
+    children.push(
+      titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
+      tableauIndividuel(rap.groupes_a_mener, periodeSuiv),
+    );
+  }
+  children.push(pied(rap.reference));
 
-  return Packer.toBuffer(doc);
+  return Packer.toBuffer(docPaysage(children));
 }
 
-export async function rapportConsolideHebdoWord(rap) {
+export async function rapportConsolideHebdoWord(rap, inclureAMener = false) {
   const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
   const periodeSuiv = `du ${rap.debut_suivant_court} au ${rap.fin_suivant_court}`;
 
-  const doc = docPaysage([
+  const children = [
     ...enTeteDocument({
       typeLabel: `${rap.type_label} — consolidé`,
       debut_court: rap.debut_court,
@@ -316,10 +322,14 @@ export async function rapportConsolideHebdoWord(rap) {
     }),
     titreTableau(`Activités de la période — ${periodeCol}`),
     tableauConsolide(rap.employes, periodeCol),
-    titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
-    tableauConsolide(rap.employes_a_mener, periodeSuiv),
-    pied(rap.reference),
-  ]);
+  ];
+  if (inclureAMener) {
+    children.push(
+      titreTableau(`Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, BLEU),
+      tableauConsolide(rap.employes_a_mener, periodeSuiv),
+    );
+  }
+  children.push(pied(rap.reference));
 
-  return Packer.toBuffer(doc);
+  return Packer.toBuffer(docPaysage(children));
 }

@@ -27,10 +27,11 @@ const LIENS_EMPLOYE: Lien[] = [
   { to: "/", label: "Tableau de bord", icone: LayoutDashboard },
   { to: "/activites/nouvelle", label: "Saisir une activité", icone: FilePlus2 },
   { to: "/activites", label: "Mes activités", icone: ListChecks },
+  { to: "/mes-rapports", label: "Mes rapports", icone: FileText },
 ];
 
 export function Sidebar() {
-  const { estAdmin, estSuperAdmin, peut, user } = useAuth();
+  const { estAdmin, estSuperviseur, estSuperAdmin, peut, user } = useAuth();
 
   // La navigation d'administration s'adapte aux droits accordés.
   const liensAdmin: Lien[] = [
@@ -54,11 +55,24 @@ export function Sidebar() {
   return (
     <aside className={clsx("flex w-[238px] flex-none flex-col self-stretch p-[20px_14px]", fond)}>
       <div className="px-3 pb-1 pt-1 font-mono text-[10px] font-semibold tracking-[0.13em] text-[#5E93A4]">
-        {estSuperAdmin ? "SUPER ADMINISTRATION" : estAdmin ? "ADMINISTRATION" : "ESPACE IT"}
+        {estSuperAdmin
+          ? "SUPER ADMINISTRATION"
+          : estSuperviseur
+          ? "SUPERVISION"
+          : estAdmin
+          ? "ADMINISTRATION"
+          : "ESPACE IT"}
       </div>
-      {/* Département de rattachement (l'admin et l'IT sont cloisonnés) */}
-      {user?.departement && (
-        <div className="mb-3 truncate px-3 text-[11px] text-[#8FB2BF]">{user.departement.nom}</div>
+      {/* Périmètre de rattachement (l'admin et l'IT sont cloisonnés sur un département ; */}
+      {/* le superviseur en gère plusieurs). */}
+      {estSuperviseur ? (
+        <div className="mb-3 truncate px-3 text-[11px] text-[#8FB2BF]">
+          {user?.departements_geres?.length ?? 0} département(s) supervisé(s)
+        </div>
+      ) : (
+        user?.departement && (
+          <div className="mb-3 truncate px-3 text-[11px] text-[#8FB2BF]">{user.departement.nom}</div>
+        )
       )}
       {estSuperAdmin && <div className="mb-3 px-3 text-[11px] text-[#8FB2BF]">Tous les départements</div>}
 
@@ -80,6 +94,10 @@ export function Sidebar() {
           {(peut("IT_CREER") || peut("IT_MODIFIER") || estSuperAdmin) && (
             <LienNav lien={{ to: "/admin/utilisateurs", label: "Utilisateurs", icone: Users }} />
           )}
+          {/* Espace personnel : l'admin/superviseur/super admin saisit aussi SES activités */}
+          <div className="mx-3 my-3.5 h-px bg-white/10" />
+          <LienNav lien={{ to: "/activites/nouvelle", label: "Saisir une activité", icone: FilePlus2 }} />
+          <LienNav lien={{ to: "/activites", label: "Mes activités", icone: ListChecks }} exact />
           <LienNav lien={{ to: "/profil", label: "Mon profil", icone: UserCircle }} />
         </>
       ) : (

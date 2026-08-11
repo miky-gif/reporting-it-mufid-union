@@ -97,6 +97,9 @@ export const smtpSchema = z.object({
   mail_from: z.string().max(200).optional().nullable(),
 });
 
+// Périmètre d'un SUPERVISEUR : liste d'identifiants de départements gérés.
+const departementsGeresSchema = z.array(z.coerce.number().int().positive()).optional();
+
 export const userCreateSchema = z.object({
   nom_complet: z.string().min(2, "Nom requis.").max(150),
   email,
@@ -106,6 +109,7 @@ export const userCreateSchema = z.object({
   mot_de_passe: z.string().min(6, "6 caractères minimum."),
   // Rattachement + droits (contrôlés côté route selon le rôle du demandeur).
   departement_id: z.coerce.number().int().positive().optional().nullable(),
+  departements_geres: departementsGeresSchema, // superviseur uniquement
   permissions: z.array(z.enum(CODES_PERMISSIONS)).optional(),
 });
 
@@ -117,6 +121,7 @@ export const userUpdateSchema = z.object({
   actif: z.boolean().optional(),
   mot_de_passe: z.string().min(6).optional(),
   departement_id: z.coerce.number().int().positive().optional().nullable(),
+  departements_geres: departementsGeresSchema, // superviseur uniquement
   permissions: z.array(z.enum(CODES_PERMISSIONS)).optional(),
 });
 

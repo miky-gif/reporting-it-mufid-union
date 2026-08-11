@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
 import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, STATUTS } from "@/lib/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
 import type { Activite, Categorie, Priorite, Statut, UserWithStats } from "@/types";
@@ -39,6 +40,7 @@ type FormValues = z.infer<typeof schema>;
 export default function AdminTaskForm() {
   const navigate = useNavigate();
   const { actives, rubriquesOf, chargement: catChargement } = useCategories();
+  const { estSuperAdmin, estSuperviseur } = useAuth();
   const [employes, setEmployes] = useState<UserWithStats[] | null>(null);
   const [selection, setSelection] = useState<number[]>([]);
   const [pending, setPending] = useState<File[]>([]);
@@ -96,6 +98,19 @@ export default function AdminTaskForm() {
   }, [val.categorie, catChargement, actives, setValue]);
 
   const rubriques = useMemo(() => rubriquesOf(val.categorie), [val.categorie, rubriquesOf]);
+
+  // Agents regroupés par département (utile au super admin / superviseur qui
+  // couvrent plusieurs départements : on voit clairement qui est où).
+  const groupesAgents = useMemo(() => {
+    const map = new Map<string, { nom: string; couleur: string; agents: UserWithStats[] }>();
+    for (const e of employes ?? []) {
+      const nom = e.departement?.nom ?? "Sans département";
+      if (!map.has(nom)) map.set(nom, { nom, couleur: e.departement?.couleur ?? "#8A99A1", agents: [] });
+      map.get(nom)!.agents.push(e);
+    }
+    return [...map.values()].sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [employes]);
+  const multiDepartements = groupesAgents.length > 1;
 
   function changerCategorie(cat: Categorie) {
     setValue("categorie", cat);
@@ -315,26 +330,45 @@ export default function AdminTaskForm() {
                 {selection.length}
               </span>
             </div>
-            <div className="max-h-[220px] overflow-y-auto rounded-lg border border-bordure">
-              {employes.map((e) => (
-                <label
-                  key={e.id}
-                  className={
-                    "flex cursor-pointer items-center gap-2.5 border-b border-[#F4F6F7] px-3 py-2 last:border-0 hover:bg-surface " +
-                    (selection.includes(e.id) ? "bg-petrole-50/60" : "")
-                  }
-                >
-                  <input type="checkbox" checked={selection.includes(e.id)} onChange={() => basculer(e.id)} />
-                  <Avatar nom={e.nom_complet} id={e.id} taille={26} />
-                  <span className="min-w-0 truncate text-[13px] font-medium text-encre">{e.nom_complet}</span>
-                  <span className="ml-auto flex-none text-[11px] text-grisdoux">{e.poste}</span>
-                </label>
+            <div className="max-h-[260px] overflow-y-auto rounded-lg border border-bordure">
+              {groupesAgents.map((g) => (
+                <div key={g.nom}>
+                  {/* En-tête de département (affiché dès qu'il y a plusieurs départements) */}
+                  {multiDepartements && (
+                    <div className="flex items-center gap-2 border-b border-[#EEF2F3] bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-grisdoux">
+                      <span className="h-2 w-2 flex-none rounded-full" style={{ background: g.couleur }} />
+                      <span className="truncate">{g.nom}</span>
+                      <span className="ml-auto font-normal normal-case">{g.agents.length}</span>
+                    </div>
+                  )}
+                  {g.agents.map((e) => (
+                    <label
+                      key={e.id}
+                      className={
+                        "flex cursor-pointer items-center gap-2.5 border-b border-[#F4F6F7] px-3 py-2 last:border-0 hover:bg-surface " +
+                        (selection.includes(e.id) ? "bg-petrole-50/60" : "")
+                      }
+                    >
+                      <input type="checkbox" checked={selection.includes(e.id)} onChange={() => basculer(e.id)} />
+                      <Avatar nom={e.nom_complet} id={e.id} taille={26} />
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-encre">{e.nom_complet}</span>
+                      <span className="flex-none text-[11px] text-grisdoux">{e.poste}</span>
+                    </label>
+                  ))}
+                </div>
               ))}
               {employes.length === 0 && (
                 <div className="px-3 py-4 text-center text-[12.5px] text-grisdoux">Aucun agent actif.</div>
               )}
             </div>
-            <p className="mt-2 text-[11px] text-grisdoux">Une tâche distincte sera créée pour chaque agent sélectionné.</p>
+            <p className="mt-2 text-[11px] text-grisdoux">
+              Une tâche distincte sera créée pour chaque agent sélectionné.
+              {!estSuperAdmin && (
+                <> {estSuperviseur
+                  ? "Seuls les agents de vos départements supervisés sont listés."
+                  : "Seuls les agents de votre département sont listés."}</>
+              )}
+            </p>
           </div>
 
           {/* Aperçu compact */}

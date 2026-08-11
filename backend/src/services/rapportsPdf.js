@@ -277,7 +277,8 @@ function dessinerTableauInd(doc, groupes, colX, widths, faireEntete, bas) {
   return y;
 }
 
-export function rapportHebdoPdf(rap) {
+// `inclureAMener` : ajoute le 2e tableau (activités à mener). Par défaut, non.
+export function rapportHebdoPdf(rap, inclureAMener = false) {
   return rendrePaysage((doc) => {
     const usableW = doc.page.width - 2 * ML;
     const widths = LARGEURS_PCT.map((p) => (usableW * p) / 100);
@@ -312,12 +313,15 @@ export function rapportHebdoPdf(rap) {
 
     // Tableau 1 : activités de la période.
     sousTitrePdf(doc, `Activités de la période — ${periodeCol}`, usableW, ENCRE);
-    doc.y = dessinerTableauInd(doc, rap.groupes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
+    let y = dessinerTableauInd(doc, rap.groupes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
+    doc.y = y;
 
-    // Tableau 2 : activités à mener (période suivante).
-    if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
-    sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
-    const y = dessinerTableauInd(doc, rap.groupes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
+    // Tableau 2 : activités à mener (période suivante) — seulement si demandé.
+    if (inclureAMener) {
+      if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
+      sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
+      y = dessinerTableauInd(doc, rap.groupes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
+    }
 
     doc.fillColor(GRIS).font("Helvetica-Oblique").fontSize(8)
       .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), { width: usableW, align: "right" });
@@ -410,7 +414,7 @@ function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
   return y;
 }
 
-export function rapportConsolideHebdoPdf(rap) {
+export function rapportConsolideHebdoPdf(rap, inclureAMener = false) {
   return rendrePaysage((doc) => {
     const usableW = doc.page.width - 2 * ML;
     const widths = LARGEURS_CONS_PCT.map((p) => (usableW * p) / 100);
@@ -446,12 +450,15 @@ export function rapportConsolideHebdoPdf(rap) {
 
     // Tableau 1 : activités de la période.
     sousTitrePdf(doc, `Activités de la période — ${periodeCol}`, usableW, ENCRE);
-    doc.y = dessinerTableauCons(doc, rap.employes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
+    let y = dessinerTableauCons(doc, rap.employes, colX, widths, faireEntete(entetesDe(periodeCol)), bas);
+    doc.y = y;
 
-    // Tableau 2 : activités à mener (période suivante).
-    if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
-    sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
-    const y = dessinerTableauCons(doc, rap.employes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
+    // Tableau 2 : activités à mener (période suivante) — seulement si demandé.
+    if (inclureAMener) {
+      if (doc.y + 70 > bas) { doc.addPage(); doc.y = ML; }
+      sousTitrePdf(doc, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, usableW, BLEU);
+      y = dessinerTableauCons(doc, rap.employes_a_mener, colX, widths, faireEntete(entetesDe(periodeSuiv)), bas);
+    }
 
     doc.fillColor(GRIS).font("Helvetica-Oblique").fontSize(8)
       .text(`Référence : ${rap.reference} · Document interne · MUFID UNION`, ML, Math.min(y + 8, bas), { width: usableW, align: "right" });

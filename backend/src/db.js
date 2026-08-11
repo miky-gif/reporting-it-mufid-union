@@ -70,6 +70,7 @@ export async function ensureColonnes() {
       "ADD COLUMN IF NOT EXISTS `pourcentage` INT NULL, " +
       "ADD COLUMN IF NOT EXISTS `date_cloture` DATETIME NULL, " +
       "ADD COLUMN IF NOT EXISTS `cloture_par` INT NULL, " +
+      "ADD COLUMN IF NOT EXISTS `affecte_par` INT NULL, " +
       "ADD COLUMN IF NOT EXISTS `reaffectee_de` INT NULL, " +
       "ADD COLUMN IF NOT EXISTS `date_reaffectation` DATETIME NULL, " +
       "ADD COLUMN IF NOT EXISTS `motif_reaffectation` TEXT NULL",
@@ -112,10 +113,11 @@ export async function ensureColonnes() {
       "WHERE `date_debut` IS NULL OR `date_fin` IS NULL",
   );
 
-  // 6) Gestion des rôles à 3 niveaux : colonnes département + permissions.
+  // 6) Gestion des rôles : colonnes département + permissions (+ périmètre superviseur).
   await sequelize.query(
     "ALTER TABLE `users` " +
       "ADD COLUMN IF NOT EXISTS `departement_id` INT NULL, " +
+      "ADD COLUMN IF NOT EXISTS `departements_geres` JSON NULL, " +
       "ADD COLUMN IF NOT EXISTS `permissions` JSON NULL",
   );
   await sequelize.query("ALTER TABLE `categories` ADD COLUMN IF NOT EXISTS `departement_id` INT NULL");
@@ -132,11 +134,11 @@ export async function ensureColonnes() {
       "ADD COLUMN IF NOT EXISTS `points_ajustement` FLOAT NOT NULL DEFAULT 0",
   );
 
-  // 7) ENUM des rôles : ajout de SUPER_ADMIN.
+  // 7) ENUM des rôles : ajout de SUPER_ADMIN puis de SUPERVISEUR.
   try {
     await sequelize.query(
       "ALTER TABLE `users` MODIFY COLUMN `role` " +
-        "ENUM('EMPLOYE','ADMIN','SUPER_ADMIN') NOT NULL DEFAULT 'EMPLOYE'",
+        "ENUM('EMPLOYE','ADMIN','SUPERVISEUR','SUPER_ADMIN') NOT NULL DEFAULT 'EMPLOYE'",
     );
   } catch (e) {
     console.error("Migration rôle :", e.message);

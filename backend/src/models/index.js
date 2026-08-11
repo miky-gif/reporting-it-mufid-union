@@ -5,11 +5,15 @@ import { sequelize } from "../db.js";
 // Valeurs d'énumération. La CATÉGORIE est désormais dynamique (table categories) :
 // les codes ci-dessous ne servent que de valeurs par défaut / repli.
 //
-// Rôles (3 niveaux) :
+// Rôles (4 niveaux) :
 //   SUPER_ADMIN : voit tout, crée les départements, les admins et leurs droits.
+//   SUPERVISEUR : comme un ADMIN, mais rattaché à PLUSIEURS départements
+//                 (liste departements_geres) attribués par le super admin.
 //   ADMIN       : rattaché à UN département, cloisonné, droits granulaires.
 //   EMPLOYE     : l'agent IT, rattaché à UN département.
-export const ROLES = ["EMPLOYE", "ADMIN", "SUPER_ADMIN"];
+export const ROLES = ["EMPLOYE", "ADMIN", "SUPERVISEUR", "SUPER_ADMIN"];
+// Rôles disposant de droits granulaires (permissions) et d'un périmètre de départements.
+export const ROLES_ADMINISTRATION = ["ADMIN", "SUPERVISEUR", "SUPER_ADMIN"];
 
 // Catalogue des droits attribuables à un ADMIN par le super admin.
 // (Le SUPER_ADMIN les possède tous implicitement.)
@@ -109,8 +113,12 @@ export const User = sequelize.define(
     poste: { type: DataTypes.STRING(120), allowNull: true },
     actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     // Rattachement au département (null pour le SUPER_ADMIN : il les voit tous).
+    // Pour un SUPERVISEUR : son département « principal » (le premier de sa liste).
     departement_id: { type: DataTypes.INTEGER, allowNull: true },
-    // Droits granulaires d'un ADMIN (tableau de codes). Ignoré pour les autres rôles.
+    // Périmètre d'un SUPERVISEUR : liste des identifiants de départements gérés.
+    // Ignoré pour les autres rôles (ADMIN = un seul via departement_id).
+    departements_geres: { type: DataTypes.JSON, allowNull: true },
+    // Droits granulaires d'un ADMIN ou SUPERVISEUR (tableau de codes).
     permissions: { type: DataTypes.JSON, allowNull: true },
     date_creation: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   },
@@ -159,6 +167,9 @@ export const Activite = sequelize.define(
     duree_minutes: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     // Durée en heures dérivée (conservée pour compat. affichage/stats).
     duree_heures: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
+    // Auteur de l'affectation (admin, superviseur ou super admin qui a confié
+    // la tâche à l'agent). Null si l'agent a créé lui-même son activité.
+    affecte_par: { type: DataTypes.INTEGER, allowNull: true },
     // Validation finale par l'admin (clôture).
     date_cloture: { type: DataTypes.DATE, allowNull: true },
     cloture_par: { type: DataTypes.INTEGER, allowNull: true },
@@ -242,6 +253,8 @@ Activite.belongsTo(Departement, { foreignKey: "departement_id", as: "departement
 
 User.hasMany(Activite, { foreignKey: "user_id", onDelete: "CASCADE" });
 Activite.belongsTo(User, { foreignKey: "user_id", as: "user" });
+// Auteur de l'affectation (pour afficher « affectée par … »).
+Activite.belongsTo(User, { foreignKey: "affecte_par", as: "affecteur" });
 User.hasMany(Notification, { foreignKey: "user_id", onDelete: "CASCADE" });
 Notification.belongsTo(User, { foreignKey: "user_id", as: "user" });
 Activite.hasMany(PieceJointe, { foreignKey: "activite_id", as: "pieces", onDelete: "CASCADE" });

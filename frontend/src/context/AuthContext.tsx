@@ -15,8 +15,10 @@ interface AuthContextValue {
   chargement: boolean;
   connexion: (email: string, motDePasse: string) => Promise<void>;
   deconnexion: () => void;
-  /** Administration : admin de département OU super admin. */
+  /** Administration : admin de département, superviseur OU super admin. */
   estAdmin: boolean;
+  /** Superviseur : administrateur d'un périmètre de plusieurs départements. */
+  estSuperviseur: boolean;
   /** Super administrateur : voit tout, gère les départements et les admins. */
   estSuperAdmin: boolean;
   /** Vrai si l'utilisateur détient ce droit (le super admin les a tous). */
@@ -56,11 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<AuthContextValue>(() => {
     const estSuperAdmin = user?.role === "SUPER_ADMIN";
-    const estAdmin = estSuperAdmin || user?.role === "ADMIN";
+    const estSuperviseur = user?.role === "SUPERVISEUR";
+    const estAdmin = estSuperAdmin || estSuperviseur || user?.role === "ADMIN";
     // Le super admin détient implicitement tous les droits.
     const peut = (droit: Permission) =>
       estSuperAdmin || (user?.permissions ?? []).includes(droit);
-    return { user, chargement, connexion, deconnexion, estAdmin, estSuperAdmin, peut };
+    return { user, chargement, connexion, deconnexion, estAdmin, estSuperviseur, estSuperAdmin, peut };
   }, [user, chargement, connexion, deconnexion]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

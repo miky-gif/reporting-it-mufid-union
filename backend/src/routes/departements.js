@@ -3,7 +3,7 @@
 // boîte d'envoi SMTP (les mails de ses agents partent alors de cette boîte).
 import { Router } from "express";
 import { Activite, Categorie, Departement, User } from "../models/index.js";
-import { requireAuth, requireSuperAdmin, estSuperAdmin } from "../middleware/auth.js";
+import { requireAuth, requireSuperAdmin, estSuperAdmin, perimetreDepartement } from "../middleware/auth.js";
 import { invaliderTransport, verifierSmtpDepartement } from "../services/mailer.js";
 import { serialiserDepartement, slugAscii } from "../utils.js";
 import { departementCreateSchema, departementUpdateSchema, smtpSchema, valider } from "../validators.js";
@@ -20,11 +20,10 @@ async function codeUnique(nom) {
   return code;
 }
 
-// GET /departements — la liste. Un admin/IT ne voit que le sien.
+// GET /departements — la liste. Un admin/IT ne voit que le sien ; un superviseur, les siens.
 departementsRouter.get("/", async (req, res) => {
-  const where = estSuperAdmin(req.user)
-    ? {}
-    : { id: req.user.departement_id ?? -1 };
+  const p = perimetreDepartement(req.user); // null (tout) ou liste d'ids
+  const where = estSuperAdmin(req.user) ? {} : { id: p };
   const deps = await Departement.findAll({ where, order: [["nom", "ASC"]] });
 
   // Le super admin voit aussi les effectifs de chaque département.

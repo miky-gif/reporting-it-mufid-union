@@ -165,6 +165,11 @@ export function serialiserActivite(a) {
     en_retard: estEnRetard(plain.date_activite, plain.statut),
     date_cloture: plain.date_cloture ?? null,
     cloture_par: plain.cloture_par ?? null,
+    // Auteur de l'affectation (pour afficher « affectée par … »).
+    affecte_par: plain.affecte_par ?? null,
+    affecteur: plain.affecteur
+      ? { id: plain.affecteur.id, nom_complet: plain.affecteur.nom_complet, poste: plain.affecteur.poste ?? null, role: plain.affecteur.role }
+      : null,
     reaffectee: !!plain.reaffectee_de,
     reaffectee_de: plain.reaffectee_de ?? null,
     date_reaffectation: plain.date_reaffectation ?? null,
@@ -218,7 +223,10 @@ export function serialiserUser(u) {
     departement: p.departement
       ? { id: p.departement.id, code: p.departement.code, nom: p.departement.nom, couleur: p.departement.couleur }
       : null,
-    permissions: p.role === "ADMIN" ? parsePermissions(p.permissions) : [],
+    // Périmètre d'un superviseur (liste d'identifiants de départements gérés).
+    departements_geres: p.role === "SUPERVISEUR" ? parsePermissions(p.departements_geres).map(Number) : [],
+    // ADMIN et SUPERVISEUR disposent de droits granulaires.
+    permissions: p.role === "ADMIN" || p.role === "SUPERVISEUR" ? parsePermissions(p.permissions) : [],
     date_creation: p.date_creation,
   };
 }

@@ -3,6 +3,7 @@
 // déclenche les e-mails (best-effort : jamais bloquant pour l'action métier).
 import { Op } from "sequelize";
 import { Departement, Notification, User } from "../models/index.js";
+import { departementsGeres } from "../middleware/auth.js";
 import { libelleCategorie, libellePriorite, libelleStatut } from "../utils.js";
 import { envoyerEmail } from "./mailer.js";
 
@@ -21,12 +22,19 @@ async function departementDe(user) {
 
 /**
  * Administrateurs à alerter pour un département donné :
- * les ADMIN de ce département + tous les SUPER_ADMIN (qui supervisent tout).
+ * les ADMIN de ce département + les SUPERVISEUR dont le périmètre l'inclut
+ * + tous les SUPER_ADMIN (qui supervisent tout).
  */
 async function listerAdmins(departementId = null) {
   const ou = [{ role: "SUPER_ADMIN" }];
   if (departementId) ou.push({ role: "ADMIN", departement_id: departementId });
-  return User.findAll({ where: { actif: true, [Op.or]: ou } });
+  const admins = await User.findAll({ where: { actif: true, [Op.or]: ou } });
+  if (!departementId) return admins;
+  // Superviseurs dont le périmètre inclut ce département (filtrage en mémoire :
+  // le périmètre est stocké en JSON, indépendant du dialecte SQL).
+  const superviseurs = await User.findAll({ where: { actif: true, role: "SUPERVISEUR" } });
+  const concernes = superviseurs.filter((s) => departementsGeres(s).includes(Number(departementId)));
+  return [...admins, ...concernes];
 }
 
 /** Crée une notification interne pour un utilisateur. */

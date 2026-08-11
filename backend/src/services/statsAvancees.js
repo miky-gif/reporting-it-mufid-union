@@ -1,17 +1,17 @@
 // Statistiques avancées de la plateforme (écran « Statistiques » de l'admin).
 // Toutes les durées sont agrégées en MINUTES (exact), les heures en sont dérivées.
 import { Op } from "sequelize";
-import { Activite, Departement, PRIORITES, STATUTS, User } from "../models/index.js";
+import { Activite, PRIORITES, STATUTS, User } from "../models/index.js";
 import {
   estEnRetard,
   libelleCategorie,
-  libelleDepartement,
   libellePriorite,
   libelleStatut,
   pointsEffectifs,
   referenceActivite,
 } from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
+import { libelleEnteteDepartement } from "./enteteDepartement.js";
 
 const MOIS_COURT = ["Janv.", "Févr.", "Mars", "Avr.", "Mai", "Juin", "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc."];
 const MOIS_FR = [
@@ -75,16 +75,8 @@ export async function statistiquesAvancees(debut, fin, departementId = null) {
   const users = await User.findAll({ where: filtreDep, raw: true });
   const mapCat = await chargerMapCategories();
 
-  // En-tête : le département concerné, ou l'ensemble (super admin).
-  let entete = "Direction des Systèmes d'Information";
-  if (departementId) {
-    const dep = await Departement.findByPk(departementId);
-    if (dep) entete = libelleDepartement(dep.nom);
-  } else {
-    const deps = await Departement.findAll({ where: { actif: true }, order: [["nom", "ASC"]] });
-    if (deps.length === 1) entete = libelleDepartement(deps[0].nom);
-    else if (deps.length > 1) entete = `Tous les départements — ${deps.map((d) => d.nom).join(", ")}`;
-  }
+  // En-tête : le(s) département(s) concerné(s), ou l'ensemble (super admin).
+  const entete = await libelleEnteteDepartement(departementId ?? null);
 
   const total = activites.length;
   const par = (s) => activites.filter((a) => a.statut === s).length;

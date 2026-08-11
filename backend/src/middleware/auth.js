@@ -28,8 +28,11 @@ export async function requireAuth(req, res, next) {
 /* ------------------------------------------------------------------ */
 
 export const estSuperAdmin = (user) => user?.role === "SUPER_ADMIN";
-/** « Administration » = ADMIN ou SUPER_ADMIN (le super admin a tous les droits). */
-export const estAdministration = (user) => user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+/** Superviseur : administrateur d'un périmètre de plusieurs départements. */
+export const estSuperviseur = (user) => user?.role === "SUPERVISEUR";
+/** « Administration » = ADMIN, SUPERVISEUR ou SUPER_ADMIN (le super admin a tous les droits). */
+export const estAdministration = (user) =>
+  user?.role === "ADMIN" || user?.role === "SUPERVISEUR" || user?.role === "SUPER_ADMIN";
 
 /** Réservé à l'administration (admin de département ou super admin). */
 export function requireAdmin(req, res, next) {
@@ -51,20 +54,25 @@ export function requireSuperAdmin(req, res, next) {
 /* Permissions granulaires                                             */
 /* ------------------------------------------------------------------ */
 
+/** Parse une colonne JSON tableau (MariaDB peut la renvoyer en chaîne). */
+function parseTableau(valeur) {
+  if (!valeur) return [];
+  if (Array.isArray(valeur)) return valeur;
+  try {
+    const p = JSON.parse(valeur);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Liste des droits d'un utilisateur (MariaDB renvoie le JSON en chaîne). */
 export function permissionsDe(user) {
   if (!user) return [];
   if (estSuperAdmin(user)) return Object.keys(PERMISSIONS); // tout, implicitement
-  if (user.role !== "ADMIN") return [];
-  const p = user.permissions;
-  if (!p) return [];
-  if (Array.isArray(p)) return p;
-  try {
-    const parse = JSON.parse(p);
-    return Array.isArray(parse) ? parse : [];
-  } catch {
-    return [];
-  }
+  // ADMIN et SUPERVISEUR disposent de droits granulaires.
+  if (user.role !== "ADMIN" && user.role !== "SUPERVISEUR") return [];
+  return parseTableau(user.permissions);
 }
 
 /** Vrai si l'utilisateur détient le droit demandé. */
@@ -96,16 +104,36 @@ export function requirePermission(code) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Département auquel l'utilisateur est limité, ou null s'il voit tout
- * (super admin). Sert à filtrer listes, statistiques et rapports.
+ * Ensemble des départements administrés par l'utilisateur :
+ *   - SUPER_ADMIN            -> null (aucun cloisonnement, voit tout) ;
+ *   - SUPERVISEUR            -> sa liste departements_geres ;
+ *   - ADMIN / EMPLOYE        -> son unique département.
+ * Renvoie toujours null (tout) ou un tableau d'identifiants.
+ */
+export function departementsGeres(user) {
+  if (estSuperAdmin(user)) return null; // aucun cloisonnement
+  if (estSuperviseur(user)) {
+    const ids = parseTableau(user?.departements_geres).map(Number).filter((n) => n > 0);
+    if (ids.length > 0) return ids;
+    // Repli : au moins son département principal, sinon rien.
+    return user?.departement_id != null ? [user.departement_id] : [];
+  }
+  return user?.departement_id != null ? [user.departement_id] : [];
+}
+
+/**
+ * Périmètre à injecter dans un `where` Sequelize (clause IN si tableau).
+ * null = aucun filtre (super admin) ; [-1] = ne voit rien (aucun département).
  */
 export function perimetreDepartement(user) {
-  if (estSuperAdmin(user)) return null; // aucun cloisonnement
-  return user?.departement_id ?? -1; // -1 : aucun département -> ne voit rien
+  const g = departementsGeres(user);
+  if (g === null) return null; // aucun cloisonnement
+  return g.length > 0 ? g : [-1]; // -1 : aucun département -> ne voit rien
 }
 
 /** Vrai si l'utilisateur a le droit d'agir sur ce département. */
 export function accedeDepartement(user, departementId) {
   if (estSuperAdmin(user)) return true;
-  return departementId != null && user?.departement_id === departementId;
+  if (departementId == null) return false;
+  return departementsGeres(user).includes(Number(departementId));
 }

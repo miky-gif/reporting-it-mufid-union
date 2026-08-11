@@ -254,15 +254,19 @@ function ModalSmtp({
   onFermer: () => void;
   onSucces: () => void;
 }) {
-  const [host, setHost] = useState(dep.smtp_host ?? "smtp.office365.com");
+  const [host, setHost] = useState(dep.smtp_host ?? "");
   const [port, setPort] = useState(String(dep.smtp_port ?? 587));
   const [user, setUser] = useState(dep.smtp_user ?? "");
   const [pass, setPass] = useState("");
-  const [from, setFrom] = useState(dep.mail_from ?? "");
-  const [tlsInsecure, setTlsInsecure] = useState(dep.smtp_tls_insecure);
   const [enCours, setEnCours] = useState(false);
   const [test, setTest] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; texte: string } | null>(null);
+
+  // Préréglages des fournisseurs courants (remplit serveur + port).
+  const preselectionner = (h: string) => {
+    setHost(h);
+    setPort("587");
+  };
 
   async function enregistrer() {
     setMsg(null);
@@ -273,8 +277,10 @@ function ModalSmtp({
         smtp_port: Number(port) || 587,
         smtp_user: user.trim() || null,
         smtp_pass: pass || undefined, // vide = on garde l'existant
-        mail_from: from.trim() || null,
-        smtp_tls_insecure: tlsInsecure,
+        // L'expéditeur affiché est généré automatiquement (« MUFID UNION — Dép. <adresse> »)
+        // et le certificat auto-signé n'est pas utilisé avec les fournisseurs cloud.
+        mail_from: null,
+        smtp_tls_insecure: false,
       });
       setMsg({ type: "ok", texte: "Configuration enregistrée." });
       setPass("");
@@ -300,55 +306,59 @@ function ModalSmtp({
 
   return (
     <Cadre titre={`Boîte d'envoi — ${dep.nom}`} onFermer={onFermer} large>
-      <p className="mb-4 text-[12.5px] leading-snug text-gris">
+      <p className="mb-3 text-[12.5px] leading-snug text-gris">
         Les notifications destinées aux agents de ce département partiront de cette boîte.
-        Si elle n'est pas configurée, la configuration globale du serveur est utilisée.
+        Sans configuration, c'est la boîte globale du serveur qui est utilisée.
       </p>
+
+      {/* Préréglages fournisseur : remplissent le serveur et le port */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-[12px] text-grisdoux">Fournisseur :</span>
+        <button type="button" onClick={() => preselectionner("smtp.gmail.com")} className="rounded-md border border-bordure px-2.5 py-1 text-[12px] font-medium text-ardoise hover:border-petrole-600 hover:text-petrole-600">
+          Gmail
+        </button>
+        <button type="button" onClick={() => preselectionner("smtp.office365.com")} className="rounded-md border border-bordure px-2.5 py-1 text-[12px] font-medium text-ardoise hover:border-petrole-600 hover:text-petrole-600">
+          Microsoft 365
+        </button>
+      </div>
 
       <div className="mb-[18px] grid grid-cols-1 gap-4 sm:grid-cols-[2fr_1fr]">
         <div>
-          <label className="label">Serveur SMTP</label>
-          <input className="champ font-mono" value={host} onChange={(e) => setHost(e.target.value)} placeholder="smtp.office365.com" />
+          <label className="label">Serveur SMTP <span className="text-danger">*</span></label>
+          <input className="champ font-mono" value={host} onChange={(e) => setHost(e.target.value)} placeholder="smtp.gmail.com" />
         </div>
         <div>
-          <label className="label">Port</label>
+          <label className="label">Port <span className="text-danger">*</span></label>
           <input className="champ font-mono" value={port} onChange={(e) => setPort(e.target.value)} placeholder="587" />
         </div>
       </div>
 
       <div className="mb-[18px]">
-        <label className="label">Identifiant (adresse de la boîte)</label>
+        <label className="label">Adresse e-mail (identifiant) <span className="text-danger">*</span></label>
         <input className="champ" value={user} onChange={(e) => setUser(e.target.value)} placeholder="infrastructure@mufidunion.cm" />
+        <p className="mt-1 text-[11.5px] text-grisdoux">L'adresse complète de la boîte qui enverra les notifications.</p>
       </div>
 
       <div className="mb-[18px]">
-        <label className="label">Mot de passe</label>
+        <label className="label">Mot de passe <span className="text-danger">*</span></label>
         <input
           type="password"
           className="champ"
           value={pass}
           onChange={(e) => setPass(e.target.value)}
-          placeholder={dep.smtp_configure ? "•••••••• (laisser vide pour conserver)" : "Mot de passe de la boîte"}
-        />
-      </div>
-
-      <div className="mb-[18px]">
-        <label className="label">Expéditeur affiché</label>
-        <input
-          className="champ"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          placeholder={`MUFID UNION — ${dep.nom} <${user || "adresse@mufidunion.cm"}>`}
+          placeholder={dep.smtp_configure ? "•••••••• (laisser vide pour conserver)" : "Mot de passe d'application"}
         />
         <p className="mt-1 text-[11.5px] text-grisdoux">
-          Doit correspondre à l'identifiant ci-dessus (les serveurs refusent l'usurpation d'expéditeur).
+          Avec Gmail ou Microsoft 365 (double authentification), utilisez un <strong>mot de passe d'application</strong>,
+          pas votre mot de passe habituel.
         </p>
       </div>
 
-      <label className="mb-3 flex cursor-pointer items-start gap-2.5 text-[12.5px] text-ardoise">
-        <input type="checkbox" className="mt-0.5" checked={tlsInsecure} onChange={(e) => setTlsInsecure(e.target.checked)} />
-        Accepter un certificat auto-signé (serveur de messagerie interne)
-      </label>
+      <div className="mb-4 rounded-lg border border-[#DCE9ED] bg-petrole-50/60 px-3 py-2.5 text-[11.5px] leading-snug text-ardoise">
+        L'expéditeur affiché est généré automatiquement :
+        <span className="font-medium"> MUFID UNION — {dep.nom} &lt;{user || "adresse@mufidunion.cm"}&gt;</span>.
+        Cliquez sur <strong>Tester la connexion</strong> avant d'enregistrer.
+      </div>
 
       {msg && (
         <div

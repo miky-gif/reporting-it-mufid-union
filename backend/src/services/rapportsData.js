@@ -10,6 +10,7 @@ import {
   referenceActivite,
 } from "../utils.js";
 import { chargerMapCategories } from "./categoriesStore.js";
+import { libelleEnteteDepartement } from "./enteteDepartement.js";
 
 const MOIS_FR = [
   "janvier", "février", "mars", "avril", "mai", "juin",
@@ -231,20 +232,8 @@ export async function rapportConsolideHebdo(debut, fin, departementId = null) {
   const activites = await activitesPeriode(debut, fin, null, departementId);
   const activitesAMener = await activitesPeriode(suiv.debut, suiv.fin, null, departementId);
 
-  // En-tête : le département consolidé, ou « tous les départements » (super admin).
-  let entete = DEPARTEMENT_DEFAUT;
-  if (departementId) {
-    const dep = await Departement.findByPk(departementId);
-    if (dep) entete = libelleDepartement(dep.nom);
-  } else {
-    const noms = await Departement.findAll({ where: { actif: true }, order: [["nom", "ASC"]] });
-    entete =
-      noms.length > 1
-        ? `Tous les départements — ${noms.map((d) => d.nom).join(", ")}`
-        : noms.length === 1
-        ? libelleDepartement(noms[0].nom)
-        : DEPARTEMENT_DEFAUT;
-  }
+  // En-tête : le(s) département(s) consolidé(s), ou « tous » (super admin).
+  const entete = await libelleEnteteDepartement(departementId ?? null);
 
   const employes = grouperParEmploye(activites, mapCat);
   const employesAMener = grouperParEmploye(activitesAMener, mapCat);

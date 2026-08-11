@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, messageErreur } from "@/lib/api";
 import { LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
+import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDate, formatDuree } from "@/lib/format";
 import type { Activite, Categorie, PageActivites, Priorite, Statut } from "@/types";
@@ -15,6 +16,7 @@ const TAILLE = 8;
 
 export default function MyActivities() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { actives: categoriesActives } = useCategories();
   const [donnees, setDonnees] = useState<PageActivites | null>(null);
   const [chargement, setChargement] = useState(true);
@@ -32,6 +34,9 @@ export default function MyActivities() {
     api
       .get<PageActivites>("/activites", {
         params: {
+          // « Mes activités » = uniquement les miennes, même pour un admin/superviseur
+          // (dont la liste par défaut couvrirait tout le département).
+          user_id: user?.id,
           page,
           taille: TAILLE,
           tri,
@@ -44,7 +49,7 @@ export default function MyActivities() {
       })
       .then((r) => setDonnees(r.data))
       .finally(() => setChargement(false));
-  }, [page, tri, ordre, recherche, categorie, statut, priorite]);
+  }, [user?.id, page, tri, ordre, recherche, categorie, statut, priorite]);
 
   useEffect(() => {
     const t = setTimeout(charger, recherche ? 300 : 0);

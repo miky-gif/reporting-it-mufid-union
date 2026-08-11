@@ -1,6 +1,6 @@
 // Types partagés, alignés sur les schémas Pydantic du backend.
 
-export type Role = "EMPLOYE" | "ADMIN" | "SUPER_ADMIN";
+export type Role = "EMPLOYE" | "ADMIN" | "SUPERVISEUR" | "SUPER_ADMIN";
 
 /** Droits granulaires attribuables à un ADMIN par le super admin. */
 export type Permission =
@@ -73,6 +73,8 @@ export interface User {
   actif: boolean;
   departement_id: number | null;
   departement: { id: number; code: string; nom: string; couleur: string } | null;
+  /** Périmètre d'un superviseur : identifiants des départements gérés. */
+  departements_geres: number[];
   permissions: Permission[];
   date_creation: string;
 }
@@ -108,6 +110,9 @@ export interface Activite {
   en_retard: boolean;
   date_cloture: string | null;
   cloture_par: number | null;
+  // Auteur de l'affectation (admin/superviseur/super admin), ou null si créée par l'agent.
+  affecte_par: number | null;
+  affecteur: { id: number; nom_complet: string; poste: string | null; role: Role } | null;
   reaffectee: boolean;
   reaffectee_de: number | null;
   date_reaffectation: string | null;

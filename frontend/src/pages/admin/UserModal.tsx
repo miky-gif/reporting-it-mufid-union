@@ -29,6 +29,8 @@ export function UserModal({
   const [departementId, setDepartementId] = useState<number | "">(
     user?.departement_id ?? (estSuperAdmin ? "" : moi?.departement_id ?? ""),
   );
+  // Périmètre d'un superviseur : plusieurs départements gérés.
+  const [depsGeres, setDepsGeres] = useState<number[]>(user?.departements_geres ?? []);
   const [droits, setDroits] = useState<Permission[]>(
     user?.permissions?.length ? user.permissions : PERMISSIONS_DEFAUT,
   );
@@ -42,17 +44,27 @@ export function UserModal({
     api.get<Departement[]>("/departements").then((r) => setDeps(r.data.filter((d) => d.actif)));
   }, [estSuperAdmin]);
 
-  const estAdminCible = role === "ADMIN";
+  const estSuperviseurCible = role === "SUPERVISEUR";
+  // ADMIN et SUPERVISEUR disposent tous deux de droits granulaires.
+  const avecDroits = role === "ADMIN" || role === "SUPERVISEUR";
 
   function basculer(d: Permission) {
     setDroits((l) => (l.includes(d) ? l.filter((x) => x !== d) : [...l, d]));
+  }
+  function basculerDep(id: number) {
+    setDepsGeres((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
   }
 
   async function soumettre(e: React.FormEvent) {
     e.preventDefault();
     setErreur(null);
-    if (!monCompte && estSuperAdmin && role !== "SUPER_ADMIN" && !departementId) {
-      return setErreur("Sélectionnez le département de rattachement.");
+    if (!monCompte && estSuperAdmin) {
+      if (estSuperviseurCible && depsGeres.length === 0) {
+        return setErreur("Sélectionnez au moins un département à superviser.");
+      }
+      if (role !== "SUPER_ADMIN" && !estSuperviseurCible && !departementId) {
+        return setErreur("Sélectionnez le département de rattachement.");
+      }
     }
     setEnCours(true);
     try {
@@ -61,8 +73,13 @@ export function UserModal({
       if (!monCompte) {
         corps.role = role;
         if (estSuperAdmin) {
-          corps.departement_id = role === "SUPER_ADMIN" ? null : departementId || null;
-          if (estAdminCible) corps.permissions = droits;
+          if (estSuperviseurCible) {
+            corps.departements_geres = depsGeres;
+            corps.permissions = droits;
+          } else {
+            corps.departement_id = role === "SUPER_ADMIN" ? null : departementId || null;
+            if (avecDroits) corps.permissions = droits;
+          }
         }
       }
       if (motDePasse) corps.mot_de_passe = motDePasse;
@@ -124,6 +141,7 @@ export function UserModal({
             >
               <option value="EMPLOYE">IT</option>
               {estSuperAdmin && <option value="ADMIN">Administrateur de département</option>}
+              {estSuperAdmin && <option value="SUPERVISEUR">Superviseur (plusieurs départements)</option>}
               {/* Affiché pour que le rôle réel soit visible (jamais sélectionnable soi-même) */}
               {role === "SUPER_ADMIN" && <option value="SUPER_ADMIN">Super administrateur</option>}
             </select>
@@ -149,6 +167,34 @@ export function UserModal({
           {role === "SUPER_ADMIN" ? (
             <div className="sm:col-span-2 rounded-lg border border-bordure bg-surface px-3 py-2.5 text-[12.5px] text-gris">
               Un super administrateur n'est rattaché à <strong>aucun département</strong> : il les supervise tous.
+            </div>
+          ) : estSuperviseurCible && estSuperAdmin && !monCompte ? (
+            /* Superviseur : plusieurs départements à cocher */
+            <div className="sm:col-span-2">
+              <label className="label">
+                Départements supervisés <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-1 gap-1.5 rounded-lg border border-bordure bg-surface p-2.5 sm:grid-cols-2">
+                {deps.map((d) => (
+                  <label
+                    key={d.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[12.5px] text-ardoise hover:bg-white"
+                  >
+                    <input
+                      type="checkbox"
+                      className="accent-petrole-600"
+                      checked={depsGeres.includes(d.id)}
+                      onChange={() => basculerDep(d.id)}
+                    />
+                    <span className="h-2 w-2 flex-none rounded-full" style={{ background: d.couleur }} />
+                    {d.nom}
+                  </label>
+                ))}
+                {deps.length === 0 && <span className="px-2 text-[12px] text-grisdoux">Aucun département actif.</span>}
+              </div>
+              <p className="mt-1 text-[11.5px] text-grisdoux">
+                {depsGeres.length} département(s) sélectionné(s). Le superviseur agit sur tous ces départements.
+              </p>
             </div>
           ) : estSuperAdmin && !monCompte ? (
             <div className="sm:col-span-2">
@@ -191,14 +237,16 @@ export function UserModal({
           </label>
         </div>
 
-        {/* Droits accordés à l'administrateur (super admin uniquement) */}
-        {estSuperAdmin && estAdminCible && (
+        {/* Droits accordés à l'administrateur ou au superviseur (super admin uniquement) */}
+        {estSuperAdmin && avecDroits && (
           <div className="mt-5 rounded-xl2 border border-[#DCE9ED] bg-petrole-50/60 p-4">
             <div className="mb-1 flex items-center gap-2 text-[13.5px] font-semibold text-petrole-700">
-              <ShieldCheck size={17} /> Droits de cet administrateur
+              <ShieldCheck size={17} /> Droits de ce {estSuperviseurCible ? "superviseur" : "administrateur"}
             </div>
             <p className="mb-3 text-[12px] text-gris">
-              Il n'agira que dans son département, et uniquement sur ce que vous cochez ici.
+              {estSuperviseurCible
+                ? "Il agira sur les départements sélectionnés ci-dessus, et uniquement sur ce que vous cochez ici."
+                : "Il n'agira que dans son département, et uniquement sur ce que vous cochez ici."}
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

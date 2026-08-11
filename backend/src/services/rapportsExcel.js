@@ -163,7 +163,8 @@ function tableauCons(ws, r, employes, periodeCol) {
   return r;
 }
 
-export async function rapportHebdoExcel(rap) {
+// `inclureAMener` : ajoute le 2e tableau (activités à mener). Par défaut, non.
+export async function rapportHebdoExcel(rap, inclureAMener = false) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Rapport individuel");
   const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
@@ -179,16 +180,18 @@ export async function rapportHebdoExcel(rap) {
 
   r = titreSection(ws, r, `Activités de la période — ${periodeCol}`, 6);
   r = tableauInd(ws, r, rap.groupes, periodeCol);
-  r += 1;
-  r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 6, "FF0E5E7C");
-  r = tableauInd(ws, r, rap.groupes_a_mener, periodeSuiv);
+  if (inclureAMener) {
+    r += 1;
+    r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 6, "FF0E5E7C");
+    r = tableauInd(ws, r, rap.groupes_a_mener, periodeSuiv);
+  }
 
   ws.columns = [{ width: 22 }, { width: 34 }, { width: 40 }, { width: 26 }, { width: 14 }, { width: 13 }];
   ws.views = [{ state: "frozen", ySplit: 6 }];
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
-export async function rapportConsolideHebdoExcel(rap) {
+export async function rapportConsolideHebdoExcel(rap, inclureAMener = false) {
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Rapport consolidé");
   const periodeCol = `du ${rap.debut_court} au ${rap.fin_court}`;
@@ -204,9 +207,11 @@ export async function rapportConsolideHebdoExcel(rap) {
 
   r = titreSection(ws, r, `Activités de la période — ${periodeCol}`, 7);
   r = tableauCons(ws, r, rap.employes, periodeCol);
-  r += 1;
-  r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 7, "FF0E5E7C");
-  r = tableauCons(ws, r, rap.employes_a_mener, periodeSuiv);
+  if (inclureAMener) {
+    r += 1;
+    r = titreSection(ws, r, `Activités à mener (${rap.suivant_label}) — ${periodeSuiv}`, 7, "FF0E5E7C");
+    r = tableauCons(ws, r, rap.employes_a_mener, periodeSuiv);
+  }
 
   ws.columns = [{ width: 22 }, { width: 19 }, { width: 30 }, { width: 34 }, { width: 24 }, { width: 13 }, { width: 12 }];
   ws.views = [{ state: "frozen", ySplit: 6 }];

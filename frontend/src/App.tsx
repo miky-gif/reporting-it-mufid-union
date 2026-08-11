@@ -13,6 +13,7 @@ import Login from "@/pages/Login";
 import EmployeeDashboard from "@/pages/EmployeeDashboard";
 import ActivityForm from "@/pages/ActivityForm";
 import MyActivities from "@/pages/MyActivities";
+import MyReports from "@/pages/MyReports";
 import Profile from "@/pages/Profile";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import ActivitiesManagement from "@/pages/admin/ActivitiesManagement";
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/activites" element={<MyActivities />} />
               <Route path="/activites/nouvelle" element={<ActivityForm />} />
               <Route path="/activites/:id/modifier" element={<ActivityForm />} />
+              <Route path="/mes-rapports" element={<MyReports />} />
               <Route path="/profil" element={<Profile />} />
 
               {/* Espace administration (admin de département ou super admin) */}

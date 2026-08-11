@@ -5,8 +5,10 @@ import { Router } from "express";
 import { Op } from "sequelize";
 import { Activite, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
 import {
+  accedeDepartement,
   estAdministration,
   estSuperAdmin,
+  perimetreDepartement,
   peut,
   requireAdmin,
   requireAuth,
@@ -86,6 +88,7 @@ async function chargerOu404(id, user, res) {
   const activite = await Activite.findByPk(id, {
     include: [
       { model: User, as: "user" },
+      { model: User, as: "affecteur" },
       { model: PieceJointe, as: "pieces" },
     ],
   });
@@ -93,9 +96,9 @@ async function chargerOu404(id, user, res) {
     res.status(404).json({ detail: "Activité introuvable." });
     return null;
   }
-  // IT : uniquement les siennes. Admin : uniquement son département.
+  // IT : uniquement les siennes. Admin/superviseur : uniquement leur périmètre.
   const horsPerimetre = estAdministration(user)
-    ? !estSuperAdmin(user) && activite.departement_id !== user.departement_id
+    ? !estSuperAdmin(user) && !accedeDepartement(user, activite.departement_id)
     : activite.user_id !== user.id;
   if (horsPerimetre) {
     res.status(404).json({ detail: "Activité introuvable." });
@@ -109,6 +112,7 @@ function chargerComplet(id) {
   return Activite.findByPk(id, {
     include: [
       { model: User, as: "user" },
+      { model: User, as: "affecteur" },
       { model: PieceJointe, as: "pieces" },
     ],
   });
@@ -134,7 +138,8 @@ activitesRouter.get("/", async (req, res) => {
   // département ; le super admin, toutes.
   const where = {};
   if (estAdministration(req.user)) {
-    if (!estSuperAdmin(req.user)) where.departement_id = req.user.departement_id ?? -1;
+    const p = perimetreDepartement(req.user); // null (tout) ou liste d'ids
+    if (p !== null) where.departement_id = p;
     if (user_id) where.user_id = Number(user_id);
   } else {
     where.user_id = req.user.id;
@@ -222,12 +227,12 @@ activitesRouter.post("/", async (req, res) => {
     if (cibles.length === 0) {
       return res.status(404).json({ detail: "Aucun employé cible valide." });
     }
-    // Cloisonnement : un admin n'affecte qu'aux agents de SON département.
+    // Cloisonnement : on n'affecte qu'aux agents de son périmètre de départements.
     if (!estSuperAdmin(req.user)) {
-      const horsDep = cibles.filter((c) => c.departement_id !== req.user.departement_id);
+      const horsDep = cibles.filter((c) => !accedeDepartement(req.user, c.departement_id));
       if (horsDep.length > 0) {
         return res.status(403).json({
-          detail: "Vous ne pouvez affecter des tâches qu'aux agents de votre département.",
+          detail: "Vous ne pouvez affecter des tâches qu'aux agents de votre périmètre.",
         });
       }
     }
@@ -245,6 +250,8 @@ activitesRouter.post("/", async (req, res) => {
       user_id: cible.id,
       departement_id: cible.departement_id ?? null, // l'activité suit l'agent
       assignee_par_admin: affectation,
+      // Trace de l'auteur de l'affectation (null si l'agent crée sa propre tâche).
+      affecte_par: affectation ? req.user.id : null,
       groupe_affectation_id: groupeId,
     });
     const complet = await chargerComplet(a.id);
@@ -395,10 +402,10 @@ activitesRouter.post("/:id/reaffecter", requirePermission("TACHES_REAFFECTER"), 
 
   const nouveau = await User.findOne({ where: { id: user_id, actif: true } });
   if (!nouveau) return res.status(404).json({ detail: "Agent destinataire introuvable ou désactivé." });
-  // Cloisonnement : on ne réaffecte qu'à un agent de son propre département.
-  if (!estSuperAdmin(req.user) && nouveau.departement_id !== req.user.departement_id) {
+  // Cloisonnement : on ne réaffecte qu'à un agent de son périmètre de départements.
+  if (!estSuperAdmin(req.user) && !accedeDepartement(req.user, nouveau.departement_id)) {
     return res.status(403).json({
-      detail: "Vous ne pouvez réaffecter qu'à un agent de votre département.",
+      detail: "Vous ne pouvez réaffecter qu'à un agent de votre périmètre.",
     });
   }
 
@@ -412,6 +419,7 @@ activitesRouter.post("/:id/reaffecter", requirePermission("TACHES_REAFFECTER"), 
     user_id: nouveau.id,
     departement_id: nouveau.departement_id ?? null, // l'activité suit l'agent
     assignee_par_admin: true, // devient une tâche affectée par l'admin
+    affecte_par: req.user.id, // l'auteur de la réaffectation devient l'affecteur
     reaffectee_de: ancienId,
     date_reaffectation: new Date(),
     motif_reaffectation: motifPropre,
@@ -495,7 +503,12 @@ activitesRouter.get("/:id/pieces/:pieceId", async (req, res) => {
   if (!piece) return res.status(404).json({ detail: "Pièce jointe introuvable." });
   const chemin = path.join(DOSSIER_UPLOADS, piece.fichier);
   if (!existsSync(chemin)) return res.status(404).json({ detail: "Fichier absent du serveur." });
-  res.download(chemin, piece.nom_fichier);
+  // Callback : si le partage (NAS) tombe en cours de transfert, on répond proprement.
+  res.download(chemin, piece.nom_fichier, (err) => {
+    if (err && !res.headersSent) {
+      res.status(500).json({ detail: "Téléchargement impossible (fichier momentanément inaccessible)." });
+    }
+  });
 });
 
 // DELETE /activites/:id/pieces/:pieceId — supprime une pièce jointe.

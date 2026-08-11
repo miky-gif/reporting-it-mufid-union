@@ -4,7 +4,7 @@ import { api, messageErreur } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { formatDate } from "@/lib/format";
 import { ROLES } from "@/lib/constants";
-import type { Role, UserWithStats } from "@/types";
+import type { Departement, Role, UserWithStats } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -13,6 +13,7 @@ import { UserModal } from "./UserModal";
 export default function UsersPage() {
   const { user: courant } = useAuth();
   const [users, setUsers] = useState<UserWithStats[]>([]);
+  const [deps, setDeps] = useState<Record<number, Departement>>({});
   const [chargement, setChargement] = useState(true);
   const [recherche, setRecherche] = useState("");
   const [modal, setModal] = useState<{ ouvert: boolean; user?: UserWithStats }>({ ouvert: false });
@@ -24,6 +25,14 @@ export default function UsersPage() {
     api.get<UserWithStats[]>("/users").then((r) => setUsers(r.data)).finally(() => setChargement(false));
   }
   useEffect(charger, []);
+
+  // Départements (pour afficher le périmètre d'un superviseur par leurs noms).
+  useEffect(() => {
+    api
+      .get<Departement[]>("/departements")
+      .then((r) => setDeps(Object.fromEntries(r.data.map((d) => [d.id, d]))))
+      .catch(() => setDeps({}));
+  }, []);
 
   async function desactiver() {
     if (!aDesactiver) return;
@@ -104,7 +113,7 @@ export default function UsersPage() {
                       </div>
                     </td>
                     <td className="py-3"><BadgeRole role={u.role} /></td>
-                    <td className="py-3"><BadgeDepartement dep={u.departement} /></td>
+                    <td className="py-3"><BadgeDepartement u={u} deps={deps} /></td>
                     <td className="py-3"><BadgeStatut actif={u.actif} /></td>
                     <td className="py-3 text-right font-mono text-[13px] text-ardoise">{u.nb_activites}</td>
                     <td className="py-3 text-[12.5px] text-gris">{formatDate(u.date_creation)}</td>
@@ -191,9 +200,41 @@ function BadgeRole({ role }: { role: Role }) {
   );
 }
 
-/** Département de rattachement (le super admin n'en a aucun : il les voit tous). */
-function BadgeDepartement({ dep }: { dep: UserWithStats["departement"] }) {
-  if (!dep) return <span className="text-[12px] italic text-grisdoux">Tous</span>;
+/**
+ * Périmètre de rattachement :
+ *  - super admin : tous les départements ;
+ *  - superviseur : la liste de ses départements gérés ;
+ *  - admin / IT  : son unique département.
+ */
+function BadgeDepartement({ u, deps }: { u: UserWithStats; deps: Record<number, Departement> }) {
+  if (u.role === "SUPER_ADMIN") return <span className="text-[12px] italic text-grisdoux">Tous</span>;
+
+  if (u.role === "SUPERVISEUR") {
+    const ids = u.departements_geres ?? [];
+    if (ids.length === 0) return <span className="text-[12px] italic text-grisdoux">—</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {ids.map((id) => {
+          const d = deps[id];
+          return (
+            <span
+              key={id}
+              className="inline-flex items-center gap-1 rounded-md bg-surface px-1.5 py-0.5 text-[11.5px] text-ardoise"
+            >
+              <span
+                className="h-2 w-2 flex-none rounded-full"
+                style={{ background: d?.couleur ?? "#8A99A1" }}
+              />
+              {d?.nom ?? `#${id}`}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  const dep = u.departement;
+  if (!dep) return <span className="text-[12px] italic text-grisdoux">—</span>;
   return (
     <span className="inline-flex items-center gap-1.5 text-[12px] text-ardoise">
       <span className="h-2 w-2 flex-none rounded-full" style={{ background: dep.couleur }} />

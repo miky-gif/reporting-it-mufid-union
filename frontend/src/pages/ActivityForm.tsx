@@ -1,15 +1,16 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlignLeft, ArrowLeft, CalendarClock, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2, SlidersHorizontal, Tag, type LucideIcon } from "lucide-react";
+import { AlignLeft, ArrowLeft, CalendarClock, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2, SlidersHorizontal, Tag, UserCheck, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
-import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, STATUTS } from "@/lib/constants";
+import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, ROLES, STATUTS } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
 import type { Activite, Categorie, Priorite, Statut } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
 import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointes";
@@ -52,6 +53,9 @@ export default function ActivityForm() {
   const [pending, setPending] = useState<File[]>([]);
   // Trace de réaffectation (motif + date), affichée sur la tâche.
   const [reaff, setReaff] = useState<{ motif: string | null; date: string | null } | null>(null);
+  // Auteur de l'affectation (affiché à droite) : utile quand un autre responsable
+  // (super admin, superviseur) a confié la tâche à un agent de votre département.
+  const [affecteur, setAffecteur] = useState<Activite["affecteur"]>(null);
 
   const {
     register,
@@ -126,6 +130,7 @@ export default function ActivityForm() {
         setAssignee(a.assignee_par_admin);
         setConsignes(a.consignes ?? null);
         setReaff(a.reaffectee ? { motif: a.motif_reaffectation, date: a.date_reaffectation } : null);
+        setAffecteur(a.affecteur ?? null);
         setInitFait(true);
       })
       .catch(() => setErreur("Activité introuvable."))
@@ -162,7 +167,9 @@ export default function ActivityForm() {
   // • gel        : tâche clôturée -> lecture seule (pour l'employé uniquement)
   const verrouille = !estAdmin && assignee;
   const gel = !estAdmin && val.statut === "CLOTURE";
-  const retour = estAdmin ? "/admin/activites" : "/activites";
+  // Création = toujours une activité personnelle -> retour vers « Mes activités ».
+  // Édition par un admin = provient de la gestion du département.
+  const retour = !editionId ? "/activites" : estAdmin ? "/admin/activites" : "/activites";
 
   // Quand la catégorie change, on cale la rubrique sur une valeur valide.
   function changerCategorie(cat: Categorie) {
@@ -472,6 +479,25 @@ export default function ActivityForm() {
               </span>
             </div>
           </div>
+
+          {/* Auteur de l'affectation : qui a confié cette tâche à l'agent */}
+          {editionId && affecteur && (
+            <div className="carte p-[16px_18px]">
+              <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-grisdoux">
+                <UserCheck size={15} className="text-petrole-600" /> Affectée par
+              </div>
+              <div className="flex items-center gap-3">
+                <Avatar nom={affecteur.nom_complet} id={affecteur.id} taille={34} />
+                <div className="min-w-0">
+                  <div className="truncate text-[13.5px] font-semibold text-encre">{affecteur.nom_complet}</div>
+                  <div className="truncate text-[11.5px] text-grisdoux">
+                    {ROLES[affecteur.role]?.libelle ?? affecteur.role}
+                    {affecteur.poste ? ` · ${affecteur.poste}` : ""}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="carte p-[16px_18px]">
             <PiecesJointes activiteId={editionId} pending={pending} onPendingChange={setPending} />
