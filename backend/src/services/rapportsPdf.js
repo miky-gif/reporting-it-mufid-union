@@ -263,7 +263,7 @@ function dessinerTableauInd(doc, groupes, colX, widths, faireEntete, bas) {
     groupe.lignes.forEach((l, i) => {
       const cells = [
         { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center" },
-        { text: l.programmee },
+        { text: l.pg_span > 0 ? l.programmee : "" }, // fusion de la rubrique (répétée -> vide)
         { text: l.etat },
         { text: l.livrable },
         { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut) },
@@ -392,7 +392,7 @@ function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
         const cells = [
           { text: premiereEmp ? agentTexte : "", fill: PETROLE_TRES_CLAIR, bold: true, color: ENCRE, align: "center", topBorder: premiereEmp },
           { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center", topBorder: i === 0 },
-          { text: l.programmee, topBorder: true },
+          { text: l.pg_span > 0 ? l.programmee : "", topBorder: l.pg_span > 0 }, // fusion de la rubrique
           { text: l.etat, multi: true, topBorder: true },
           { text: l.livrable, multi: true, topBorder: true },
           { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut), topBorder: true },
@@ -402,8 +402,10 @@ function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
         if (y + mesure.rowH > bas) {
           doc.addPage();
           y = faireEntete(ML);
+          // En haut d'une nouvelle page, on réaffiche les cellules fusionnées.
           cells[0].text = agentTexte; cells[0].topBorder = true;
           cells[1].text = groupe.rubrique; cells[1].topBorder = true;
+          cells[2].text = l.programmee; cells[2].topBorder = true;
           mesure = mesurerLigneCons(doc, cells, widths);
         }
         y = dessinerLigneCons(doc, mesure.infos, mesure.rowH, colX, widths, y);

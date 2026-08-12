@@ -104,6 +104,7 @@ function tableauInd(ws, r, groupes, periodeCol) {
   }
   for (const g of groupes) {
     const debut = r;
+    const runs = []; // séries d'une même rubrique à fusionner (colonne 2)
     for (const l of g.lignes) {
       ecrireCellule(ws, r, 1, g.rubrique, { bold: true, color: "FF0E5E7C", align: "center", fill: PETROLE_CLAIR });
       ecrireCellule(ws, r, 2, l.programmee, { wrap: true });
@@ -111,9 +112,11 @@ function tableauInd(ws, r, groupes, periodeCol) {
       ecrireCellule(ws, r, 4, l.livrable, { wrap: true });
       ecrireCellule(ws, r, 5, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
       ecrireCellule(ws, r, 6, l.pourcentage, { bold: true, align: "center" });
+      if (l.pg_span > 1) runs.push([r, r + l.pg_span - 1]);
       r += 1;
     }
     fusion(ws, 1, debut, r - 1);
+    for (const [a, b] of runs) fusion(ws, 2, a, b); // fusion des rubriques répétées
   }
   return r;
 }
@@ -138,6 +141,7 @@ function tableauCons(ws, r, employes, periodeCol) {
     const debutEmp = r;
     for (const g of emp.groupes) {
       const debutCat = r;
+      const runs = []; // séries d'une même rubrique à fusionner (colonne 3)
       for (const l of g.lignes) {
         ecrireCellule(ws, r, 1, "", { fill: PETROLE_TRES_CLAIR });
         ecrireCellule(ws, r, 2, g.rubrique, { bold: true, color: "FF0E5E7C", align: "center", fill: PETROLE_CLAIR });
@@ -146,9 +150,11 @@ function tableauCons(ws, r, employes, periodeCol) {
         ecrireCellule(ws, r, 5, l.livrable, { wrap: true });
         ecrireCellule(ws, r, 6, l.statut, { bold: true, align: "center", color: couleurStatutArgb(l.statut) });
         ecrireCellule(ws, r, 7, l.pourcentage, { bold: true, align: "center" });
+        if (l.pg_span > 1) runs.push([r, r + l.pg_span - 1]);
         r += 1;
       }
       fusion(ws, 2, debutCat, r - 1);
+      for (const [a, b] of runs) fusion(ws, 3, a, b); // fusion des rubriques répétées
     }
     const cellAgent = ecrireCellule(
       ws,

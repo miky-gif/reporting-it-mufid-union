@@ -13,6 +13,7 @@ interface LigneRapport {
   livrable: string;
   pourcentage: string;
   statut: string;
+  pg_span: number; // rowSpan de la rubrique (0 = fusionnée avec la précédente)
 }
 interface GroupeRapport {
   code: string;
@@ -245,7 +246,11 @@ function TableauConsolide({ employes, periodeCol }: { employes: EmployeRapport[]
                       {g.rubrique}
                     </td>
                   )}
-                  <Td>{l.programmee}</Td>
+                  {l.pg_span > 0 && (
+                    <td rowSpan={l.pg_span} className="break-words border border-[#D8E1E5] px-2.5 py-2 align-middle text-ardoise">
+                      {l.programmee}
+                    </td>
+                  )}
                   <Td><Multiligne texte={l.etat} /></Td>
                   <Td><Multiligne texte={l.livrable} /></Td>
                   <td className="border border-[#D8E1E5] px-2.5 py-2 text-center font-semibold" style={{ color: couleurStatut(l.statut) }}>{l.statut}</td>

@@ -158,16 +158,35 @@ function grouperParCategorie(activites, mapCat) {
     parCat.get(a.categorie).push(a);
   }
   return [...parCat.entries()]
-    .map(([code, acts]) => ({
-      code,
-      rubrique: libCat(code, mapCat),
-      couleur: mapCat[code]?.couleur ?? "#64757D",
-      ordre: mapCat[code]?.ordre ?? 999,
-      lignes: acts
+    .map(([code, acts]) => {
+      // Tri par rubrique (titre) puis par date : les tâches d'une même rubrique
+      // deviennent contiguës, ce qui permet de fusionner leur cellule.
+      const lignes = acts
         .slice()
-        .sort((a, b) => (a.date_activite < b.date_activite ? -1 : 1))
-        .map(ligneActivite),
-    }))
+        .sort((a, b) => {
+          const t = (a.titre || "").localeCompare(b.titre || "", "fr");
+          return t !== 0 ? t : a.date_activite < b.date_activite ? -1 : 1;
+        })
+        .map(ligneActivite);
+      // Fusion verticale de la colonne « Activités programmées » : pg_span = nombre
+      // de lignes d'une même rubrique (posé sur la 1re), 0 sur les continuations.
+      for (let i = 0; i < lignes.length; i++) {
+        if (i > 0 && lignes[i].programmee === lignes[i - 1].programmee) {
+          lignes[i].pg_span = 0; // couverte par la cellule fusionnée précédente
+        } else {
+          let n = 1;
+          while (i + n < lignes.length && lignes[i + n].programmee === lignes[i].programmee) n++;
+          lignes[i].pg_span = n;
+        }
+      }
+      return {
+        code,
+        rubrique: libCat(code, mapCat),
+        couleur: mapCat[code]?.couleur ?? "#64757D",
+        ordre: mapCat[code]?.ordre ?? 999,
+        lignes,
+      };
+    })
     .sort((x, y) => x.ordre - y.ordre);
 }
 

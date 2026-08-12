@@ -87,6 +87,15 @@ function cellule(children, { fill, merge, align } = {}) {
   return new TableCell(opts);
 }
 
+// Cellule « Activités programmées » (rubrique) : fusionnée verticalement quand
+// plusieurs tâches partagent la même rubrique (pg_span > 0 = 1re, 0 = continuation).
+function celluleProgrammee(l) {
+  if (l.pg_span === 0) {
+    return cellule([new Paragraph({ children: [] })], { merge: VerticalMergeType.CONTINUE, align: "center" });
+  }
+  return cellule([ligneTexte(l.programmee, { size: 18 })], { merge: VerticalMergeType.RESTART, align: "center" });
+}
+
 // Les 3 cellules communes (description, résultat, statut, %) d'une ligne.
 function cellulesCommunes(l) {
   return [
@@ -127,7 +136,7 @@ function tableauIndividuel(groupes, periodeCol) {
               premiere ? [ligneTexte(groupe.rubrique, { bold: true, color: PETROLE, size: 18 })] : [new Paragraph({ children: [] })],
               { fill: PETROLE_CLAIR, merge: premiere ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE, align: "center" },
             ),
-            cellule([ligneTexte(l.programmee, { size: 18 })]),
+            celluleProgrammee(l),
             ...cellulesCommunes(l),
           ],
         }),
@@ -183,7 +192,7 @@ function tableauConsolide(employes, periodeCol) {
 
         lignes.push(
           new TableRow({
-            children: [celluleAgent, celluleRubrique, cellule([ligneTexte(l.programmee, { size: 18 })]), ...cellulesCommunes(l)],
+            children: [celluleAgent, celluleRubrique, celluleProgrammee(l), ...cellulesCommunes(l)],
           }),
         );
         premiereEmp = false;
