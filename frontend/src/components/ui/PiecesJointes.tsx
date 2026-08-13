@@ -1,4 +1,4 @@
-import { Download, FileUp, Loader2, Paperclip, Trash2, X } from "lucide-react";
+import { Download, FileUp, Loader2, Lock, Paperclip, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
 import { telechargerFichier } from "@/lib/download";
@@ -22,10 +22,13 @@ export function PiecesJointes({
   activiteId,
   pending,
   onPendingChange,
+  archive = false,
 }: {
   activiteId: number | null;
   pending: File[];
   onPendingChange: (files: File[]) => void;
+  /** Tâche clôturée : les fichiers sont archivés (ni ajout ni suppression). */
+  archive?: boolean;
 }) {
   const [pieces, setPieces] = useState<PieceJointe[]>([]);
   const [chargement, setChargement] = useState(false);
@@ -69,9 +72,13 @@ export function PiecesJointes({
   }
 
   async function supprimer(id: number) {
-    if (!activiteId) return;
-    await api.delete(`/activites/${activiteId}/pieces/${id}`).catch(() => {});
-    setPieces((p) => p.filter((x) => x.id !== id));
+    if (!activiteId || archive) return;
+    try {
+      await api.delete(`/activites/${activiteId}/pieces/${id}`);
+      setPieces((p) => p.filter((x) => x.id !== id));
+    } catch (err) {
+      setErreur(messageErreur(err, "Suppression impossible."));
+    }
   }
 
   async function telecharger(p: PieceJointe) {
@@ -91,14 +98,24 @@ export function PiecesJointes({
         className="hidden"
         onChange={(e) => ajouter(e.target.files)}
       />
-      <button
-        type="button"
-        onClick={() => input.current?.click()}
-        className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#C6D2D7] bg-surface px-3 py-3 text-[12.5px] font-medium text-gris hover:border-petrole-600 hover:text-petrole-600"
-      >
-        {chargement ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
-        Ajouter un fichier (PDF, Word, Excel, image — 10 Mo max)
-      </button>
+      {archive ? (
+        <div className="flex items-start gap-2 rounded-lg border border-[#B7DEC9] bg-succes/5 px-3 py-2.5 text-[12px] leading-snug text-succes">
+          <Lock size={15} className="mt-0.5 flex-none" />
+          <span>
+            Tâche clôturée : les pièces jointes sont <strong>archivées</strong>. Elles restent
+            téléchargeables mais ne peuvent plus être ajoutées ni supprimées.
+          </span>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#C6D2D7] bg-surface px-3 py-3 text-[12.5px] font-medium text-gris hover:border-petrole-600 hover:text-petrole-600"
+        >
+          {chargement ? <Loader2 size={16} className="animate-spin" /> : <FileUp size={16} />}
+          Ajouter un fichier (PDF, Word, Excel, image — 10 Mo max)
+        </button>
+      )}
 
       {erreur && <p className="mt-1.5 text-[12px] text-danger">{erreur}</p>}
 
@@ -113,9 +130,13 @@ export function PiecesJointes({
               <button type="button" onClick={() => telecharger(p)} title="Télécharger" className="flex-none text-petrole-600 hover:text-petrole-800">
                 <Download size={15} />
               </button>
-              <button type="button" onClick={() => supprimer(p.id)} title="Supprimer" className="flex-none text-danger hover:opacity-70">
-                <Trash2 size={15} />
-              </button>
+              {archive ? (
+                <Lock size={14} className="flex-none text-succes" aria-label="Fichier archivé" />
+              ) : (
+                <button type="button" onClick={() => supprimer(p.id)} title="Supprimer" className="flex-none text-danger hover:opacity-70">
+                  <Trash2 size={15} />
+                </button>
+              )}
             </li>
           ))}
         </ul>

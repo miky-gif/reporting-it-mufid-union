@@ -500,7 +500,13 @@ export default function ActivityForm() {
           )}
 
           <div className="carte p-[16px_18px]">
-            <PiecesJointes activiteId={editionId} pending={pending} onPendingChange={setPending} />
+            {/* Tâche clôturée : les pièces jointes sont archivées (lecture seule). */}
+            <PiecesJointes
+              activiteId={editionId}
+              pending={pending}
+              onPendingChange={setPending}
+              archive={val.statut === "CLOTURE"}
+            />
           </div>
 
           {!estAdmin && (

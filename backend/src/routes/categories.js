@@ -12,6 +12,10 @@ import {
 } from "../middleware/auth.js";
 import { categorieCreateSchema, categorieUpdateSchema, valider } from "../validators.js";
 import { slugAscii } from "../utils.js";
+import { parseMap } from "../services/categoriesStore.js";
+import { normaliserDossier, racineActive } from "../services/uploads.js";
+import { readdirSync } from "fs";
+import path from "path";
 
 export const categoriesRouter = Router();
 categoriesRouter.use(requireAuth);
@@ -38,10 +42,22 @@ function serialiser(c) {
     nom: p.nom,
     couleur: p.couleur,
     rubriques: parseRubriques(p.rubriques),
+    // Dossier de rangement des pièces jointes, par rubrique.
+    dossiers_rubriques: parseMap(p.dossiers_rubriques),
     ordre: p.ordre,
     actif: !!p.actif,
     departement_id: p.departement_id ?? null,
   };
+}
+
+/** Ne conserve que les dossiers des rubriques existantes, chemins normalisés. */
+function nettoyerDossiers(dossiers, rubriques) {
+  const sortie = {};
+  for (const r of rubriques || []) {
+    const chemin = normaliserDossier((dossiers || {})[r]);
+    if (chemin) sortie[r] = chemin;
+  }
+  return sortie;
 }
 
 // Génère un code unique (SLUG en majuscules) à partir du nom.
@@ -78,6 +94,30 @@ categoriesRouter.get("/", async (req, res) => {
   res.json(cats.map(serialiser));
 });
 
+// GET /categories/dossiers — dossiers existants du NAS (aide à la saisie).
+// Permet à l'administrateur de choisir un dossier sans toucher au code.
+categoriesRouter.get("/dossiers", requirePermission("CATEGORIES_GERER"), (_req, res) => {
+  const trouves = [];
+  // Deux niveaux suffisent : « Catégorie » et « Catégorie/Rubrique ».
+  const lister = (base, prefixe, profondeur) => {
+    let entrees = [];
+    try {
+      entrees = readdirSync(base, { withFileTypes: true });
+    } catch {
+      return; // dossier illisible (NAS injoignable) : on renvoie ce qu'on a
+    }
+    for (const e of entrees) {
+      if (!e.isDirectory() || e.name.startsWith(".")) continue; // ignore .tmp
+      const chemin = prefixe ? `${prefixe}/${e.name}` : e.name;
+      trouves.push(chemin);
+      if (profondeur > 1) lister(path.join(base, e.name), chemin, profondeur - 1);
+    }
+  };
+  const racine = racineActive(); // NAS si joignable, sinon dossier local
+  lister(racine, "", 2);
+  res.json({ racine, dossiers: trouves.sort((a, b) => a.localeCompare(b, "fr")) });
+});
+
 // --- À partir d'ici : droit « Gérer les catégories et rubriques » ---
 categoriesRouter.use(requirePermission("CATEGORIES_GERER"));
 
@@ -105,6 +145,7 @@ categoriesRouter.post("/", async (req, res) => {
     nom: v.data.nom,
     couleur: v.data.couleur,
     rubriques: v.data.rubriques,
+    dossiers_rubriques: nettoyerDossiers(v.data.dossiers_rubriques, v.data.rubriques),
     ordre: (Number.isFinite(dernier) ? dernier : 0) + 1,
     actif: true,
     departement_id: depId,
@@ -120,6 +161,15 @@ categoriesRouter.put("/:id", async (req, res) => {
   if (!v.ok) return;
   const donnees = { ...v.data };
   if (!estSuperAdmin(req.user)) delete donnees.departement_id; // un admin ne déplace pas une catégorie
+  // Les dossiers ne concernent que les rubriques réellement présentes.
+  if (donnees.dossiers_rubriques !== undefined || donnees.rubriques !== undefined) {
+    const rubriques = donnees.rubriques ?? parseRubriques(cat.rubriques);
+    const actuels = parseMap(cat.dossiers_rubriques);
+    donnees.dossiers_rubriques = nettoyerDossiers(
+      { ...actuels, ...(donnees.dossiers_rubriques || {}) },
+      rubriques,
+    );
+  }
   await cat.update(donnees);
   res.json(serialiser(cat));
 });

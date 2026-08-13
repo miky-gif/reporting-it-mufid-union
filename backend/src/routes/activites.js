@@ -30,10 +30,9 @@ import {
   notifierRetraitTache,
   notifierSuppressionTache,
 } from "../services/notifications.js";
-import { categorieActiveExiste } from "../services/categoriesStore.js";
-import { upload, DOSSIER_UPLOADS } from "../services/uploads.js";
-import { existsSync, unlink } from "fs";
-import path from "path";
+import { categorieActiveExiste, dossierDeRubrique } from "../services/categoriesStore.js";
+import { upload, cheminFichier, rangerFichier } from "../services/uploads.js";
+import { unlink } from "fs";
 
 // Les notifications ne doivent jamais faire échouer l'action métier.
 async function sansErreur(promesse, contexte) {
@@ -468,18 +467,40 @@ function televerser(req, res, next) {
 }
 
 // POST /activites/:id/pieces — téléverse une pièce jointe (propriétaire ou admin).
+// Le fichier est rangé dans le dossier de la RUBRIQUE, sous son nom d'origine.
 activitesRouter.post("/:id/pieces", televerser, async (req, res) => {
   const activite = await chargerOu404(Number(req.params.id), req.user, res);
   if (!activite) {
-    if (req.file) unlink(path.join(DOSSIER_UPLOADS, req.file.filename), () => {});
+    if (req.file) unlink(req.file.path, () => {}); // nettoyage du fichier temporaire
     return;
   }
   if (!req.file) return res.status(400).json({ detail: "Aucun fichier reçu." });
 
+  // Une tâche clôturée est figée : plus aucun ajout de pièce jointe.
+  if (activite.statut === "CLOTURE") {
+    unlink(req.file.path, () => {});
+    return res.status(403).json({
+      detail: "Cette tâche est clôturée : ses pièces jointes ne peuvent plus être modifiées.",
+    });
+  }
+
+  // Dossier cible = celui configuré pour la rubrique (titre) de la catégorie.
+  let cheminRelatif;
+  try {
+    const dossier = await dossierDeRubrique(activite.categorie, activite.titre);
+    cheminRelatif = rangerFichier(req.file.path, dossier, req.file.originalname);
+  } catch (e) {
+    unlink(req.file.path, () => {});
+    console.error("✖ Rangement de la pièce jointe :", e.message);
+    return res.status(500).json({
+      detail: "Enregistrement du fichier impossible (dossier de destination inaccessible).",
+    });
+  }
+
   const piece = await PieceJointe.create({
     activite_id: activite.id,
     nom_fichier: req.file.originalname,
-    fichier: req.file.filename,
+    fichier: cheminRelatif, // chemin relatif (dossier de la rubrique + nom d'origine)
     mime: req.file.mimetype,
     taille: req.file.size,
     televerse_par: req.user.id,
@@ -501,8 +522,9 @@ activitesRouter.get("/:id/pieces/:pieceId", async (req, res) => {
     where: { id: Number(req.params.pieceId), activite_id: activite.id },
   });
   if (!piece) return res.status(404).json({ detail: "Pièce jointe introuvable." });
-  const chemin = path.join(DOSSIER_UPLOADS, piece.fichier);
-  if (!existsSync(chemin)) return res.status(404).json({ detail: "Fichier absent du serveur." });
+  // Recherche sur le NAS puis en local (repli) : le fichier peut être des deux côtés.
+  const chemin = cheminFichier(piece.fichier);
+  if (!chemin) return res.status(404).json({ detail: "Fichier introuvable (stockage momentanément indisponible ?)." });
   // Callback : si le partage (NAS) tombe en cours de transfert, on répond proprement.
   res.download(chemin, piece.nom_fichier, (err) => {
     if (err && !res.headersSent) {
@@ -512,14 +534,22 @@ activitesRouter.get("/:id/pieces/:pieceId", async (req, res) => {
 });
 
 // DELETE /activites/:id/pieces/:pieceId — supprime une pièce jointe.
+// Une tâche CLÔTURÉE est archivée : ses fichiers deviennent inaltérables.
 activitesRouter.delete("/:id/pieces/:pieceId", async (req, res) => {
   const activite = await chargerOu404(Number(req.params.id), req.user, res);
   if (!activite) return;
+  if (activite.statut === "CLOTURE") {
+    return res.status(403).json({
+      detail:
+        "Cette tâche est clôturée : ses pièces jointes sont archivées et ne peuvent plus être supprimées.",
+    });
+  }
   const piece = await PieceJointe.findOne({
     where: { id: Number(req.params.pieceId), activite_id: activite.id },
   });
   if (!piece) return res.status(404).json({ detail: "Pièce jointe introuvable." });
-  unlink(path.join(DOSSIER_UPLOADS, piece.fichier), () => {});
+  const cible = cheminFichier(piece.fichier); // NAS ou repli local
+  if (cible) unlink(cible, () => {});
   await piece.destroy();
   res.status(204).end();
 });

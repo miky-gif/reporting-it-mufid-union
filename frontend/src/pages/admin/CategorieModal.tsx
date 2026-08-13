@@ -1,4 +1,4 @@
-import { Building2, GripVertical, Loader2, Plus, X } from "lucide-react";
+import { Building2, FolderTree, GripVertical, Loader2, Plus, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +29,30 @@ export function CategorieModal({
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
 
+  // Dossier de rangement des pièces jointes, par rubrique (NAS).
+  const [dossiers, setDossiers] = useState<Record<string, string>>(
+    categorie?.dossiers_rubriques ?? {},
+  );
+  const [dossiersExistants, setDossiersExistants] = useState<string[]>([]);
+  const [racineNas, setRacineNas] = useState("");
+
+  // Dossiers déjà présents dans le stockage : proposés en autocomplétion.
+  useEffect(() => {
+    api
+      .get<{ racine: string; dossiers: string[] }>("/categories/dossiers")
+      .then((r) => {
+        setDossiersExistants(r.data.dossiers);
+        setRacineNas(r.data.racine);
+      })
+      .catch(() => setDossiersExistants([]));
+  }, []);
+
+  // Dossier appliqué par défaut si l'administrateur n'en saisit aucun.
+  const dossierParDefaut = (rubrique: string) => {
+    const base = (nom || "Catégorie").trim();
+    return base && rubrique && rubrique !== base ? `${base}/${rubrique}` : base || rubrique;
+  };
+
   // Rattachement au département : le super admin choisit, un admin crée dans le sien.
   const [deps, setDeps] = useState<Departement[]>([]);
   const [departementId, setDepartementId] = useState<number | "">(
@@ -52,7 +76,27 @@ export function CategorieModal({
   }
 
   function modifierRubrique(i: number, valeur: string) {
+    const ancien = rubriques[i];
     setRubriques((prev) => prev.map((r, idx) => (idx === i ? valeur : r)));
+    // Le dossier associé suit le renommage de la rubrique.
+    setDossiers((prev) => {
+      if (!(ancien in prev)) return prev;
+      const copie = { ...prev };
+      const chemin = copie[ancien];
+      delete copie[ancien];
+      if (valeur) copie[valeur] = chemin;
+      return copie;
+    });
+  }
+
+  function retirerRubrique(i: number) {
+    const cible = rubriques[i];
+    setRubriques((prev) => prev.filter((_, idx) => idx !== i));
+    setDossiers((prev) => {
+      const copie = { ...prev };
+      delete copie[cible];
+      return copie;
+    });
   }
 
   async function soumettre(e: React.FormEvent) {
@@ -64,7 +108,18 @@ export function CategorieModal({
     const rubNettoyees = rubriques.map((r) => r.trim()).filter(Boolean);
     setEnCours(true);
     try {
-      const corps: Record<string, unknown> = { nom, couleur, rubriques: rubNettoyees };
+      // On ne transmet que les dossiers des rubriques encore présentes.
+      const dossiersUtiles: Record<string, string> = {};
+      for (const r of rubNettoyees) {
+        const chemin = (dossiers[r] || "").trim();
+        if (chemin) dossiersUtiles[r] = chemin;
+      }
+      const corps: Record<string, unknown> = {
+        nom,
+        couleur,
+        rubriques: rubNettoyees,
+        dossiers_rubriques: dossiersUtiles,
+      };
       // Super admin et superviseur choisissent le département cible.
       if (choisitDepartement) corps.departement_id = departementId;
       if (edition) await api.put(`/categories/${categorie!.id}`, corps);
@@ -145,14 +200,45 @@ export function CategorieModal({
 
           <div>
             <label className="label">Rubriques ({rubriques.length})</label>
-            <div className="flex flex-col gap-2">
+            <p className="mb-2 text-[11.5px] leading-snug text-grisdoux">
+              Chaque rubrique range ses pièces jointes dans son propre dossier du stockage
+              {racineNas && <span className="font-mono"> ({racineNas})</span>}. Laissez le dossier vide pour
+              utiliser celui proposé automatiquement.
+            </p>
+            {/* Dossiers déjà présents dans le stockage : proposés à la saisie */}
+            <datalist id="dossiers-nas">
+              {dossiersExistants.map((d) => (
+                <option key={d} value={d} />
+              ))}
+            </datalist>
+            <div className="flex flex-col gap-3">
               {rubriques.map((r, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <GripVertical size={16} className="flex-none text-[#C6D2D7]" />
-                  <input className="champ flex-1 py-2" maxLength={500} value={r} onChange={(e) => modifierRubrique(i, e.target.value)} />
-                  <button type="button" onClick={() => setRubriques((prev) => prev.filter((_, idx) => idx !== i))} className="flex-none text-grisdoux hover:text-danger" title="Retirer">
-                    <X size={18} />
-                  </button>
+                <div key={i} className="rounded-lg border border-bordure bg-surface p-2.5">
+                  <div className="flex items-center gap-2">
+                    <GripVertical size={16} className="flex-none text-[#C6D2D7]" />
+                    <input
+                      className="champ flex-1 py-2"
+                      maxLength={500}
+                      value={r}
+                      onChange={(e) => modifierRubrique(i, e.target.value)}
+                      placeholder="Nom de la rubrique"
+                    />
+                    <button type="button" onClick={() => retirerRubrique(i)} className="flex-none text-grisdoux hover:text-danger" title="Retirer">
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 pl-6">
+                    <FolderTree size={15} className="flex-none text-petrole-600" />
+                    <input
+                      list="dossiers-nas"
+                      className="champ flex-1 py-1.5 font-mono text-[12px]"
+                      maxLength={300}
+                      value={dossiers[r] ?? ""}
+                      onChange={(e) => setDossiers((prev) => ({ ...prev, [r]: e.target.value }))}
+                      placeholder={dossierParDefaut(r)}
+                      title="Dossier de rangement des pièces jointes de cette rubrique"
+                    />
+                  </div>
                 </div>
               ))}
               {rubriques.length === 0 && (

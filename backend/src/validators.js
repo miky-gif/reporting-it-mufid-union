@@ -129,10 +129,14 @@ const couleurHex = z
   .string()
   .regex(/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/, "Couleur hexadécimale invalide (ex. #0E5E7C).");
 
+// Dossier de rangement des pièces jointes, par rubrique : { rubrique: chemin }.
+const dossiersRubriquesSchema = z.record(z.string(), z.string().max(300)).optional();
+
 export const categorieCreateSchema = z.object({
   nom: z.string().min(2, "Nom de catégorie requis.").max(255),
   couleur: couleurHex.default("#64757D"),
   rubriques: z.array(z.string().min(1).max(500)).default([]),
+  dossiers_rubriques: dossiersRubriquesSchema,
   // Département cible (le super admin peut le choisir ; un admin crée dans le sien).
   departement_id: z.coerce.number().int().positive().optional().nullable(),
 });
@@ -141,6 +145,7 @@ export const categorieUpdateSchema = z.object({
   nom: z.string().min(2).max(255).optional(),
   couleur: couleurHex.optional(),
   rubriques: z.array(z.string().min(1).max(500)).optional(),
+  dossiers_rubriques: dossiersRubriquesSchema,
   actif: z.boolean().optional(),
   ordre: z.number().int().optional(),
   departement_id: z.coerce.number().int().positive().optional().nullable(),

@@ -46,6 +46,8 @@ export interface CategorieDef {
   nom: string;
   couleur: string;
   rubriques: string[];
+  /** Dossier de rangement des pièces jointes, par rubrique : { rubrique: chemin }. */
+  dossiers_rubriques: Record<string, string>;
   ordre: number;
   actif: boolean;
   /** Département propriétaire : chaque département a son propre référentiel. */

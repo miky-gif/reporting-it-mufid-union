@@ -109,6 +109,19 @@ export async function ensureColonnes() {
     console.error("Migration longueur des champs :", e.message);
   }
 
+  // 3ter) Rangement des pièces jointes par rubrique (dossier du NAS).
+  try {
+    await sequelize.query(
+      "ALTER TABLE `categories` ADD COLUMN IF NOT EXISTS `dossiers_rubriques` JSON NULL",
+    );
+    // Le chemin relatif (dossier + nom d'origine) est plus long qu'un simple nom.
+    if (await tableExiste("pieces_jointes")) {
+      await sequelize.query("ALTER TABLE `pieces_jointes` MODIFY COLUMN `fichier` VARCHAR(500) NOT NULL");
+    }
+  } catch (e) {
+    console.error("Migration pièces jointes :", e.message);
+  }
+
 
   // // Titre libre plus long : VARCHAR(200) -> TEXT
   // await sequelize.query("ALTER TABLE `activites` MODIFY COLUMN `titre` TEXT NOT NULL");

@@ -95,6 +95,10 @@ export const Categorie = sequelize.define(
     couleur: { type: DataTypes.STRING(9), allowNull: false, defaultValue: "#64757D" },
     // Liste des rubriques (tableau de chaînes) stockée en JSON.
     rubriques: { type: DataTypes.JSON, allowNull: false, defaultValue: [] },
+    // Dossier de rangement des pièces jointes, par rubrique :
+    // { "Nom de la rubrique": "chemin/relatif/dans/le/NAS" }.
+    // Sans entrée, un dossier est déduit du nom (catégorie/rubrique).
+    dossiers_rubriques: { type: DataTypes.JSON, allowNull: true },
     ordre: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     departement_id: { type: DataTypes.INTEGER, allowNull: true },
@@ -237,8 +241,9 @@ export const PieceJointe = sequelize.define(
   {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     activite_id: { type: DataTypes.INTEGER, allowNull: false },
-    nom_fichier: { type: DataTypes.STRING(255), allowNull: false },
-    fichier: { type: DataTypes.STRING(255), allowNull: false }, // nom stocké sur disque
+    nom_fichier: { type: DataTypes.STRING(255), allowNull: false }, // nom d'origine (conservé)
+    // Chemin RELATIF au dossier de stockage (ex. « Infrastructure/Sauvegardes/rapport.pdf »).
+    fichier: { type: DataTypes.STRING(500), allowNull: false },
     mime: { type: DataTypes.STRING(120), allowNull: true },
     taille: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     televerse_par: { type: DataTypes.INTEGER, allowNull: true },
