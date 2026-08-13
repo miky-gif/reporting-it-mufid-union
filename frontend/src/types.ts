@@ -157,6 +157,8 @@ export interface ChargeEmploye {
   user_id: number;
   nom_complet: string;
   initiales: string;
+  /** Rôle du compte (utile pour distinguer l'encadrement). */
+  role?: Role;
   minutes: number; // durée exacte (source de vérité)
   heures: number; // dérivé, pour affichage décimal éventuel
   nb_activites: number;
@@ -225,6 +227,8 @@ export interface AgentStat {
   user_id: number;
   nom_complet: string;
   poste: string;
+  /** Rôle du compte (utile pour distinguer l'encadrement). */
+  role?: Role;
   total: number;
   cloturees: number;
   en_retard: number;
@@ -276,6 +280,8 @@ export interface StatsAvancees {
   repartition_priorite: RepartitionStat[];
   repartition_categorie: RepartitionStat[];
   par_agent: AgentStat[];
+  /** Performance des comptes d'encadrement (admin, superviseur, super admin). */
+  par_administrateur: AgentStat[];
   activites_en_retard: RetardStat[];
   evolution_mensuelle: { mois: string; total: number; cloturees: number; en_retard: number }[];
 }
@@ -292,6 +298,8 @@ export interface StatsAdmin {
   repartition_categorie: Repartition[];
   repartition_statut: Repartition[];
   charge_par_employe: ChargeEmploye[];
+  /** Charge des comptes d'encadrement (admin, superviseur, super admin). */
+  charge_par_administrateur: ChargeEmploye[];
   top_contributeurs: ChargeEmploye[];
   evolution_mensuelle: SerieMois[];
 }

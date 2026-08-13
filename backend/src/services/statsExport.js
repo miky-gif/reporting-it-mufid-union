@@ -10,6 +10,14 @@ const ZEBRA = "FFF4F6F7";
 const BORD_XL = { style: "thin", color: { argb: "FFC6D2D7" } };
 const BORDS_XL = { top: BORD_XL, left: BORD_XL, bottom: BORD_XL, right: BORD_XL };
 
+// Libellés des rôles d'encadrement (colonne « Rôle » des exports).
+const LIBELLE_ROLE = {
+  SUPER_ADMIN: "Super admin",
+  SUPERVISEUR: "Superviseur",
+  ADMIN: "Administrateur",
+  EMPLOYE: "IT",
+};
+
 const fmtDuree = (min) => {
   const m = Math.max(0, Math.round(min || 0));
   const h = Math.floor(m / 60);
@@ -98,6 +106,20 @@ export async function statistiquesExcel(st) {
     ]),
   );
   ws2.columns = [{ width: 26 }, { width: 24 }, { width: 11 }, { width: 11 }, { width: 11 }, { width: 14 }, { width: 16 }, { width: 10 }];
+
+  // --- Feuille 2bis : Par administrateur (encadrement)
+  const wsA = wb.addWorksheet("Par administrateur");
+  let rA = feuilleEntete(wsA, "Performance par administrateur", periode, 8);
+  rA = tableauXl(
+    wsA,
+    rA,
+    ["Administrateur", "Rôle", "Activités", "Clôturées", "En retard", "Charge", "Heures réalisées", "Points"],
+    (st.par_administrateur ?? []).map((a) => [
+      a.nom_complet, LIBELLE_ROLE[a.role] || a.role || "—", a.total, a.cloturees, a.en_retard,
+      fmtDuree(a.minutes), fmtDuree(a.minutes_realisees), a.points,
+    ]),
+  );
+  wsA.columns = [{ width: 26 }, { width: 20 }, { width: 11 }, { width: 11 }, { width: 11 }, { width: 14 }, { width: 16 }, { width: 10 }];
 
   // --- Feuille 3 : Activités en retard
   const ws3 = wb.addWorksheet("En retard");
@@ -295,6 +317,25 @@ export function statistiquesPdf(st) {
             { texte: String(a.points), align: "center", gras: true },
           ])
         : [[{ texte: "Aucune activité sur la période.", couleur: GRIS_PDF }, "", "", "", "", "", ""]],
+    );
+
+    // ---- Performance par administrateur (encadrement) ---------------------
+    const admins = st.par_administrateur ?? [];
+    tableau(
+      "Performance par administrateur",
+      ["Administrateur", "Rôle", "Activités", "Clôturées", "En retard", "Charge", "Points"],
+      [0.24, 0.15, 0.11, 0.11, 0.11, 0.14, 0.14],
+      admins.length
+        ? admins.map((a) => [
+            { texte: a.nom_complet, gras: true },
+            { texte: LIBELLE_ROLE[a.role] || a.role || "—" },
+            { texte: String(a.total), align: "center" },
+            { texte: String(a.cloturees), align: "center", couleur: "#1B8A4B" },
+            { texte: String(a.en_retard), align: "center", couleur: a.en_retard > 0 ? "#C0392B" : "#8A99A1" },
+            { texte: fmtDuree(a.minutes), align: "center" },
+            { texte: String(a.points), align: "center", gras: true },
+          ])
+        : [[{ texte: "Aucune activité enregistrée par l'encadrement.", couleur: GRIS_PDF }, "", "", "", "", "", ""]],
     );
 
     // ---- Répartition par catégorie ---------------------------------------

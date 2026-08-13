@@ -104,22 +104,29 @@ export async function statistiquesAvancees(debut, fin, departementId = null) {
     if (estEnRetard(a.date_activite, a.statut)) e.retard += 1;
   }
   const usersById = Object.fromEntries(users.map((u) => [u.id, u]));
-  const agents = [...parAgent.entries()]
-    .filter(([uid]) => usersById[uid]?.role === "EMPLOYE")
-    .map(([uid, e]) => ({
-      user_id: uid,
-      nom_complet: usersById[uid]?.nom_complet || `Utilisateur #${uid}`,
-      poste: usersById[uid]?.poste || "",
-      total: e.nb,
-      cloturees: e.clot,
-      en_retard: e.retard,
-      minutes: e.minutes,
-      heures: arr2(e.minutes / 60),
-      minutes_realisees: e.minutesReal,
-      points: arr2(e.points),
-      taux_cloture: pct(e.clot, e.nb),
-    }))
-    .sort((a, b) => b.points - a.points || b.cloturees - a.cloturees);
+  // Construit le classement de performance pour un ensemble de rôles.
+  const performancePourRoles = (roles) =>
+    [...parAgent.entries()]
+      .filter(([uid]) => roles.includes(usersById[uid]?.role))
+      .map(([uid, e]) => ({
+        user_id: uid,
+        nom_complet: usersById[uid]?.nom_complet || `Utilisateur #${uid}`,
+        poste: usersById[uid]?.poste || "",
+        role: usersById[uid]?.role || "EMPLOYE",
+        total: e.nb,
+        cloturees: e.clot,
+        en_retard: e.retard,
+        minutes: e.minutes,
+        heures: arr2(e.minutes / 60),
+        minutes_realisees: e.minutesReal,
+        points: arr2(e.points),
+        taux_cloture: pct(e.clot, e.nb),
+      }))
+      .sort((a, b) => b.points - a.points || b.cloturees - a.cloturees);
+
+  const agents = performancePourRoles(["EMPLOYE"]);
+  // Encadrement : administrateurs, superviseurs et super administrateurs.
+  const administrateurs = performancePourRoles(["ADMIN", "SUPERVISEUR", "SUPER_ADMIN"]);
 
   // --- Activités en retard (détail) -------------------------------------
   const detailRetard = enRetard
@@ -196,6 +203,8 @@ export async function statistiquesAvancees(debut, fin, departementId = null) {
     ),
     repartition_categorie: repartition("categorie", activites, libelleCategorie, mapCat),
     par_agent: agents,
+    // Réservé à l'administration : performance des comptes d'encadrement.
+    par_administrateur: administrateurs,
     activites_en_retard: detailRetard,
     evolution_mensuelle: evolution,
   };

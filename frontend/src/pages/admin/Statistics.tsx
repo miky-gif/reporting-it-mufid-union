@@ -8,6 +8,8 @@ import {
   Gauge,
   LayoutList,
   Loader2,
+  type LucideIcon,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import { startOfMonth, subMonths } from "date-fns";
@@ -28,7 +30,7 @@ import {
 import { api, messageErreur } from "@/lib/api";
 import { telechargerFichier } from "@/lib/download";
 import { formatDuree, formatPoints, isoDate } from "@/lib/format";
-import { PRIORITES, STATUTS } from "@/lib/constants";
+import { PRIORITES, ROLES, STATUTS } from "@/lib/constants";
 import type { AgentStat, RepartitionStat, StatsAvancees } from "@/types";
 import { KpiCard } from "@/components/ui/KpiCard";
 import { Avatar } from "@/components/ui/Avatar";
@@ -222,40 +224,25 @@ export default function Statistics() {
             <BlocRepartition titre="Par priorité" items={st.repartition_priorite} couleurDe={(c) => PRIORITES[c as keyof typeof PRIORITES]?.couleur ?? "#8A99A1"} />
           </div>
 
-          {/* Performance par agent */}
-          <div className="carte mb-4 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-[#EEF2F3] px-[22px] py-[15px]">
-              <Users size={17} className="text-petrole-600" />
-              <span className="text-[15px] font-semibold text-encre">Performance par agent</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px]">
-                <thead>
-                  <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux">
-                    <th className="px-[22px] py-2.5 font-semibold">Agent</th>
-                    <th className="py-2.5 text-center font-semibold">Activités</th>
-                    <th className="py-2.5 text-center font-semibold">Clôturées</th>
-                    <th className="py-2.5 text-center font-semibold">En retard</th>
-                    <th className="py-2.5 text-center font-semibold">Charge</th>
-                    <th className="py-2.5 text-center font-semibold">Taux clôture</th>
-                    <th className="px-[22px] py-2.5 text-right font-semibold">Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {st.par_agent.map((a) => (
-                    <LigneAgent key={a.user_id} a={a} />
-                  ))}
-                  {st.par_agent.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-[13px] text-grisdoux">
-                        Aucune activité sur cette période.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Performance par agent (IT) */}
+          <BlocPerformance
+            titre="Performance par agent"
+            icone={Users}
+            items={st.par_agent}
+            libelleColonne="Agent"
+            vide="Aucune activité sur cette période."
+          />
+
+          {/* Performance de l'encadrement — réservé à l'administration */}
+          <BlocPerformance
+            titre="Performance par administrateur"
+            sousTitre="— administrateurs, superviseurs et super administrateurs"
+            icone={ShieldCheck}
+            items={st.par_administrateur ?? []}
+            libelleColonne="Administrateur"
+            avecRole
+            vide="Aucune activité enregistrée par l'encadrement sur cette période."
+          />
 
           {/* Activités en retard */}
           <div className="carte overflow-hidden">
@@ -316,14 +303,82 @@ export default function Statistics() {
   );
 }
 
-function LigneAgent({ a }: { a: AgentStat }) {
+/** Tableau de performance (agents IT ou encadrement) — même grille de colonnes. */
+function BlocPerformance({
+  titre,
+  sousTitre,
+  icone: Icone,
+  items,
+  libelleColonne,
+  avecRole = false,
+  vide,
+}: {
+  titre: string;
+  sousTitre?: string;
+  icone: LucideIcon;
+  items: AgentStat[];
+  libelleColonne: string;
+  avecRole?: boolean;
+  vide: string;
+}) {
+  return (
+    <div className="carte mb-4 overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-[#EEF2F3] px-[22px] py-[15px]">
+        <Icone size={17} className="text-petrole-600" />
+        <span className="text-[15px] font-semibold text-encre">
+          {titre}
+          {sousTitre && <span className="ml-1.5 text-xs font-normal text-grisdoux">{sousTitre}</span>}
+        </span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px]">
+          <thead>
+            <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux">
+              <th className="px-[22px] py-2.5 font-semibold">{libelleColonne}</th>
+              <th className="py-2.5 text-center font-semibold">Activités</th>
+              <th className="py-2.5 text-center font-semibold">Clôturées</th>
+              <th className="py-2.5 text-center font-semibold">En retard</th>
+              <th className="py-2.5 text-center font-semibold">Charge</th>
+              <th className="py-2.5 text-center font-semibold">Taux clôture</th>
+              <th className="px-[22px] py-2.5 text-right font-semibold">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((a) => (
+              <LigneAgent key={a.user_id} a={a} avecRole={avecRole} />
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-[13px] text-grisdoux">
+                  {vide}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function LigneAgent({ a, avecRole = false }: { a: AgentStat; avecRole?: boolean }) {
   return (
     <tr className="border-b border-[#F4F6F7] last:border-0 hover:bg-[#FAFBFB]">
       <td className="px-[22px] py-3">
         <div className="flex items-center gap-2.5">
           <Avatar nom={a.nom_complet} id={a.user_id} taille={28} />
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-medium text-encre">{a.nom_complet}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="truncate text-[13px] font-medium text-encre">{a.nom_complet}</span>
+              {avecRole && a.role && (
+                <span
+                  className="flex-none whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold"
+                  style={{ background: ROLES[a.role].fond, color: ROLES[a.role].couleur }}
+                >
+                  {ROLES[a.role].libelle}
+                </span>
+              )}
+            </div>
             <div className="truncate text-[11px] text-grisdoux">{a.poste || "—"}</div>
           </div>
         </div>

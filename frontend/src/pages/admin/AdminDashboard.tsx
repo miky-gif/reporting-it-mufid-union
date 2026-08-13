@@ -1,4 +1,4 @@
-import { AlertTriangle, Award, Clock, LayoutList, TrendingUp } from "lucide-react";
+import { AlertTriangle, Award, Clock, LayoutList, ShieldCheck, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   Area,
@@ -11,6 +11,7 @@ import {
   XAxis,
 } from "recharts";
 import { api } from "@/lib/api";
+import { ROLES } from "@/lib/constants";
 import { formatDuree, formatPoints } from "@/lib/format";
 import type { ChargeEmploye, StatsAdmin } from "@/types";
 import { KpiCard, BarreProgression } from "@/components/ui/KpiCard";
@@ -33,6 +34,7 @@ export default function AdminDashboard() {
     pct: r.pourcentage,
   }));
   const maxMinutes = Math.max(1, ...stats.charge_par_employe.map((c) => c.minutes));
+  const maxMinutesAdmin = Math.max(1, ...(stats.charge_par_administrateur ?? []).map((c) => c.minutes));
   const maxPoints = Math.max(1, ...stats.charge_par_employe.map((c) => c.points ?? 0));
 
   return (
@@ -152,25 +154,30 @@ export default function AdminDashboard() {
 
       {/* Charge + top contributeurs */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.55fr_1fr]">
-        <div className="carte p-[20px_22px]">
-          <div className="mb-4 text-[15px] font-semibold text-encre">
-            Charge par employé <span className="text-xs font-normal text-grisdoux">— heures sur la période</span>
+        {/* Colonne de gauche : charge des agents, puis celle de l'encadrement */}
+        <div className="flex flex-col gap-4">
+          <div className="carte p-[20px_22px]">
+            <div className="mb-4 text-[15px] font-semibold text-encre">
+              Charge par employé <span className="text-xs font-normal text-grisdoux">— heures sur la période</span>
+            </div>
+            <BarresCharge items={stats.charge_par_employe} max={maxMinutes} vide="Aucun agent avec des activités." />
           </div>
-          <div className="flex flex-col gap-3.5">
-            {stats.charge_par_employe.map((c) => (
-              <div key={c.user_id} className="flex items-center gap-3">
-                <div className="w-28 truncate text-[13px] font-medium text-ardoise">{c.nom_complet}</div>
-                <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-[#F0F3F4]">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#1B7C9E] to-petrole-600"
-                    style={{ width: `${(c.minutes / maxMinutes) * 100}%` }}
-                  />
-                </div>
-                <div className="w-16 text-right font-mono text-[12.5px] font-semibold text-encre">
-                  {formatDuree(c.minutes)}
-                </div>
-              </div>
-            ))}
+
+          {/* Réservé à l'administration : charge des comptes d'encadrement */}
+          <div className="carte p-[20px_22px]">
+            <div className="mb-1 flex items-center gap-2 text-[15px] font-semibold text-encre">
+              <ShieldCheck size={17} className="text-petrole-600" /> Charge par administrateur
+              <span className="text-xs font-normal text-grisdoux">— heures sur la période</span>
+            </div>
+            <p className="mb-4 text-[11.5px] text-grisdoux">
+              Activités propres à l'encadrement (administrateurs, superviseurs, super administrateurs).
+            </p>
+            <BarresCharge
+              items={stats.charge_par_administrateur ?? []}
+              max={maxMinutesAdmin}
+              couleur="admin"
+              vide="Aucune activité enregistrée par l'encadrement."
+            />
           </div>
         </div>
 
@@ -183,6 +190,52 @@ export default function AdminDashboard() {
         </div>
       </div>
     </>
+  );
+}
+
+/** Barres horizontales de charge (durée) — partagées par les deux blocs. */
+function BarresCharge({
+  items,
+  max,
+  couleur = "agent",
+  vide,
+}: {
+  items: ChargeEmploye[];
+  max: number;
+  couleur?: "agent" | "admin";
+  vide: string;
+}) {
+  if (items.length === 0) {
+    return <div className="py-2 text-[12.5px] text-grisdoux">{vide}</div>;
+  }
+  const barre =
+    couleur === "admin"
+      ? "bg-gradient-to-r from-[#9B7BD4] to-[#7E57C2]"
+      : "bg-gradient-to-r from-[#1B7C9E] to-petrole-600";
+  return (
+    <div className="flex flex-col gap-3.5">
+      {items.map((c) => (
+        <div key={c.user_id} className="flex items-center gap-3">
+          <div className="w-28 flex-none truncate text-[13px] font-medium text-ardoise" title={c.nom_complet}>
+            {c.nom_complet}
+          </div>
+          {couleur === "admin" && c.role && (
+            <span
+              className="flex-none whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold"
+              style={{ background: ROLES[c.role].fond, color: ROLES[c.role].couleur }}
+            >
+              {ROLES[c.role].libelle}
+            </span>
+          )}
+          <div className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[#F0F3F4]">
+            <div className={"h-full rounded-full " + barre} style={{ width: `${(c.minutes / max) * 100}%` }} />
+          </div>
+          <div className="w-16 flex-none text-right font-mono text-[12.5px] font-semibold text-encre">
+            {formatDuree(c.minutes)}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

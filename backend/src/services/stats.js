@@ -149,21 +149,29 @@ export async function statsAdmin(departementId = null) {
     }
   }
   const usersById = Object.fromEntries(users.map((u) => [u.id, u]));
-  // On ne classe que les agents (employés), pas les comptes admin.
-  const charges = [...parUser.entries()]
-    .filter(([uid]) => usersById[uid]?.role === "EMPLOYE")
-    .map(([uid, e]) => ({
-      user_id: uid,
-      nom_complet: usersById[uid]?.nom_complet || `Utilisateur #${uid}`,
-      initiales: initiales(usersById[uid]?.nom_complet || ""),
-      minutes: e.min,
-      heures: arr2(e.min / 60),
-      nb_activites: e.nb,
-      cloturees: e.clot,
-      points: arr2(e.ptsAcquis),
-    }));
+  // Construit la liste de charge pour un ensemble de rôles donné.
+  const chargesPourRoles = (roles) =>
+    [...parUser.entries()]
+      .filter(([uid]) => roles.includes(usersById[uid]?.role))
+      .map(([uid, e]) => ({
+        user_id: uid,
+        nom_complet: usersById[uid]?.nom_complet || `Utilisateur #${uid}`,
+        initiales: initiales(usersById[uid]?.nom_complet || ""),
+        role: usersById[uid]?.role || "EMPLOYE",
+        minutes: e.min,
+        heures: arr2(e.min / 60),
+        nb_activites: e.nb,
+        cloturees: e.clot,
+        points: arr2(e.ptsAcquis),
+      }));
+
+  // Agents IT (employés) : charge et contributions.
+  const charges = chargesPourRoles(["EMPLOYE"]);
+  // Encadrement (admin, superviseur, super admin) : leurs propres activités.
+  const chargesAdmins = chargesPourRoles(["ADMIN", "SUPERVISEUR", "SUPER_ADMIN"]);
 
   const chargeParEmploye = [...charges].sort((a, b) => b.minutes - a.minutes);
+  const chargeParAdministrateur = [...chargesAdmins].sort((a, b) => b.minutes - a.minutes);
   const topContributeurs = [...charges].sort((a, b) => b.points - a.points || b.cloturees - a.cloturees).slice(0, 5);
 
   // Évolution mensuelle (6 derniers mois)
@@ -192,6 +200,8 @@ export async function statsAdmin(departementId = null) {
     repartition_categorie: repartitionCategorie(activites, total, mapCat),
     repartition_statut: repartitionStatut(activites, total),
     charge_par_employe: chargeParEmploye,
+    // Réservé à l'administration : charge des comptes d'encadrement.
+    charge_par_administrateur: chargeParAdministrateur,
     top_contributeurs: topContributeurs,
     evolution_mensuelle: evolution,
   };
