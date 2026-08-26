@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { AlignLeft, ArrowLeft, CalendarClock, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2, SlidersHorizontal, Tag, UserCheck, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { api, messageErreur } from "@/lib/api";
 import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLOYE, POURCENTAGE_PAR_STATUT, PRIORITES, RECURRENCES, ROLES, STATUTS } from "@/lib/constants";
@@ -41,6 +41,7 @@ export default function ActivityForm() {
   const { id } = useParams();
   const editionId = id ? Number(id) : null;
   const navigate = useNavigate();
+  const location = useLocation();
   const { estAdmin } = useAuth();
   const { actives, rubriquesOf, chargement: catChargement } = useCategories();
   const [erreur, setErreur] = useState<string | null>(null);
@@ -169,7 +170,16 @@ export default function ActivityForm() {
   const gel = !estAdmin && val.statut === "CLOTURE";
   // Création = toujours une activité personnelle -> retour vers « Mes activités ».
   // Édition par un admin = provient de la gestion du département.
-  const retour = !editionId ? "/activites" : estAdmin ? "/admin/activites" : "/activites";
+  // Page d'où l'on vient (filtres et pagination compris) : on y revient à
+  // l'identique. On n'accepte qu'un chemin interne, jamais une URL externe.
+  const retourDemande = (location.state as { retour?: string } | null)?.retour;
+  const retourValide =
+    typeof retourDemande === "string" && retourDemande.startsWith("/") && !retourDemande.startsWith("//")
+      ? retourDemande
+      : null;
+  // Par défaut : création = activité personnelle ; édition par un admin = gestion.
+  const retourDefaut = !editionId ? "/activites" : estAdmin ? "/admin/activites" : "/activites";
+  const retour = retourValide ?? retourDefaut;
 
   // Quand la catégorie change, on cale la rubrique sur une valeur valide.
   function changerCategorie(cat: Categorie) {

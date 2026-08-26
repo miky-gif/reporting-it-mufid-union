@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, CheckCheck, Filter, Loader2, Pencil, Repeat2, Search, SendHorizonal } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
 import { useCategories } from "@/context/CategoriesContext";
@@ -24,14 +24,35 @@ export default function ActivitiesManagement() {
   const [donnees, setDonnees] = useState<PageActivites | null>(null);
   const [employes, setEmployes] = useState<UserWithStats[]>([]);
   const [chargement, setChargement] = useState(true);
-  const [page, setPage] = useState(1);
-  const [recherche, setRecherche] = useState("");
-  const [userId, setUserId] = useState<string>("");
-  const [categorie, setCategorie] = useState<Categorie | "">("");
-  const [statut, setStatut] = useState<FiltreStatut>("");
-  const [priorite, setPriorite] = useState<Priorite | "">("");
-  const [ordre, setOrdre] = useState<"asc" | "desc">("desc");
   const [aReaffecter, setAReaffecter] = useState<Activite | null>(null);
+
+  // Les filtres sont portés par l'URL : ils survivent ainsi à l'aller-retour
+  // vers une tâche, et la vue filtrée reste partageable / navigable (précédent).
+  const [params, setParams] = useSearchParams();
+  const recherche = params.get("q") ?? "";
+  const userId = params.get("agent") ?? "";
+  const categorie = (params.get("cat") ?? "") as Categorie | "";
+  const statut = (params.get("statut") ?? "") as FiltreStatut;
+  const priorite = (params.get("priorite") ?? "") as Priorite | "";
+  const ordre: "asc" | "desc" = params.get("ordre") === "asc" ? "asc" : "desc";
+  const page = Math.max(1, Number(params.get("page")) || 1);
+
+  /** Met à jour un filtre dans l'URL (et revient page 1, sauf pagination). */
+  function majParam(cle: string, valeur: string, retourPage1 = true) {
+    const p = new URLSearchParams(params);
+    if (valeur) p.set(cle, valeur);
+    else p.delete(cle);
+    if (retourPage1) p.delete("page");
+    setParams(p, { replace: true }); // replace : pas d'entrée d'historique par frappe
+  }
+
+  const setRecherche = (v: string) => majParam("q", v);
+  const setUserId = (v: string) => majParam("agent", v);
+  const setCategorie = (v: Categorie | "") => majParam("cat", v);
+  const setStatut = (v: FiltreStatut) => majParam("statut", v);
+  const setPriorite = (v: Priorite | "") => majParam("priorite", v);
+  const setPage = (p: number) => majParam("page", p > 1 ? String(p) : "", false);
+  const basculerOrdre = () => majParam("ordre", ordre === "desc" ? "asc" : "desc");
 
   useEffect(() => {
     api.get<UserWithStats[]>("/users").then((r) => setEmployes(r.data));
@@ -61,12 +82,11 @@ export default function ActivitiesManagement() {
     const t = setTimeout(charger, recherche ? 300 : 0);
     return () => clearTimeout(t);
   }, [charger, recherche]);
-  useEffect(() => setPage(1), [recherche, userId, categorie, statut, priorite, ordre]);
 
   const nbFiltres = [userId, categorie, statut, priorite].filter(Boolean).length;
 
   function reinitialiser() {
-    setRecherche(""); setUserId(""); setCategorie(""); setStatut(""); setPriorite("");
+    setParams(new URLSearchParams(), { replace: true });
   }
 
   return (
@@ -155,7 +175,7 @@ export default function ActivitiesManagement() {
                     <th className="py-2.5 font-semibold">Priorité</th>
                     <th className="py-2.5 font-semibold">Statut</th>
                     <th className="py-2.5 font-semibold">
-                      <button onClick={() => setOrdre((o) => (o === "desc" ? "asc" : "desc"))} className="flex items-center gap-1 text-petrole-600">
+                      <button onClick={basculerOrdre} className="flex items-center gap-1 text-petrole-600">
                         Date {ordre === "desc" ? <ArrowDown size={15} /> : <ArrowUp size={15} />}
                       </button>
                     </th>
@@ -205,7 +225,10 @@ function LigneActivite({
   onReaffecter: () => void;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [enCours, setEnCours] = useState(false);
+  // URL courante (filtres compris) : la page d'édition s'en sert pour revenir ici.
+  const retour = location.pathname + location.search;
 
   async function cloturer() {
     setEnCours(true);
@@ -260,7 +283,7 @@ function LigneActivite({
       <td className="px-[18px] py-3">
         <div className="flex items-center justify-end gap-2.5">
           <button
-            onClick={() => navigate(`/activites/${a.id}/modifier`)}
+            onClick={() => navigate(`/activites/${a.id}/modifier`, { state: { retour } })}
             title="Ouvrir / modifier"
             className="text-grisdoux hover:text-petrole-600"
           >
