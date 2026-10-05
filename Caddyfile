@@ -1,0 +1,19 @@
+# Reverse proxy HTTPS pour MUFID UNION.
+# Caddy obtient et renouvelle seul le certificat Let's Encrypt pour {$DOMAIN}
+# — aucune action manuelle, à condition que :
+#   1. Le DNS de {$DOMAIN} pointe vers l'IP publique de ce serveur.
+#   2. Les ports 80 et 443 soient ouverts sur le pare-feu / la sécurité du VPS.
+
+{$DOMAIN} {
+	reverse_proxy app:8000
+
+	encode gzip
+
+	# En-têtes de sécurité de base (le reste — CORS, JSON, etc. — est déjà
+	# géré côté application).
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+	}
+}

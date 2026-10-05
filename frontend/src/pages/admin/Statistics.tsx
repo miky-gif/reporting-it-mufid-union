@@ -83,7 +83,7 @@ export default function Statistics() {
           <input type="date" className="champ font-mono" value={fin} onChange={(e) => setFin(e.target.value)} />
         </div>
         <div className="flex-1" />
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
           <button className="btn-succes" disabled={!!tele || !st} onClick={() => exporter("excel")}>
             {tele === "excel" ? <Loader2 size={19} className="animate-spin" /> : <FileSpreadsheet size={19} />}
             Exporter Excel

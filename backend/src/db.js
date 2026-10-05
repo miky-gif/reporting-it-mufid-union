@@ -109,6 +109,14 @@ export async function ensureColonnes() {
     console.error("Migration longueur des champs :", e.message);
   }
 
+  // 3quater) Objectifs de tâche : suivi du % calculé et justification d'écart.
+  // (La table `objectifs` elle-même est créée par sequelize.sync().)
+  await sequelize.query(
+    "ALTER TABLE `activites` " +
+      "ADD COLUMN IF NOT EXISTS `pourcentage_force` TINYINT(1) NOT NULL DEFAULT 0, " +
+      "ADD COLUMN IF NOT EXISTS `justification_objectif` TEXT NULL",
+  );
+
   // 3ter) Rangement des pièces jointes par rubrique (dossier du NAS).
   try {
     await sequelize.query(

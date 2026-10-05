@@ -5,15 +5,15 @@
 // manquées si le serveur a été arrêté plusieurs jours.
 import { Op } from "sequelize";
 import { Activite, User } from "../models/index.js";
-import { ajouterIntervalle } from "../utils.js";
+import { ajouterJoursOuvres, joursOuvresEntre, prochaineOccurrence, prochainJourOuvre } from "../utils.js";
 import { notifierOccurrenceRecurrente } from "./notifications.js";
+import { creerObjectifs, listerObjectifs } from "./objectifsStore.js";
 
 // Sécurités : on ne génère jamais une avalanche d'occurrences en un seul passage.
 const MAX_PAR_MODELE = 60; // rattrapage borné par tâche
 const INTERVALLE_MS = 60 * 60 * 1000; // vérification toutes les heures
 
 const aujourdhuiISO = () => new Date().toISOString().slice(0, 10);
-const joursEntre = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
 
 // Notifications non bloquantes (une occurrence doit être créée même si le mail échoue).
 async function sansErreur(promesse, ctx) {
@@ -26,10 +26,10 @@ async function sansErreur(promesse, ctx) {
 
 // Crée une occurrence à partir d'un modèle, pour la date de début donnée.
 async function creerOccurrence(modele, dateDebut) {
-  // On conserve la durée de la période initiale (fin - début).
-  const span =
-    modele.date_debut && modele.date_fin ? Math.max(0, joursEntre(modele.date_debut, modele.date_fin)) : 0;
-  const dateFin = ajouterIntervalle(dateDebut, "JOUR", span);
+  // On conserve la durée de la période initiale, comptée en jours OUVRÉS :
+  // une tâche de 2 jours démarrée un vendredi s'achève le lundi, pas le dimanche.
+  const span = joursOuvresEntre(modele.date_debut, modele.date_fin);
+  const dateFin = ajouterJoursOuvres(dateDebut, span);
 
   const occ = await Activite.create({
     user_id: modele.user_id,
@@ -53,6 +53,15 @@ async function creerOccurrence(modele, dateDebut) {
     recurrence: "AUCUNE",
     recurrence_parent_id: modele.id,
   });
+
+  // Les objectifs du modèle sont recopiés, mais l'avancement REPART DE ZÉRO :
+  // « collecter 18 données » vaut pour chaque mois, pas une fois pour toutes.
+  const objectifsModele = await listerObjectifs(modele.id);
+  if (objectifsModele.length > 0) {
+    await creerObjectifs(occ.id, objectifsModele.map((o) => o.get({ plain: true })), {
+      remiseAZero: true,
+    });
+  }
 
   const destinataire = modele.user ?? (await User.findByPk(modele.user_id));
   if (destinataire && destinataire.actif) {
@@ -82,7 +91,8 @@ export async function genererOccurrencesDues() {
   let creees = 0;
   for (const modele of modeles) {
     // On ne génère pas pour un agent désactivé (mais on continue d'avancer le compteur).
-    let prochaine = modele.recurrence_prochaine;
+    // Normalisation : un compteur hérité peut encore pointer sur un week-end.
+    let prochaine = prochainJourOuvre(modele.recurrence_prochaine);
     let n = 0;
     let terminee = false;
 
@@ -95,7 +105,7 @@ export async function genererOccurrencesDues() {
         await creerOccurrence(modele, prochaine);
         creees += 1;
       }
-      prochaine = ajouterIntervalle(prochaine, modele.recurrence, 1);
+      prochaine = prochaineOccurrence(prochaine, modele.recurrence, 1);
       n += 1;
     }
 

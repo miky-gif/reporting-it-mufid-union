@@ -7,8 +7,8 @@ import { messageErreur } from "@/lib/api";
 export default function Login() {
   const { connexion, user } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("n.fotso@mufidunion.cm");
-  const [motDePasse, setMotDePasse] = useState("Mufid2026!");
+  const [email, setEmail] = useState("");
+  const [motDePasse, setMotDePasse] = useState("");
   const [voirMdp, setVoirMdp] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(false);
@@ -62,9 +62,9 @@ export default function Login() {
               ))}
             </ul>
           </div>
-          <div className="relative font-mono text-[11px] tracking-wide text-[#6C97A6]">
-            RÉSEAU DE MICROFINANCE · ZONE CEMAC · RÉGULÉ COBAC
-          </div>
+          {/* Espaceur : conserve la position du bloc de texte ci-dessus
+              (calée par `justify-between` sur 3 niveaux, comme à l'origine) */}
+          <div />
         </div>
 
         {/* Panneau formulaire */}

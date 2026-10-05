@@ -109,7 +109,7 @@ export default function IndividualReports() {
           <label className="label">Au</label>
           <input type="date" className="champ font-mono" value={fin} onChange={(e) => setFin(e.target.value)} />
         </div>
-        <div className="flex gap-2.5">
+        <div className="flex flex-wrap gap-2.5">
           <button className="btn-primaire" disabled={!!telechargement} onClick={() => exporter("word")}>
             {telechargement === "word" ? <Loader2 size={19} className="animate-spin" /> : <FileType2 size={19} />}
             Word

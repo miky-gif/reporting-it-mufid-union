@@ -150,6 +150,9 @@ const storage = multer.diskStorage({
 
 export const upload = multer({
   storage,
+  // Sans cela, un nom de fichier accentué arrive mal décodé (« schéma » ->
+  // « schÃ©ma ») : les navigateurs envoient de l'UTF-8, pas du latin-1.
+  defParamCharset: "utf8",
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 Mo par fichier
   fileFilter: (_req, file, cb) => {
     if (MIMES_AUTORISES.has(file.mimetype)) return cb(null, true);

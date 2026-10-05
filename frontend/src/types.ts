@@ -58,6 +58,19 @@ export type Priorite = "BASSE" | "MOYENNE" | "HAUTE" | "TRES_HAUTE" | "CRITIQUE"
 export type Statut = "A_FAIRE" | "EN_COURS" | "STANDBY" | "TERMINE" | "CLOTURE";
 export type Recurrence = "AUCUNE" | "JOUR" | "SEMAINE" | "MOIS";
 
+/** Objectif d'une tâche : ce qu'on attend concrètement de l'agent.
+ *  L'unité fait partie du libellé (« Collecter 18 données terrain »). */
+export interface ObjectifSaisi {
+  id?: number;
+  libelle: string;
+  type: "QUANTITATIF" | "JALON";
+  cible: number;
+  realise: number;
+  /** Renvoyés par le serveur (non saisis) */
+  pourcentage?: number;
+  atteint?: boolean;
+}
+
 export interface PieceJointe {
   id: number;
   nom_fichier: string;
@@ -100,6 +113,12 @@ export interface Activite {
   priorite: Priorite;
   statut: Statut;
   pourcentage: number; // % réalisation (0-100)
+  /** Objectifs de la tâche (présents dès que la tâche est chargée seule). */
+  objectifs?: ObjectifSaisi[];
+  /** L'administration a figé le % au lieu de le laisser suivre les objectifs. */
+  pourcentage_force: boolean;
+  /** Explication fournie si la tâche est terminée sans atteindre les objectifs. */
+  justification_objectif: string | null;
   points_base: number; // points automatiques (durée)
   points_ajustement: number; // bonus/malus décidé par l'admin
   date_activite: string; // échéance (= date_fin)

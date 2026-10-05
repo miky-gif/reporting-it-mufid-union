@@ -22,7 +22,7 @@ export function EtatVide({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center px-10 py-14 text-center">
+    <div className="flex flex-col items-center px-5 py-10 text-center sm:px-10 sm:py-14">
       <div className="mb-5 flex h-[74px] w-[74px] items-center justify-center rounded-full bg-petrole-100">
         <Icone size={34} className="text-petrole-600" />
       </div>
@@ -43,12 +43,12 @@ export function EnteteSection({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
-      <div>
-        <h1 className="text-[23px] font-semibold tracking-tight text-encre">{titre}</h1>
-        {sousTitre && <p className="mt-1 text-[13.5px] text-gris">{sousTitre}</p>}
+    <div className="mb-5 flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+      <div className="min-w-0">
+        <h1 className="text-[20px] font-semibold tracking-tight text-encre sm:text-[23px]">{titre}</h1>
+        {sousTitre && <p className="mt-1 text-[13px] text-gris sm:text-[13.5px]">{sousTitre}</p>}
       </div>
-      {action}
+      {action && <div className="flex-none">{action}</div>}
     </div>
   );
 }

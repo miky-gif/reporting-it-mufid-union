@@ -1,3 +1,7 @@
 
 # Pièces jointes téléversées
 backend/uploads/
+
+# Secrets de déploiement (Docker Compose) — ne jamais commiter
+.env
+

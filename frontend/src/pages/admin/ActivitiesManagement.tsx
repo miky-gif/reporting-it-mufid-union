@@ -9,17 +9,23 @@ import type { Activite, Categorie, PageActivites, Priorite, Statut, UserWithStat
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
+import { BasculeVue, VueTableau } from "@/components/ui/VueTableau";
 import { Pagination } from "@/components/ui/Pagination";
 import { ReassignModal } from "./ReassignModal";
 import { SearchX } from "lucide-react";
 
 const TAILLE = 9;
+// La vue tableau garnit toutes les colonnes d'un coup : on charge le maximum
+// autorisé par l'API (100) plutôt qu'une page.
+const TAILLE_TABLEAU = 100;
 
 // Le filtre de statut accepte aussi le pseudo-statut « EN_RETARD ».
 type FiltreStatut = Statut | "EN_RETARD" | "";
 
 export default function ActivitiesManagement() {
   const navigate = useNavigate();
+  // Sert à mémoriser d'où l'on vient (filtres compris) avant d'ouvrir une tâche.
+  const emplacement = useLocation();
   const { actives: categoriesActives } = useCategories();
   const [donnees, setDonnees] = useState<PageActivites | null>(null);
   const [employes, setEmployes] = useState<UserWithStats[]>([]);
@@ -36,6 +42,7 @@ export default function ActivitiesManagement() {
   const priorite = (params.get("priorite") ?? "") as Priorite | "";
   const ordre: "asc" | "desc" = params.get("ordre") === "asc" ? "asc" : "desc";
   const page = Math.max(1, Number(params.get("page")) || 1);
+  const vue: "liste" | "tableau" = params.get("vue") === "tableau" ? "tableau" : "liste";
 
   /** Met à jour un filtre dans l'URL (et revient page 1, sauf pagination). */
   function majParam(cle: string, valeur: string, retourPage1 = true) {
@@ -52,6 +59,7 @@ export default function ActivitiesManagement() {
   const setStatut = (v: FiltreStatut) => majParam("statut", v);
   const setPriorite = (v: Priorite | "") => majParam("priorite", v);
   const setPage = (p: number) => majParam("page", p > 1 ? String(p) : "", false);
+  const setVue = (v: "liste" | "tableau") => majParam("vue", v === "tableau" ? "tableau" : "");
   const basculerOrdre = () => majParam("ordre", ordre === "desc" ? "asc" : "desc");
 
   useEffect(() => {
@@ -63,8 +71,8 @@ export default function ActivitiesManagement() {
     api
       .get<PageActivites>("/activites", {
         params: {
-          page,
-          taille: TAILLE,
+          page: vue === "tableau" ? 1 : page,
+          taille: vue === "tableau" ? TAILLE_TABLEAU : TAILLE,
           tri: "date_activite",
           ordre,
           recherche: recherche || undefined,
@@ -76,7 +84,7 @@ export default function ActivitiesManagement() {
       })
       .then((r) => setDonnees(r.data))
       .finally(() => setChargement(false));
-  }, [page, ordre, recherche, userId, categorie, statut, priorite]);
+  }, [page, ordre, recherche, userId, categorie, statut, priorite, vue]);
 
   useEffect(() => {
     const t = setTimeout(charger, recherche ? 300 : 0);
@@ -95,9 +103,12 @@ export default function ActivitiesManagement() {
         titre="Gestion des activités"
         sousTitre={donnees ? `${donnees.total} activité(s) — tout le personnel IT.` : " "}
         action={
-          <button className="btn-primaire" onClick={() => navigate("/admin/taches/nouvelle")}>
-            <SendHorizonal size={18} /> Affecter une tâche
-          </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <BasculeVue vue={vue} onChanger={setVue} />
+            <button className="btn-primaire" onClick={() => navigate("/admin/taches/nouvelle")}>
+              <SendHorizonal size={18} /> Affecter une tâche
+            </button>
+          </div>
         }
       />
 
@@ -163,12 +174,27 @@ export default function ActivitiesManagement() {
             description="Aucune activité ne correspond à vos critères. Essayez d'élargir la période ou de retirer un filtre."
             action={<button className="btn-secondaire" onClick={reinitialiser}>Réinitialiser les filtres</button>}
           />
+        ) : vue === "tableau" ? (
+          <div className="p-[18px]">
+            <VueTableau
+              activites={donnees!.items}
+              afficherAgent
+              onOuvrir={(act) =>
+                navigate(`/activites/${act.id}/modifier`, {
+                  state: { retour: emplacement.pathname + emplacement.search },
+                })
+              }
+              onChange={charger}
+            />
+          </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* En-tête figé : les intitulés de colonne restent lisibles
+                quand on parcourt une longue liste. */}
+            <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 290px)" }}>
               <table className="w-full min-w-[900px]">
-                <thead>
-                  <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux [&>th]:bg-[#FAFBFB]">
                     <th className="px-[18px] py-2.5 font-semibold">Réf.</th>
                     <th className="py-2.5 font-semibold">Activité</th>
                     <th className="py-2.5 font-semibold">Employé</th>

@@ -1,6 +1,6 @@
 // Schémas de validation zod (entrées API) + helper de validation.
 import { z } from "zod";
-import { CODES_PERMISSIONS, PRIORITES, RECURRENCES, ROLES, STATUTS } from "./models/index.js";
+import { CODES_PERMISSIONS, PRIORITES, RECURRENCES, ROLES, STATUTS, TYPES_OBJECTIF } from "./models/index.js";
 
 const email = z.string().email("Adresse e-mail invalide.");
 
@@ -15,6 +15,22 @@ export const changeMotDePasseSchema = z.object({
 });
 
 const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+
+// Objectif d'une tâche. L'unité fait partie du libellé (« Collecter 18 données »),
+// volontairement : un champ de moins à saisir pour l'administrateur.
+const objectifSchema = z
+  .object({
+    id: z.coerce.number().int().positive().optional(), // présent = objectif existant
+    // Facultatif quand on ne fait que renseigner l'avancement d'un objectif existant.
+    libelle: z.string().max(300).optional(),
+    type: z.enum(TYPES_OBJECTIF).optional(),
+    cible: z.coerce.number().min(0).max(1000000000).optional(),
+    realise: z.coerce.number().min(0).max(1000000000).optional(),
+  })
+  .refine((o) => o.id !== undefined || String(o.libelle || "").trim().length > 0, {
+    message: "Libellé de l'objectif requis.",
+    path: ["libelle"],
+  });
 
 const activiteBase = z.object({
   titre: z.string().min(2, "Le titre est requis (2 caractères min.).").max(500),
@@ -37,6 +53,12 @@ const activiteBase = z.object({
   // Récurrence : régénère automatiquement de nouvelles occurrences.
   recurrence: z.enum(RECURRENCES).default("AUCUNE"),
   recurrence_fin: z.string().regex(dateRe, "Date de fin de récurrence invalide.").optional().nullable(),
+  // Objectifs : ce qu'on attend concrètement (12 au maximum, largement suffisant).
+  objectifs: z.array(objectifSchema).max(12).optional(),
+  // L'administrateur reprend la main sur le % (sinon il suit les objectifs).
+  pourcentage_force: z.coerce.boolean().optional(),
+  // Explication obligatoire si la tâche est terminée sans atteindre les objectifs.
+  justification_objectif: z.string().max(1000).optional().nullable(),
   user_id: z.coerce.number().int().positive().optional(),
   // Affectation multiple : liste d'agents destinataires (admin).
   user_ids: z.array(z.coerce.number().int().positive()).optional(),

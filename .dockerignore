@@ -1,0 +1,25 @@
+# Contexte de build Docker : ce qui NE DOIT PAS entrer dans l'image.
+
+# Dépendances (réinstallées proprement dans l'image, pas copiées depuis l'hôte —
+# évite d'embarquer des modules natifs compilés pour Windows/macOS)
+**/node_modules
+
+# Secrets et configuration locale — ne doivent JAMAIS finir dans une image Docker
+backend/.env
+.env
+.env.*
+!.env.*.example
+
+# Fichiers générés (reconstruits pendant le build)
+frontend/dist
+backend/uploads
+frontend/tsconfig.tsbuildinfo
+
+# Métadonnées de dépôt / éditeur
+.git
+.gitignore
+.vscode
+*.log
+
+# Documents annexes (non nécessaires à l'exécution)
+*.docx

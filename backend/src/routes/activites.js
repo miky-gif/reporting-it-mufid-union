@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { Router } from "express";
 import { Op } from "sequelize";
-import { Activite, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
+import { Activite, Objectif, PieceJointe, PRIORITES, STATUTS, User } from "../models/index.js";
 import {
   accedeDepartement,
   estAdministration,
@@ -14,7 +14,7 @@ import {
   requireAuth,
   requirePermission,
 } from "../middleware/auth.js";
-import { ajouterIntervalle, serialiserActivite } from "../utils.js";
+import { objectifsAtteints, prochaineOccurrence, serialiserActivite } from "../utils.js";
 import {
   activiteCreateSchema,
   activiteUpdateSchema,
@@ -31,6 +31,12 @@ import {
   notifierSuppressionTache,
 } from "../services/notifications.js";
 import { categorieActiveExiste, dossierDeRubrique } from "../services/categoriesStore.js";
+import {
+  appliquerObjectifs,
+  creerObjectifs,
+  listerObjectifs,
+  recalculerPourcentage,
+} from "../services/objectifsStore.js";
 import { upload, cheminFichier, rangerFichier } from "../services/uploads.js";
 import { unlink } from "fs";
 
@@ -52,7 +58,11 @@ const COLONNES_TRI = new Set([
 
 // Champs qu'un employé peut modifier sur une tâche AFFECTÉE par l'admin.
 // (Il peut renseigner l'état d'exécution mais pas les consignes ni le cadrage.)
-const CHAMPS_EMPLOYE_TACHE_ASSIGNEE = ["statut", "pourcentage", "description", "livrable", "activites_a_mener"];
+const CHAMPS_EMPLOYE_TACHE_ASSIGNEE = [
+  "statut", "pourcentage", "description", "livrable", "activites_a_mener",
+  // L'agent renseigne son avancement (cibles verrouillées) et justifie un écart.
+  "objectifs", "justification_objectif",
+];
 
 // Garde en cohérence la durée en heures (dérivée) avec la durée en minutes.
 function synchroniserDuree(donnees) {
@@ -72,7 +82,7 @@ function synchroniserPeriode(donnees) {
 // d'une date d'ancrage (le début de la tâche), ou remet à zéro si « Aucune ».
 function initialiserRecurrence(donnees, ancre) {
   if (donnees.recurrence && donnees.recurrence !== "AUCUNE" && ancre) {
-    donnees.recurrence_prochaine = ajouterIntervalle(ancre, donnees.recurrence, 1);
+    donnees.recurrence_prochaine = prochaineOccurrence(ancre, donnees.recurrence, 1);
     donnees.recurrence_active = true;
   } else if (donnees.recurrence !== undefined) {
     donnees.recurrence = "AUCUNE";
@@ -89,6 +99,7 @@ async function chargerOu404(id, user, res) {
       { model: User, as: "user" },
       { model: User, as: "affecteur" },
       { model: PieceJointe, as: "pieces" },
+      { model: Objectif, as: "objectifs", separate: true, order: [["ordre", "ASC"], ["id", "ASC"]] },
     ],
   });
   if (!activite) {
@@ -113,6 +124,7 @@ function chargerComplet(id) {
       { model: User, as: "user" },
       { model: User, as: "affecteur" },
       { model: PieceJointe, as: "pieces" },
+      { model: Objectif, as: "objectifs", separate: true, order: [["ordre", "ASC"], ["id", "ASC"]] },
     ],
   });
 }
@@ -191,7 +203,7 @@ activitesRouter.get("/", async (req, res) => {
 activitesRouter.post("/", async (req, res) => {
   const v = valider(activiteCreateSchema, req.body, res);
   if (!v.ok) return;
-  const { user_id, user_ids, ...donnees } = v.data;
+  const { user_id, user_ids, objectifs, ...donnees } = v.data;
   synchroniserDuree(donnees);
   synchroniserPeriode(donnees);
   initialiserRecurrence(donnees, donnees.date_debut);
@@ -253,6 +265,12 @@ activitesRouter.post("/", async (req, res) => {
       affecte_par: affectation ? req.user.id : null,
       groupe_affectation_id: groupeId,
     });
+    // Objectifs : une copie propre par agent (chacun suit sa propre progression).
+    if (objectifs?.length) {
+      await creerObjectifs(a.id, objectifs, { remiseAZero: affectation });
+      await recalculerPourcentage(a);
+    }
+
     const complet = await chargerComplet(a.id);
     creees.push(complet);
 
@@ -309,12 +327,15 @@ activitesRouter.put("/:id", async (req, res) => {
   }
 
   // Périmètre de modification côté employé.
-  let donnees = { ...v.data };
+  // `objectifs` n'est pas une colonne : on le traite à part, après la mise à jour.
+  const { objectifs, ...champs } = v.data;
+  let donnees = { ...champs };
+  if (!estAdmin) delete donnees.pourcentage_force; // forçage réservé à l'administration
   if (!estAdmin) {
     if (activite.assignee_par_admin) {
       // Tâche affectée : l'employé ne touche que l'état d'exécution et le statut.
       donnees = Object.fromEntries(
-        Object.entries(v.data).filter(([k]) => CHAMPS_EMPLOYE_TACHE_ASSIGNEE.includes(k)),
+        Object.entries(champs).filter(([k]) => CHAMPS_EMPLOYE_TACHE_ASSIGNEE.includes(k)),
       );
     } else {
       // Tâche personnelle : l'employé ne peut jamais poser « À faire »/« Clôturé ».
@@ -334,7 +355,7 @@ activitesRouter.put("/:id", async (req, res) => {
       const ancre = donnees.date_debut || activite.date_debut || activite.date_activite;
       // On (re)démarre le compteur seulement si la fréquence change ou n'existait pas.
       if (activite.recurrence !== donnees.recurrence || !activite.recurrence_prochaine) {
-        donnees.recurrence_prochaine = ajouterIntervalle(ancre, donnees.recurrence, 1);
+        donnees.recurrence_prochaine = prochaineOccurrence(ancre, donnees.recurrence, 1);
       }
       donnees.recurrence_active = true;
     }
@@ -342,6 +363,45 @@ activitesRouter.put("/:id", async (req, res) => {
 
   // Gestion de la clôture (date + auteur) côté admin.
   const ancienStatut = activite.statut;
+
+  // --- Objectifs : état PROJETÉ après cette mise à jour ---------------------
+  // Calculé en mémoire pour pouvoir refuser la demande sans rien avoir écrit.
+  const objectifsActuels = await listerObjectifs(activite.id);
+  const nombre = (v) => Math.max(0, Number(v) || 0);
+  let projetes = objectifsActuels.map((o) => ({ cible: nombre(o.cible), realise: nombre(o.realise) }));
+  if (Array.isArray(objectifs)) {
+    if (estAdmin) {
+      // L'administration redéfinit la liste (l'avancement est conservé si absent).
+      projetes = objectifs
+        .filter((o) => String(o?.libelle || "").trim())
+        .map((o) => ({
+          cible: o.type === "JALON" ? 1 : nombre(o.cible),
+          realise:
+            o.realise !== undefined
+              ? nombre(o.realise)
+              : nombre(objectifsActuels.find((x) => x.id === Number(o.id))?.realise),
+        }));
+    } else {
+      // L'agent ne touche qu'à l'avancement : les cibles restent celles en base.
+      const envoyes = new Map(objectifs.map((o) => [Number(o?.id), o]));
+      projetes = objectifsActuels.map((o) => ({
+        cible: nombre(o.cible),
+        realise: envoyes.has(o.id) ? nombre(envoyes.get(o.id).realise) : nombre(o.realise),
+      }));
+    }
+  }
+
+  // Terminer sans avoir atteint les objectifs exige une explication.
+  const passeATermine = donnees.statut === "TERMINE" && ancienStatut !== "TERMINE";
+  const justification = String(
+    donnees.justification_objectif ?? activite.justification_objectif ?? "",
+  ).trim();
+  if (passeATermine && projetes.length > 0 && !objectifsAtteints(projetes) && !justification) {
+    return res.status(400).json({
+      detail:
+        "Objectifs non atteints : expliquez pourquoi avant de passer la tâche à « Terminé ».",
+    });
+  }
   if (donnees.statut === "CLOTURE" && ancienStatut !== "CLOTURE") {
     donnees.date_cloture = new Date();
     donnees.cloture_par = req.user.id;
@@ -357,6 +417,14 @@ activitesRouter.put("/:id", async (req, res) => {
 
   const proprietaire = activite.user; // inclus par chargerOu404
   await activite.update(donnees);
+
+  // Objectifs : l'administration gère la liste, l'agent seulement l'avancement.
+  if (Array.isArray(objectifs)) {
+    await appliquerObjectifs(activite.id, objectifs, { complet: estAdmin });
+  }
+  // Le % suit les objectifs, sauf si l'administration l'a explicitement forcé.
+  await recalculerPourcentage(activite);
+
   const complet = await chargerComplet(activite.id);
 
   const statutChange = donnees.statut && donnees.statut !== ancienStatut;

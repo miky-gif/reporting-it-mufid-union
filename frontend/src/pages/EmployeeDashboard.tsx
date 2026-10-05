@@ -108,9 +108,13 @@ export default function EmployeeDashboard() {
           </div>
           <div className="flex flex-col gap-1.5">
             {stats.activites_en_retard.map((a) => (
+              /* Ouvre directement l'activité concernée : depuis le tableau de
+                 bord, on veut la traiter, pas la retrouver dans une liste.
+                 « retour » ramène ensuite ici. */
               <Link
                 key={a.id}
-                to="/activites"
+                to={`/activites/${a.id}/modifier`}
+                state={{ retour: "/" }}
                 className="flex items-center gap-2 rounded-lg border border-[#EFD3CD] bg-white px-3 py-2 text-[12.5px] hover:bg-danger/5"
               >
                 <span className="min-w-0 flex-1 truncate font-medium text-encre">{a.titre}</span>

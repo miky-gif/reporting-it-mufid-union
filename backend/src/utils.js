@@ -91,6 +91,65 @@ export function ajouterIntervalle(iso, frequence, n = 1) {
   return iso;
 }
 
+/* ------------------------------------------------------------------ */
+/* Jours ouvrés                                                        */
+/* Le service IT ne travaille pas le week-end : une tâche récurrente   */
+/* ne doit donc jamais être générée un samedi ou un dimanche, sous     */
+/* peine d'apparaître « en retard » dès le lundi matin.                */
+/* ------------------------------------------------------------------ */
+
+/** Samedi ou dimanche ? (getUTCDay : 0 = dimanche, 6 = samedi) */
+export function estWeekend(iso) {
+  const [a, m, j] = String(iso).split("-").map(Number);
+  const jour = new Date(Date.UTC(a, m - 1, j)).getUTCDay();
+  return jour === 0 || jour === 6;
+}
+
+/** La date elle-même si elle est ouvrée, sinon le lundi qui suit. */
+export function prochainJourOuvre(iso) {
+  let d = String(iso);
+  // 2 itérations au maximum (samedi -> lundi).
+  while (estWeekend(d)) d = ajouterIntervalle(d, "JOUR", 1);
+  return d;
+}
+
+/** Ajoute n jours OUVRÉS : le week-end est sauté, jamais compté. */
+export function ajouterJoursOuvres(iso, n = 1) {
+  let d = prochainJourOuvre(iso);
+  for (let i = 0; i < n; i += 1) {
+    do {
+      d = ajouterIntervalle(d, "JOUR", 1);
+    } while (estWeekend(d));
+  }
+  return d;
+}
+
+/** Nombre de jours OUVRÉS entre deux dates (0 si la fin précède le début). */
+export function joursOuvresEntre(debut, fin) {
+  if (!debut || !fin) return 0;
+  let d = String(debut);
+  const cible = String(fin);
+  if (cible <= d) return 0;
+  let n = 0;
+  // Garde-fou : une période de tâche reste raisonnable (≈ 10 ans max).
+  for (let i = 0; i < 3700 && d < cible; i += 1) {
+    d = ajouterIntervalle(d, "JOUR", 1);
+    if (!estWeekend(d)) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Date de la prochaine occurrence d'une tâche récurrente, week-ends exclus.
+ *   • JOUR             : le jour ouvré suivant (vendredi -> lundi)
+ *   • SEMAINE / MOIS   : l'intervalle habituel, repoussé au lundi s'il
+ *                        tombe un samedi ou un dimanche.
+ */
+export function prochaineOccurrence(iso, frequence, n = 1) {
+  if (frequence === "JOUR") return ajouterJoursOuvres(iso, n);
+  return prochainJourOuvre(ajouterIntervalle(iso, frequence, n));
+}
+
 // Points : 40 h = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 export const pointsDepuisMinutes = (min) => Math.round(((min || 0) / MINUTES_PAR_POINT) * 1000) / 1000;
@@ -103,6 +162,51 @@ export const pointsBase = (a) => pointsDepuisMinutes(minutesActivite(a));
 export function pointsEffectifs(a) {
   const total = pointsBase(a) + Number(a.points_ajustement || 0);
   return Math.max(0, Math.round(total * 1000) / 1000);
+}
+
+/* ---- Objectifs de tâche ------------------------------------------- */
+
+/** Avancement d'un objectif, borné à 100 % (un dépassement reste « atteint »). */
+export function pourcentageObjectif(o) {
+  const cible = Number(o?.cible) || 0;
+  const realise = Number(o?.realise) || 0;
+  if (cible <= 0) return 0;
+  return Math.min(100, Math.round((realise / cible) * 100));
+}
+
+/**
+ * Avancement global d'une tâche = moyenne de ses objectifs.
+ * Renvoie null s'il n'y en a aucun : la tâche garde alors son % manuel.
+ */
+export function pourcentageObjectifs(objectifs) {
+  const liste = (objectifs || []).filter((o) => Number(o?.cible) > 0);
+  if (liste.length === 0) return null;
+  const total = liste.reduce((s, o) => s + pourcentageObjectif(o), 0);
+  return Math.round(total / liste.length);
+}
+
+/** Vrai si TOUS les objectifs sont atteints (aucun objectif = rien à vérifier). */
+export function objectifsAtteints(objectifs) {
+  const liste = objectifs || [];
+  if (liste.length === 0) return true;
+  return liste.every((o) => (Number(o?.realise) || 0) >= (Number(o?.cible) || 0));
+}
+
+/** Sérialise un objectif pour l'interface (avec son avancement calculé). */
+export function serialiserObjectif(o) {
+  const p = o.get ? o.get({ plain: true }) : o;
+  const cible = Number(p.cible) || 0;
+  const realise = Number(p.realise) || 0;
+  return {
+    id: p.id,
+    libelle: p.libelle,
+    type: p.type || "QUANTITATIF",
+    cible,
+    realise,
+    pourcentage: pourcentageObjectif(p),
+    atteint: cible > 0 ? realise >= cible : false,
+    date_maj: p.date_maj ?? null,
+  };
 }
 
 // Une tâche est en retard si l'échéance est passée et qu'elle n'est ni terminée ni clôturée.
@@ -165,6 +269,10 @@ export function serialiserActivite(a) {
     en_retard: estEnRetard(plain.date_activite, plain.statut),
     date_cloture: plain.date_cloture ?? null,
     cloture_par: plain.cloture_par ?? null,
+    // Objectifs (présents seulement si la relation a été chargée).
+    objectifs: Array.isArray(plain.objectifs) ? plain.objectifs.map(serialiserObjectif) : undefined,
+    pourcentage_force: !!plain.pourcentage_force,
+    justification_objectif: plain.justification_objectif ?? null,
     // Auteur de l'affectation (pour afficher « affectée par … »).
     affecte_par: plain.affecte_par ?? null,
     affecteur: plain.affecteur

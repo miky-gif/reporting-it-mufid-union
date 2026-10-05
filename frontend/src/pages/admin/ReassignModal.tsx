@@ -75,7 +75,7 @@ export function ReassignModal({
   return (
     <>
       <div className="fixed inset-0 z-40 bg-encre/40" onClick={onFermer} />
-      <div className="fixed left-1/2 top-1/2 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-xl2 border border-bordure bg-white shadow-popover">
+      <div className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl2 border border-bordure bg-white shadow-popover">
         {/* En-tête */}
         <div className="flex items-center justify-between border-b border-[#EEF2F3] px-6 py-4">
           <div className="flex items-center gap-2.5">

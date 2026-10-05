@@ -12,6 +12,7 @@ import {
   ShadingType,
   Table,
   TableCell,
+  TableLayoutType,
   TableRow,
   TextRun,
   VerticalMergeType,
@@ -29,9 +30,18 @@ const BORDURE = "C6D2D7";
 const BORD = { style: BorderStyle.SINGLE, size: 4, color: BORDURE };
 const BORDS_CELLULE = { top: BORD, bottom: BORD, left: BORD, right: BORD };
 
-// Largeurs relatives (somme = 100). La colonne « Activités à mener » a été retirée.
-const LARGEURS_IND = [16, 20, 24, 16, 12, 12]; // 6 colonnes
-const LARGEURS_CONS = [13, 13, 17, 20, 14, 11, 12]; // 7 colonnes (Agent en tête)
+// Largeurs des colonnes, EXACTEMENT celles du PDF et du tableur : les trois
+// formats doivent se superposer. Somme = 100.
+const LARGEURS_IND = [14, 24, 28, 16, 8, 10]; // 6 colonnes
+const LARGEURS_CONS = [12, 12, 20, 24, 14, 8, 10]; // 7 colonnes (Agent en tête)
+
+// Largeur utile d'une page A4 paysage (16838 twips) moins les marges (2 × 720).
+const LARGEUR_UTILE = 15398;
+
+/** Convertit des pourcentages en largeurs absolues (twips). */
+const enTwips = (pourcentages) => pourcentages.map((p) => Math.round((p / 100) * LARGEUR_UTILE));
+const DXA_IND = enTwips(LARGEURS_IND);
+const DXA_CONS = enTwips(LARGEURS_CONS);
 
 function couleurStatutHex(statut) {
   if (statut === "Terminé") return "1B8A4B";
@@ -66,8 +76,12 @@ function contenuMultiligne(texte, { size = 18 } = {}) {
   );
 }
 
-function celluleEntete(texte) {
+// ⚠ La largeur doit être posée sur CHAQUE cellule. Déclarer seulement
+// `columnWidths` sur le tableau ne suffit pas : Word applique alors son
+// ajustement automatique et redimensionne les colonnes selon leur contenu.
+function celluleEntete(texte, largeur) {
   return new TableCell({
+    width: { size: largeur, type: WidthType.DXA },
     shading: { type: ShadingType.CLEAR, fill: PETROLE, color: "auto" },
     borders: BORDS_CELLULE,
     margins: { top: 60, bottom: 60, left: 80, right: 80 },
@@ -75,12 +89,13 @@ function celluleEntete(texte) {
   });
 }
 
-function cellule(children, { fill, merge, align } = {}) {
+function cellule(children, { fill, merge, align, largeur } = {}) {
   const opts = {
     borders: BORDS_CELLULE,
     margins: { top: 50, bottom: 50, left: 80, right: 80 },
     children: Array.isArray(children) ? children : [children],
   };
+  if (largeur) opts.width = { size: largeur, type: WidthType.DXA };
   if (fill) opts.shading = { type: ShadingType.CLEAR, fill, color: "auto" };
   if (merge) opts.verticalMerge = merge;
   if (align) opts.verticalAlign = align;
@@ -89,23 +104,24 @@ function cellule(children, { fill, merge, align } = {}) {
 
 // Cellule « Activités programmées » (rubrique) : fusionnée verticalement quand
 // plusieurs tâches partagent la même rubrique (pg_span > 0 = 1re, 0 = continuation).
-function celluleProgrammee(l) {
+function celluleProgrammee(l, largeur) {
   if (l.pg_span === 0) {
-    return cellule([new Paragraph({ children: [] })], { merge: VerticalMergeType.CONTINUE, align: "center" });
+    return cellule([new Paragraph({ children: [] })], { merge: VerticalMergeType.CONTINUE, align: "center", largeur });
   }
-  return cellule([ligneTexte(l.programmee, { size: 18 })], { merge: VerticalMergeType.RESTART, align: "center" });
+  return cellule([ligneTexte(l.programmee, { size: 18 })], { merge: VerticalMergeType.RESTART, align: "center", largeur });
 }
 
 // Les 3 cellules communes (description, résultat, statut, %) d'une ligne.
-function cellulesCommunes(l) {
+function cellulesCommunes(l, [lEtat, lLivrable, lStatut, lPct]) {
   return [
-    cellule(contenuMultiligne(l.etat)),
-    cellule(contenuMultiligne(l.livrable)),
+    cellule(contenuMultiligne(l.etat), { largeur: lEtat }),
+    cellule(contenuMultiligne(l.livrable), { largeur: lLivrable }),
     cellule(
       [ligneTexte(l.statut, { bold: true, size: 18, color: couleurStatutHex(l.statut), align: AlignmentType.CENTER })],
-      { align: "center" },
+      { align: "center", largeur: lStatut },
     ),
-    cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })], { align: "center" }),
+    cellule([ligneTexte(l.pourcentage, { bold: true, size: 18, align: AlignmentType.CENTER })],
+      { align: "center", largeur: lPct }),
   ];
 }
 
@@ -116,12 +132,12 @@ function tableauIndividuel(groupes, periodeCol) {
   const enTete = new TableRow({
     tableHeader: true,
     children: [
-      celluleEntete("Rubriques"),
-      celluleEntete(`Activités programmées (${periodeCol})`),
-      celluleEntete("Description de l'activité"),
-      celluleEntete("Résultat attendu (livrable)"),
-      celluleEntete("Statut"),
-      celluleEntete("% réalisation"),
+      celluleEntete("Rubriques", DXA_IND[0]),
+      celluleEntete(`Activités programmées (${periodeCol})`, DXA_IND[1]),
+      celluleEntete("Description de l'activité", DXA_IND[2]),
+      celluleEntete("Résultat attendu (livrable)", DXA_IND[3]),
+      celluleEntete("Statut", DXA_IND[4]),
+      celluleEntete("% réalisation", DXA_IND[5]),
     ],
   });
 
@@ -134,10 +150,10 @@ function tableauIndividuel(groupes, periodeCol) {
           children: [
             cellule(
               premiere ? [ligneTexte(groupe.rubrique, { bold: true, color: PETROLE, size: 18 })] : [new Paragraph({ children: [] })],
-              { fill: PETROLE_CLAIR, merge: premiere ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE, align: "center" },
+              { fill: PETROLE_CLAIR, merge: premiere ? VerticalMergeType.RESTART : VerticalMergeType.CONTINUE, align: "center", largeur: DXA_IND[0] },
             ),
-            celluleProgrammee(l),
-            ...cellulesCommunes(l),
+            celluleProgrammee(l, DXA_IND[1]),
+            ...cellulesCommunes(l, DXA_IND.slice(2)),
           ],
         }),
       );
@@ -146,8 +162,11 @@ function tableauIndividuel(groupes, periodeCol) {
   if (lignes.length === 0) lignes.push(ligneVide(6));
 
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: LARGEURS_IND.map((p) => Math.round((p / 100) * 15000)),
+    // Largeur absolue + disposition FIXE : Word respecte alors les colonnes
+    // telles qu'elles sont déclarées, au lieu de les recalculer.
+    width: { size: LARGEUR_UTILE, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: DXA_IND,
     rows: [enTete, ...lignes],
   });
 }
@@ -159,13 +178,13 @@ function tableauConsolide(employes, periodeCol) {
   const enTete = new TableRow({
     tableHeader: true,
     children: [
-      celluleEntete("Agent"),
-      celluleEntete("Rubriques"),
-      celluleEntete(`Activités programmées (${periodeCol})`),
-      celluleEntete("Description de l'activité"),
-      celluleEntete("Résultat attendu (livrable)"),
-      celluleEntete("Statut"),
-      celluleEntete("% réalisation"),
+      celluleEntete("Agent", DXA_CONS[0]),
+      celluleEntete("Rubriques", DXA_CONS[1]),
+      celluleEntete(`Activités programmées (${periodeCol})`, DXA_CONS[2]),
+      celluleEntete("Description de l'activité", DXA_CONS[3]),
+      celluleEntete("Résultat attendu (livrable)", DXA_CONS[4]),
+      celluleEntete("Statut", DXA_CONS[5]),
+      celluleEntete("% réalisation", DXA_CONS[6]),
     ],
   });
 
@@ -181,18 +200,18 @@ function tableauConsolide(employes, periodeCol) {
                 ligneTexte(emp.nom_complet.toUpperCase(), { bold: true, color: ENCRE, size: 18, align: AlignmentType.CENTER }),
                 ...(emp.poste ? [ligneTexte(emp.poste, { color: GRIS, size: 15, align: AlignmentType.CENTER })] : []),
               ],
-              { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.RESTART, align: "center" },
+              { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.RESTART, align: "center", largeur: DXA_CONS[0] },
             )
-          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center" });
+          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_TRES_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center", largeur: DXA_CONS[0] });
         const celluleRubrique = premiereCat
           ? cellule([ligneTexte(groupe.rubrique, { bold: true, color: BLEU, size: 18 })], {
-              fill: PETROLE_CLAIR, merge: VerticalMergeType.RESTART, align: "center",
+              fill: PETROLE_CLAIR, merge: VerticalMergeType.RESTART, align: "center", largeur: DXA_CONS[1],
             })
-          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center" });
+          : cellule([new Paragraph({ children: [] })], { fill: PETROLE_CLAIR, merge: VerticalMergeType.CONTINUE, align: "center", largeur: DXA_CONS[1] });
 
         lignes.push(
           new TableRow({
-            children: [celluleAgent, celluleRubrique, celluleProgrammee(l), ...cellulesCommunes(l)],
+            children: [celluleAgent, celluleRubrique, celluleProgrammee(l, DXA_CONS[2]), ...cellulesCommunes(l, DXA_CONS.slice(3))],
           }),
         );
         premiereEmp = false;
@@ -202,8 +221,9 @@ function tableauConsolide(employes, periodeCol) {
   if (lignes.length === 0) lignes.push(ligneVide(7));
 
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    columnWidths: LARGEURS_CONS.map((p) => Math.round((p / 100) * 15000)),
+    width: { size: LARGEUR_UTILE, type: WidthType.DXA },
+    layout: TableLayoutType.FIXED,
+    columnWidths: DXA_CONS,
     rows: [enTete, ...lignes],
   });
 }
@@ -213,6 +233,9 @@ function ligneVide(span) {
     children: [
       new TableCell({
         columnSpan: span,
+        // La cellule couvre toute la largeur : sinon Word rétrécit le tableau
+        // vide et il n'a plus la même emprise que les tableaux garnis.
+        width: { size: LARGEUR_UTILE, type: WidthType.DXA },
         borders: BORDS_CELLULE,
         margins: { top: 80, bottom: 80, left: 80, right: 80 },
         children: [ligneTexte("Aucune activité sur cette période.", { color: GRIS, align: AlignmentType.CENTER })],

@@ -1,0 +1,96 @@
+# Déploiement de production MUFID UNION : 3 conteneurs.
+#   - db     : MariaDB (les données survivent dans le volume db_data)
+#   - app    : API + frontend statique (l'image construite par le Dockerfile)
+#   - proxy  : Caddy — HTTPS automatique (Let's Encrypt) + réachemine vers app
+#
+# Utilisation : voir DEPLOIEMENT-DOCKER.md à la racine du dépôt.
+#   1. cp .env.production.example .env   puis compléter .env
+#   2. docker compose build
+#   3. docker compose up -d
+#   4. docker compose exec app node src/creer-super-admin.js --nom "..." --email "..." --mot-de-passe "..."
+
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME:-mufid_activites}
+      MARIADB_USER: ${DB_USER:-mufid_app}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Définissez DB_PASSWORD dans .env}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Définissez DB_ROOT_PASSWORD dans .env}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - interne
+    # Le port 3306 n'est PAS publié : la base n'est joignable que depuis les
+    # autres conteneurs du réseau « interne ». Pour un accès ponctuel depuis
+    # l'hôte (phpMyAdmin, DBeaver…), décommentez temporairement :
+    # ports:
+    #   - "127.0.0.1:3306:3306"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      DATABASE_URL: mysql://${DB_USER:-mufid_app}:${DB_PASSWORD}@db:3306/${DB_NAME:-mufid_activites}
+      JWT_SECRET: ${JWT_SECRET:?Définissez JWT_SECRET dans .env (chaîne aléatoire longue)}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
+      CORS_ORIGINS: ${CORS_ORIGINS:?Définissez CORS_ORIGINS dans .env (ex. https://votre-domaine.cm)}
+      SEED_PASSWORD: ${SEED_PASSWORD:-}
+      # Pièces jointes : vide = stockage local (volume uploads_data ci-dessous).
+      # Pour le NAS de l'entreprise, voir la section dédiée du manuel.
+      UPLOADS_DIR: ${UPLOADS_DIR:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    volumes:
+      - uploads_data:/app/backend/uploads
+      # NAS déjà monté sur l'hôte (ex. via un montage CIFS système sur
+      # /mnt/nas-mufid) : décommentez et faites pointer UPLOADS_DIR dessus.
+      # - /mnt/nas-mufid:/mnt/nas-mufid
+    networks:
+      - interne
+      - web
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?Définissez DOMAIN dans .env (nom de domaine pointant vers ce serveur)}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - web
+
+networks:
+  interne:
+  web:
+
+volumes:
+  db_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:

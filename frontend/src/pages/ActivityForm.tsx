@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlignLeft, ArrowLeft, CalendarClock, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2, SlidersHorizontal, Tag, UserCheck, type LucideIcon } from "lucide-react";
+import { AlignLeft, ArrowLeft, CalendarClock, Check, Lightbulb, Loader2, Lock, Repeat, Repeat2, SlidersHorizontal, Star, Tag, Target, UserCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -9,12 +9,15 @@ import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS, LISTE_STATUTS_EMPLO
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
-import type { Activite, Categorie, Priorite, Statut } from "@/types";
+import type { Activite, Categorie, ObjectifSaisi, Priorite, Statut } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
+import { ListeDeroulante } from "@/components/ui/ListeDeroulante";
+import { BarreActions, Section } from "@/components/ui/Section";
 import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointes";
 import { AjustementPoints } from "@/components/ui/AjustementPoints";
+import { Objectifs, avancementGlobal, tousAtteints } from "@/components/ui/Objectifs";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
@@ -57,6 +60,10 @@ export default function ActivityForm() {
   // Auteur de l'affectation (affiché à droite) : utile quand un autre responsable
   // (super admin, superviseur) a confié la tâche à un agent de votre département.
   const [affecteur, setAffecteur] = useState<Activite["affecteur"]>(null);
+  // Objectifs : définis par l'administration, renseignés par l'agent.
+  const [objectifs, setObjectifs] = useState<ObjectifSaisi[]>([]);
+  const [pourcentageForce, setPourcentageForce] = useState(false);
+  const [justification, setJustification] = useState("");
 
   const {
     register,
@@ -98,6 +105,19 @@ export default function ActivityForm() {
 
   const val = watch();
 
+  // Avancement déduit des objectifs (null s'il n'y en a aucun : % manuel conservé).
+  const avancement = avancementGlobal(objectifs);
+  const pourcentageAuto = avancement !== null && !pourcentageForce;
+  // L'écart doit être justifié pour passer la tâche à « Terminé ».
+  const ecartAJustifier =
+    objectifs.length > 0 && !tousAtteints(objectifs) && val.statut === "TERMINE";
+
+  useEffect(() => {
+    if (pourcentageAuto && avancement !== val.pourcentage) {
+      setValue("pourcentage", avancement, { shouldValidate: true });
+    }
+  }, [pourcentageAuto, avancement, val.pourcentage, setValue]);
+
   useEffect(() => {
     if (!editionId) return;
     api
@@ -132,6 +152,9 @@ export default function ActivityForm() {
         setConsignes(a.consignes ?? null);
         setReaff(a.reaffectee ? { motif: a.motif_reaffectation, date: a.date_reaffectation } : null);
         setAffecteur(a.affecteur ?? null);
+        setObjectifs(a.objectifs ?? []);
+        setPourcentageForce(!!a.pourcentage_force);
+        setJustification(a.justification_objectif ?? "");
         setInitFait(true);
       })
       .catch(() => setErreur("Activité introuvable."))
@@ -190,10 +213,14 @@ export default function ActivityForm() {
 
   async function soumettre(valeurs: FormValues) {
     setErreur(null);
-    const corps = {
+    const corps: Record<string, unknown> = {
       ...valeurs,
       recurrence_fin: valeurs.recurrence !== "AUCUNE" && valeurs.recurrence_fin ? valeurs.recurrence_fin : undefined,
+      objectifs,
+      justification_objectif: justification.trim() || null,
     };
+    // Le forçage du pourcentage est une décision de l'administration.
+    if (estAdmin) corps.pourcentage_force = pourcentageForce;
     try {
       if (editionId) {
         // Le backend applique les règles de périmètre (état/statut si affectée).
@@ -249,7 +276,7 @@ export default function ActivityForm() {
 
       <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_330px]">
         {/* Colonne principale : configuration organisée en sections */}
-        <div className="carte p-[22px_26px]">
+        <div className="carte p-[16px_18px] sm:p-[22px_26px]">
           {/* Tâche reprise d'un autre agent : motif de la réaffectation */}
           {reaff && (
             <div className="mb-5 rounded-lg border border-[#DCE9ED] bg-surface px-3.5 py-3">
@@ -273,7 +300,10 @@ export default function ActivityForm() {
           )}
 
           <Section titre="Identification" icone={Tag}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* La rubrique est bien plus longue que la catégorie : celle-ci
+                est plafonnée, la rubrique récupère toute la largeur restante.
+                minmax(0,…) permet aux pistes de rétrécir au lieu de déborder. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
               <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
                 <select className="champ" value={val.categorie} disabled={verrouille || gel} onChange={(e) => changerCategorie(e.target.value)}>
                   {actives.map((c) => (
@@ -281,13 +311,17 @@ export default function ActivityForm() {
                   ))}
                 </select>
               </Champ>
-              <Champ label="Rubrique" requis erreur={errors.titre?.message}>
-                <select className="champ" disabled={verrouille || gel} {...register("titre")}>
-                  {rubriques.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </Champ>
+              <div className="min-w-0">
+                <Champ label="Rubrique" requis erreur={errors.titre?.message}>
+                  <ListeDeroulante
+                    valeur={val.titre ?? ""}
+                    options={rubriques}
+                    desactive={verrouille || gel}
+                    placeholder="Choisissez une rubrique"
+                    onChoisir={(r) => setValue("titre", r, { shouldValidate: true, shouldDirty: true })}
+                  />
+                </Champ>
+              </div>
             </div>
 
             {/* Consigne de départ : modifiable par l'admin, lecture seule pour l'IT */}
@@ -366,11 +400,14 @@ export default function ActivityForm() {
               </Champ>
             </div>
 
-            {/* Récurrence : régénère automatiquement la tâche (verrouillée si tâche affectée) */}
-            <div className="rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
-              <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
-                <Repeat size={15} /> Récurrence
-              </div>
+          </Section>
+
+          {/* Récurrence : génération automatique des occurrences */}
+          <Section
+            titre="Récurrence"
+            icone={Repeat}
+          >
+            <div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Champ label="Fréquence">
                   <select className="champ" disabled={verrouille || gel} {...register("recurrence")}>
@@ -394,7 +431,44 @@ export default function ActivityForm() {
             </div>
           </Section>
 
-          <Section titre="Suivi & pondération" icone={SlidersHorizontal}>
+          {/* Objectifs : ce qu'on attend concrètement de l'agent */}
+          <Section
+            titre="Objectifs"
+            icone={Target}
+            compteur={objectifs.length}
+            aide={avancement !== null ? `Avancement : ${avancement} %` : undefined}
+          >
+            <Objectifs
+              valeur={objectifs}
+              onChange={setObjectifs}
+              mode={gel ? "lecture" : estAdmin ? "definition" : "progression"}
+            />
+
+            {/* Écart non justifié : on l'explique avant de terminer la tâche */}
+            {ecartAJustifier && (
+              <div className="mt-3.5">
+                <Champ label="Pourquoi les objectifs ne sont-ils pas atteints ?" requis>
+                  <textarea
+                    rows={2}
+                    className="champ resize-y"
+                    disabled={gel}
+                    placeholder="Ex. accès au site bloqué deux semaines (travaux)…"
+                    value={justification}
+                    onChange={(e) => setJustification(e.target.value)}
+                  />
+                  <p className="mt-1 text-[11.5px] text-attention">
+                    Explication obligatoire : l'avancement est de {avancement} % alors que la tâche
+                    passe à « Terminé ».
+                  </p>
+                </Champ>
+              </div>
+            )}
+          </Section>
+
+          <Section
+            titre="Suivi"
+            icone={SlidersHorizontal}
+          >
             <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
               <Champ label="Priorité" requis>
                 <div className="flex flex-wrap gap-2">
@@ -426,6 +500,7 @@ export default function ActivityForm() {
               </Champ>
             </div>
 
+
             <Champ label="% réalisation" requis erreur={errors.pourcentage?.message}>
               <div className="flex items-center gap-3">
                 <input
@@ -433,8 +508,8 @@ export default function ActivityForm() {
                   min="0"
                   max="100"
                   step="5"
-                  className="flex-1 accent-[#0E5E7C]"
-                  disabled={gel}
+                  className="flex-1 accent-[#0E5E7C] disabled:opacity-60"
+                  disabled={gel || pourcentageAuto}
                   value={val.pourcentage ?? 0}
                   onChange={(e) => setValue("pourcentage", Number(e.target.value))}
                 />
@@ -443,38 +518,66 @@ export default function ActivityForm() {
                   min="0"
                   max="100"
                   className="champ w-[86px] font-mono"
-                  disabled={gel}
+                  disabled={gel || pourcentageAuto}
                   {...register("pourcentage")}
                 />
                 <span className="text-[13px] font-semibold text-petrole-600">%</span>
               </div>
+              {avancement !== null && (
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-[11.5px] text-grisdoux">
+                  {pourcentageAuto
+                    ? "Calculé automatiquement d'après les objectifs."
+                    : "Valeur fixée à la main : elle ne suit plus les objectifs."}
+                  {/* Seule l'administration peut reprendre la main sur le pourcentage. */}
+                  {estAdmin && !gel && (
+                    <button
+                      type="button"
+                      onClick={() => setPourcentageForce((v) => !v)}
+                      className="font-medium text-petrole-600 underline"
+                    >
+                      {pourcentageAuto ? "Corriger à la main" : "Revenir au calcul automatique"}
+                    </button>
+                  )}
+                </p>
+              )}
             </Champ>
 
-            {/* Ajustement des points : réservé à l'administration */}
-            {estAdmin && (
+          </Section>
+
+          {/* Pondération : réservée à l'administration */}
+          {estAdmin && (
+            <Section
+              titre="Pondération des points"
+              icone={Star}
+              aide={
+                (val.points_ajustement ?? 0) === 0
+                  ? undefined
+                  : `${(val.points_ajustement ?? 0) > 0 ? "+" : ""}${val.points_ajustement} point(s)`
+              }
+            >
               <AjustementPoints
                 dureeMinutes={val.duree_minutes ?? 0}
                 ajustement={val.points_ajustement ?? 0}
                 onChange={(n) => setValue("points_ajustement", n)}
                 disabled={gel}
               />
-            )}
-          </Section>
+            </Section>
+          )}
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
+          <BarreActions>
             <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
             <button type="submit" disabled={isSubmitting || gel} className="btn-primaire">
               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
               {editionId ? "Enregistrer les modifications" : "Enregistrer l'activité"}
             </button>
-          </div>
+          </BarreActions>
         </div>
 
         {/* Colonne latérale collante : aperçu, pièces jointes, conseils */}
         <div className="flex flex-col gap-4 lg:sticky lg:top-4">
           <div className="carte p-[16px_18px]">
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-grisdoux">Aperçu</div>
-            <div className="mb-3 text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
+            <div className="mb-3 break-words text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
             <div className="mb-3.5 flex flex-wrap gap-2">
               <CategorieTag categorie={val.categorie} />
               <PrioriteBadge priorite={val.priorite} />
@@ -549,18 +652,6 @@ function jjmm(iso: string): string {
   return j && m ? `${j}/${m}` : iso;
 }
 
-function Section({ titre, icone: Icone, children }: { titre: string; icone: LucideIcon; children: React.ReactNode }) {
-  return (
-    <section className="mt-6 border-t border-[#EEF2F3] pt-5 first:mt-0 first:border-0 first:pt-0">
-      <div className="mb-4 flex items-center gap-2">
-        <Icone size={16} className="text-petrole-600" />
-        <h3 className="text-[13.5px] font-semibold text-encre">{titre}</h3>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 function Champ({
   label,
   requis,
@@ -572,8 +663,10 @@ function Champ({
   erreur?: string;
   children: React.ReactNode;
 }) {
+  // min-w-0 : sans cela, une case de grille refuse de descendre sous la
+  // largeur de son contenu (une longue rubrique) et fait déborder la ligne.
   return (
-    <div className="mb-[18px]">
+    <div className="mb-[18px] min-w-0">
       <label className="label">
         {label} {requis && <span className="text-danger">*</span>}
       </label>

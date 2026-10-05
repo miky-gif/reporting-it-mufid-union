@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Download, Pencil, Plus, Search, SearchX, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api, messageErreur } from "@/lib/api";
 import { LISTE_PRIORITES, LISTE_STATUTS, PRIORITES, STATUTS } from "@/lib/constants";
 import { useAuth } from "@/context/AuthContext";
@@ -11,23 +11,55 @@ import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges
 import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
 import { Pagination } from "@/components/ui/Pagination";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { BasculeVue, VueTableau } from "@/components/ui/VueTableau";
 
 const TAILLE = 8;
+// La vue tableau affiche toutes les colonnes d'un coup : on charge le maximum
+// autorisé par l'API (100) plutôt qu'une page.
+const TAILLE_TABLEAU = 100;
 
 export default function MyActivities() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { actives: categoriesActives } = useCategories();
   const [donnees, setDonnees] = useState<PageActivites | null>(null);
   const [chargement, setChargement] = useState(true);
-  const [page, setPage] = useState(1);
-  const [recherche, setRecherche] = useState("");
-  const [categorie, setCategorie] = useState<Categorie | "">("");
-  const [statut, setStatut] = useState<Statut | "">("");
-  const [priorite, setPriorite] = useState<Priorite | "">("");
-  const [tri, setTri] = useState<"date_activite" | "duree_minutes" | "titre">("date_activite");
-  const [ordre, setOrdre] = useState<"asc" | "desc">("desc");
   const [aSupprimer, setASupprimer] = useState<Activite | null>(null);
+
+  // Les filtres sont portés par l'URL : ils survivent à l'aller-retour vers une
+  // tâche, et la vue filtrée reste partageable / navigable (bouton Précédent).
+  const [params, setParams] = useSearchParams();
+  const recherche = params.get("q") ?? "";
+  const categorie = (params.get("cat") ?? "") as Categorie | "";
+  const statut = (params.get("statut") ?? "") as Statut | "";
+  const priorite = (params.get("priorite") ?? "") as Priorite | "";
+  const TRIS = ["date_activite", "duree_minutes", "titre"] as const;
+  const triParam = params.get("tri") ?? "";
+  const tri = (TRIS as readonly string[]).includes(triParam)
+    ? (triParam as (typeof TRIS)[number])
+    : "date_activite";
+  const ordre: "asc" | "desc" = params.get("ordre") === "asc" ? "asc" : "desc";
+  const page = Math.max(1, Number(params.get("page")) || 1);
+  const vue: "liste" | "tableau" = params.get("vue") === "tableau" ? "tableau" : "liste";
+
+  /** Met à jour un filtre dans l'URL (et revient page 1, sauf pagination). */
+  function majParams(modifs: Record<string, string>, retourPage1 = true) {
+    const p = new URLSearchParams(params);
+    for (const [cle, valeur] of Object.entries(modifs)) {
+      if (valeur) p.set(cle, valeur);
+      else p.delete(cle);
+    }
+    if (retourPage1) p.delete("page");
+    setParams(p, { replace: true }); // replace : pas d'entrée d'historique par frappe
+  }
+
+  const setRecherche = (v: string) => majParams({ q: v });
+  const setCategorie = (v: Categorie | "") => majParams({ cat: v });
+  const setStatut = (v: Statut | "") => majParams({ statut: v });
+  const setPriorite = (v: Priorite | "") => majParams({ priorite: v });
+  const setPage = (p: number) => majParams({ page: p > 1 ? String(p) : "" }, false);
+  const setVue = (v: "liste" | "tableau") => majParams({ vue: v === "tableau" ? "tableau" : "" });
 
   const charger = useCallback(() => {
     setChargement(true);
@@ -37,8 +69,8 @@ export default function MyActivities() {
           // « Mes activités » = uniquement les miennes, même pour un admin/superviseur
           // (dont la liste par défaut couvrirait tout le département).
           user_id: user?.id,
-          page,
-          taille: TAILLE,
+          page: vue === "tableau" ? 1 : page,
+          taille: vue === "tableau" ? TAILLE_TABLEAU : TAILLE,
           tri,
           ordre,
           recherche: recherche || undefined,
@@ -49,15 +81,12 @@ export default function MyActivities() {
       })
       .then((r) => setDonnees(r.data))
       .finally(() => setChargement(false));
-  }, [user?.id, page, tri, ordre, recherche, categorie, statut, priorite]);
+  }, [user?.id, page, tri, ordre, recherche, categorie, statut, priorite, vue]);
 
   useEffect(() => {
     const t = setTimeout(charger, recherche ? 300 : 0);
     return () => clearTimeout(t);
   }, [charger, recherche]);
-
-  // Réinitialise la page quand un filtre change.
-  useEffect(() => setPage(1), [recherche, categorie, statut, priorite, tri, ordre]);
 
   async function supprimer() {
     if (!aSupprimer) return;
@@ -71,8 +100,7 @@ export default function MyActivities() {
   }
 
   function basculerTriDate() {
-    setTri("date_activite");
-    setOrdre((o) => (o === "desc" ? "asc" : "desc"));
+    majParams({ tri: "date_activite", ordre: ordre === "desc" ? "asc" : "desc" });
   }
 
   const filtresActifs = !!(recherche || categorie || statut || priorite);
@@ -83,13 +111,14 @@ export default function MyActivities() {
         titre="Mes activités"
         sousTitre={donnees ? `${donnees.total} activité(s) enregistrée(s).` : " "}
         action={
-          <div className="flex gap-2.5">
+          <div className="flex flex-wrap gap-2.5">
             <button
               className="btn-secondaire"
               onClick={() => alert("L'export est disponible pour l'administrateur via les rapports.")}
             >
               <Download size={18} /> Exporter
             </button>
+            <BasculeVue vue={vue} onChanger={setVue} />
             <button onClick={() => navigate("/activites/nouvelle")} className="btn-primaire">
               <Plus size={18} /> Nouvelle activité
             </button>
@@ -141,7 +170,7 @@ export default function MyActivities() {
             }
             action={
               filtresActifs ? (
-                <button className="btn-secondaire" onClick={() => { setRecherche(""); setCategorie(""); setStatut(""); setPriorite(""); }}>
+                <button className="btn-secondaire" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
                   Réinitialiser les filtres
                 </button>
               ) : (
@@ -151,12 +180,24 @@ export default function MyActivities() {
               )
             }
           />
+        ) : vue === "tableau" ? (
+          <VueTableau
+            activites={donnees!.items}
+            onOuvrir={(act) =>
+              navigate(`/activites/${act.id}/modifier`, {
+                state: { retour: location.pathname + location.search },
+              })
+            }
+            onChange={charger}
+          />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* En-tête figé : les intitulés de colonne restent lisibles
+                quand on parcourt une longue liste. */}
+            <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 290px)" }}>
               <table className="w-full min-w-[820px]">
-                <thead>
-                  <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-[#EEF2F3] bg-[#FAFBFB] text-left text-[11px] uppercase tracking-wide text-grisdoux [&>th]:bg-[#FAFBFB]">
                     <th className="px-[18px] py-2.5 font-semibold">Réf.</th>
                     <th className="py-2.5 font-semibold">Activité</th>
                     <th className="py-2.5 font-semibold">Priorité</th>
@@ -184,7 +225,7 @@ export default function MyActivities() {
                       <td className="py-3 text-right font-mono text-[13px] text-ardoise">{formatDuree(a.duree_minutes)}</td>
                       <td className="px-[18px] py-3">
                         <div className="flex justify-end gap-3 text-grisdoux">
-                          <button onClick={() => navigate(`/activites/${a.id}/modifier`)} title="Modifier" className="hover:text-petrole-600">
+                          <button onClick={() => navigate(`/activites/${a.id}/modifier`, { state: { retour: location.pathname + location.search } })} title="Modifier" className="hover:text-petrole-600">
                             <Pencil size={18} />
                           </button>
                           <button onClick={() => setASupprimer(a)} title="Supprimer" className="hover:text-danger">

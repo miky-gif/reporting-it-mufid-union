@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "seed": "node src/seed.js",
+    "creer-admin": "node src/creer-super-admin.js",
     "smoke": "node src/smoke-test.js",
     "verify": "node src/verify.js",
     "test-email": "node src/test-email.js"

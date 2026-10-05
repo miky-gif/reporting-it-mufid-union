@@ -63,7 +63,7 @@ export function Notifications() {
       {ouvert && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOuvert(false)} />
-          <div className="absolute right-0 top-[calc(100%+10px)] z-20 w-[360px] overflow-hidden rounded-xl2 border border-bordure bg-white shadow-popover">
+          <div className="absolute right-0 top-[calc(100%+10px)] z-20 w-[360px] max-w-[calc(100vw-24px)] overflow-hidden rounded-xl2 border border-bordure bg-white shadow-popover">
             <div className="flex items-center justify-between border-b border-[#EEF2F3] px-4 py-3">
               <div className="text-[13px] font-semibold text-encre">
                 Notifications {nonLues > 0 && <span className="text-grisdoux">· {nonLues} non lue(s)</span>}

@@ -21,8 +21,15 @@
     @apply bg-white border border-bordure rounded-xl2 shadow-carte;
   }
   .champ {
-    @apply w-full border border-[#CDD8DC] rounded-lg px-3 py-2.5 text-sm text-encre bg-white
+    @apply w-full max-w-full border border-[#CDD8DC] rounded-lg px-3 py-2.5 text-sm text-encre bg-white
            outline-none transition focus:border-petrole-600 focus:ring-[3px] focus:ring-petrole-600/15;
+  }
+  /* Une liste déroulante dont l'option est longue (rubrique, nom d'agent…) :
+     certains navigateurs élargissent le champ jusqu'à faire déborder la page,
+     d'autres tranchent en plein mot. On impose une coupe nette avec points
+     de suspension, et le texte complet reste accessible au survol (title). */
+  select.champ {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
   .label {
     @apply block text-[12.5px] font-medium text-ardoise mb-1.5;

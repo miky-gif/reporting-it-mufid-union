@@ -1,4 +1,4 @@
-import { Award, Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { formatPoints } from "@/lib/format";
 
 const MINUTES_PAR_POINT = 480; // 40 h = 5 points
@@ -31,10 +31,7 @@ export function AjustementPoints({
   const couleurAjust = ajustement > 0 ? "#1B8A4B" : ajustement < 0 ? "#C0392B" : "#8A99A1";
 
   return (
-    <div className="mb-[18px] rounded-lg border border-[#F0E4C9] bg-[#FBF7EC] p-3.5">
-      <div className="mb-2.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-[#B4750E]">
-        <Award size={15} /> Points (pondération)
-      </div>
+    <div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px]">
         <div>

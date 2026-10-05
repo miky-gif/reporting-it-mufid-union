@@ -57,6 +57,8 @@ export const PRIORITES = ["BASSE", "MOYENNE", "HAUTE", "TRES_HAUTE", "CRITIQUE"]
 export const STATUTS = ["A_FAIRE", "EN_COURS", "STANDBY", "TERMINE", "CLOTURE"];
 // Fréquences de récurrence d'une tâche.
 export const RECURRENCES = ["AUCUNE", "JOUR", "SEMAINE", "MOIS"];
+// Types d'objectif : cible chiffrée, ou simple jalon fait/pas fait.
+export const TYPES_OBJECTIF = ["QUANTITATIF", "JALON"];
 // Points : référence 40 h de travail = 5 points -> 1 point = 480 minutes.
 export const MINUTES_PAR_POINT = 480;
 
@@ -141,10 +143,6 @@ export const Activite = sequelize.define(
     // un cloisonnement simple et rapide des listes, stats et rapports).
     departement_id: { type: DataTypes.INTEGER, allowNull: true },
     titre: { type: DataTypes.TEXT, allowNull: false }, // rubrique choisie (texte libre, peut être long)
-    titre: { type: DataTypes.TEXT, allowNull: false },
-
-
-
     description: { type: DataTypes.TEXT, allowNull: true }, // « État d'exécution de l'activité »
     // Consigne de départ (attentes/instructions) — modifiable par l'admin uniquement.
     consignes: { type: DataTypes.TEXT, allowNull: true },
@@ -162,7 +160,12 @@ export const Activite = sequelize.define(
     priorite: { type: DataTypes.ENUM(...PRIORITES), allowNull: false, defaultValue: "MOYENNE" },
     statut: { type: DataTypes.ENUM(...STATUTS), allowNull: false, defaultValue: "A_FAIRE" },
     // Pourcentage de réalisation (0-100). Si null -> déduit du statut.
+    // Quand la tâche porte des objectifs, il est RECALCULÉ à partir d'eux,
+    // sauf si l'administrateur l'a forcé (pourcentage_force).
     pourcentage: { type: DataTypes.INTEGER, allowNull: true },
+    pourcentage_force: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    // Explication fournie quand la tâche est terminée sans que les objectifs soient atteints.
+    justification_objectif: { type: DataTypes.TEXT, allowNull: true },
     // Ajustement manuel des points par l'admin (bonus si +, malus si -).
     // Le score final = points automatiques (durée) + cet ajustement, borné à 0.
     points_ajustement: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
@@ -252,6 +255,27 @@ export const PieceJointe = sequelize.define(
   { timestamps: false, indexes: [{ fields: ["activite_id"] }] },
 );
 
+// Objectifs d'une tâche : ce qu'on attend concrètement de l'agent.
+//   QUANTITATIF : une cible chiffrée (« Collecter 18 données terrain » -> cible 18)
+//   JALON       : simplement fait / pas fait (realise vaut 0 ou 1, cible 1)
+// L'unité fait partie du libellé (choix volontaire : un champ de moins à saisir).
+export const Objectif = sequelize.define(
+  "objectifs",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    activite_id: { type: DataTypes.INTEGER, allowNull: false },
+    libelle: { type: DataTypes.STRING(300), allowNull: false },
+    type: { type: DataTypes.STRING(12), allowNull: false, defaultValue: "QUANTITATIF" },
+    // Cible à atteindre (1 pour un jalon).
+    cible: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 1 },
+    // Avancement saisi par l'agent (0 ou 1 pour un jalon).
+    realise: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
+    ordre: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    date_maj: { type: DataTypes.DATE, allowNull: true },
+  },
+  { timestamps: false, indexes: [{ fields: ["activite_id"] }] },
+);
+
 // Associations
 Departement.hasMany(User, { foreignKey: "departement_id", as: "membres" });
 User.belongsTo(Departement, { foreignKey: "departement_id", as: "departement" });
@@ -267,4 +291,7 @@ Activite.belongsTo(User, { foreignKey: "affecte_par", as: "affecteur" });
 User.hasMany(Notification, { foreignKey: "user_id", onDelete: "CASCADE" });
 Notification.belongsTo(User, { foreignKey: "user_id", as: "user" });
 Activite.hasMany(PieceJointe, { foreignKey: "activite_id", as: "pieces", onDelete: "CASCADE" });
+Activite.hasMany(Objectif, { foreignKey: "activite_id", as: "objectifs", onDelete: "CASCADE" });
+
+Objectif.belongsTo(Activite, { foreignKey: "activite_id", as: "activite" });
 PieceJointe.belongsTo(Activite, { foreignKey: "activite_id", as: "activite" });

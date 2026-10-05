@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlignLeft, ArrowLeft, CalendarClock, Check, Loader2, Repeat, Send, SlidersHorizontal, Tag, Users, type LucideIcon } from "lucide-react";
+import { AlignLeft, ArrowLeft, CalendarClock, Check, Loader2, Repeat, Send, SlidersHorizontal, Star, Tag, Target, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -9,12 +9,15 @@ import { LIBELLE_RECURRENCE, LISTE_PRIORITES, LISTE_STATUTS_ADMIN, POURCENTAGE_P
 import { useAuth } from "@/context/AuthContext";
 import { useCategories } from "@/context/CategoriesContext";
 import { formatDuree, isoDate } from "@/lib/format";
-import type { Activite, Categorie, Priorite, Statut, UserWithStats } from "@/types";
+import type { Activite, Categorie, ObjectifSaisi, Priorite, Statut, UserWithStats } from "@/types";
 import { Avatar } from "@/components/ui/Avatar";
+import { ListeDeroulante } from "@/components/ui/ListeDeroulante";
 import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
+import { BarreActions, Section } from "@/components/ui/Section";
 import { PiecesJointes, televerserEnAttente } from "@/components/ui/PiecesJointes";
 import { AjustementPoints } from "@/components/ui/AjustementPoints";
+import { Objectifs } from "@/components/ui/Objectifs";
 
 const schema = z.object({
   categorie: z.string().min(1, "La catégorie est requise."),
@@ -46,6 +49,8 @@ export default function AdminTaskForm() {
   const [pending, setPending] = useState<File[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState(false);
+  // Objectifs de la tâche : chaque agent affecté recevra sa propre copie, à zéro.
+  const [objectifs, setObjectifs] = useState<ObjectifSaisi[]>([]);
 
   const {
     register,
@@ -133,6 +138,7 @@ export default function AdminTaskForm() {
     try {
       const corps = {
         ...valeurs,
+        objectifs,
         user_ids: selection,
         // La date de fin de récurrence n'a de sens que si une récurrence est active.
         recurrence_fin: valeurs.recurrence !== "AUCUNE" && valeurs.recurrence_fin ? valeurs.recurrence_fin : undefined,
@@ -171,9 +177,12 @@ export default function AdminTaskForm() {
 
       <form onSubmit={handleSubmit(soumettre)} className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1fr_330px]">
         {/* Colonne principale : configuration organisée en sections */}
-        <div className="carte p-[22px_26px]">
+        <div className="carte p-[16px_18px] sm:p-[22px_26px]">
           <Section titre="Identification" icone={Tag}>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {/* La rubrique est bien plus longue que la catégorie : celle-ci
+                est plafonnée, la rubrique récupère toute la largeur restante.
+                minmax(0,…) permet aux pistes de rétrécir au lieu de déborder. */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
               <Champ label="Catégorie" requis erreur={errors.categorie?.message}>
                 <select className="champ" value={val.categorie} onChange={(e) => changerCategorie(e.target.value)}>
                   {actives.map((c) => (
@@ -181,13 +190,16 @@ export default function AdminTaskForm() {
                   ))}
                 </select>
               </Champ>
-              <Champ label="Rubrique" requis erreur={errors.titre?.message}>
-                <select className="champ" {...register("titre")}>
-                  {rubriques.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </Champ>
+              <div className="min-w-0">
+                <Champ label="Rubrique" requis erreur={errors.titre?.message}>
+                  <ListeDeroulante
+                    valeur={val.titre ?? ""}
+                    options={rubriques}
+                    placeholder="Choisissez une rubrique"
+                    onChoisir={(r) => setValue("titre", r, { shouldValidate: true, shouldDirty: true })}
+                  />
+                </Champ>
+              </div>
             </div>
           </Section>
 
@@ -230,11 +242,14 @@ export default function AdminTaskForm() {
               </Champ>
             </div>
 
-            {/* Récurrence : régénère automatiquement la tâche + notifie à chaque fois */}
-            <div className="rounded-lg border border-[#DCE9ED] bg-petrole-50/50 p-3.5">
-              <div className="mb-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-petrole-600">
-                <Repeat size={15} /> Récurrence
-              </div>
+          </Section>
+
+          {/* Récurrence : génération automatique des occurrences */}
+          <Section
+            titre="Récurrence"
+            icone={Repeat}
+          >
+            <div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Champ label="Fréquence">
                   <select className="champ" {...register("recurrence")}>
@@ -258,7 +273,19 @@ export default function AdminTaskForm() {
             </div>
           </Section>
 
-          <Section titre="Suivi & pondération" icone={SlidersHorizontal}>
+          {/* Objectifs : ce qu'on attend concrètement de l'agent */}
+          <Section
+            titre="Objectifs"
+            icone={Target}
+            compteur={objectifs.length}
+          >
+            <Objectifs valeur={objectifs} onChange={setObjectifs} mode="definition" />
+          </Section>
+
+          <Section
+            titre="Suivi"
+            icone={SlidersHorizontal}
+          >
             <div className="grid grid-cols-1 gap-x-6 gap-y-0 sm:grid-cols-2">
               <Champ label="Priorité" requis>
                 <div className="flex flex-wrap gap-2">
@@ -289,6 +316,7 @@ export default function AdminTaskForm() {
               </Champ>
             </div>
 
+
             <Champ label="% réalisation" requis erreur={errors.pourcentage?.message}>
               <div className="flex items-center gap-3">
                 <input
@@ -305,6 +333,18 @@ export default function AdminTaskForm() {
               </div>
             </Champ>
 
+          </Section>
+
+          {/* Pondération : bonus ou malus décidé par l'administration */}
+          <Section
+            titre="Pondération des points"
+            icone={Star}
+            aide={
+              (val.points_ajustement ?? 0) === 0
+                ? undefined
+                : `${(val.points_ajustement ?? 0) > 0 ? "+" : ""}${val.points_ajustement} point(s)`
+            }
+          >
             <AjustementPoints
               dureeMinutes={val.duree_minutes ?? 0}
               ajustement={val.points_ajustement ?? 0}
@@ -312,13 +352,13 @@ export default function AdminTaskForm() {
             />
           </Section>
 
-          <div className="mt-6 flex items-center justify-end gap-3 border-t border-[#EEF2F3] pt-5">
+          <BarreActions>
             <button type="button" onClick={() => navigate(-1)} className="btn-fantome">Annuler</button>
             <button type="submit" disabled={isSubmitting || succes} className="btn-primaire">
               {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               Affecter et notifier
             </button>
-          </div>
+          </BarreActions>
         </div>
 
         {/* Colonne latérale collante : à qui, aperçu, pièces jointes */}
@@ -385,7 +425,7 @@ export default function AdminTaskForm() {
           {/* Aperçu compact */}
           <div className="carte p-[16px_18px]">
             <div className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-grisdoux">Aperçu</div>
-            <div className="mb-3 text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
+            <div className="mb-3 break-words text-[14.5px] font-semibold leading-snug text-encre">{val.titre || "Rubrique"}</div>
             <div className="mb-3.5 flex flex-wrap gap-2">
               <CategorieTag categorie={val.categorie} />
               <PrioriteBadge priorite={val.priorite} />
@@ -411,21 +451,9 @@ export default function AdminTaskForm() {
   );
 }
 
-function Section({ titre, icone: Icone, children }: { titre: string; icone: LucideIcon; children: React.ReactNode }) {
-  return (
-    <section className="mt-6 border-t border-[#EEF2F3] pt-5 first:mt-0 first:border-0 first:pt-0">
-      <div className="mb-4 flex items-center gap-2">
-        <Icone size={16} className="text-petrole-600" />
-        <h3 className="text-[13.5px] font-semibold text-encre">{titre}</h3>
-      </div>
-      {children}
-    </section>
-  );
-}
-
 function Champ({ label, requis, erreur, children }: { label: string; requis?: boolean; erreur?: string; children: React.ReactNode }) {
   return (
-    <div className="mb-[18px]">
+    <div className="mb-[18px] min-w-0">
       <label className="label">{label} {requis && <span className="text-danger">*</span>}</label>
       {children}
       {erreur && <p className="mt-1 text-[12px] text-danger">{erreur}</p>}
