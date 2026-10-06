@@ -1,12 +1,25 @@
-import { Check, FileSpreadsheet, FileText, FileType2, KeyRound, Loader2, Mail, Shield, User as UserIcon } from "lucide-react";
+import {
+  Camera,
+  Check,
+  FileSpreadsheet,
+  FileText,
+  FileType2,
+  KeyRound,
+  Loader2,
+  Mail,
+  Shield,
+  Trash2,
+  User as UserIcon,
+} from "lucide-react";
 import { startOfMonth, subMonths } from "date-fns";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, messageErreur } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { telechargerFichier } from "@/lib/download";
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, Spinner } from "@/components/ui/Divers";
-import type { StatsEmploye } from "@/types";
+import type { StatsEmploye, User } from "@/types";
+import { oublierPhoto } from "@/lib/photos";
 import { formatDate, formatDuree, formatPoints, isoDate } from "@/lib/format";
 
 export default function Profile() {
@@ -25,13 +38,7 @@ export default function Profile() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1.4fr]">
         <div className="carte p-7">
-          <div className="flex items-center gap-4">
-            <Avatar nom={user.nom_complet} id={user.id} taille={64} />
-            <div>
-              <div className="text-lg font-semibold text-encre">{user.nom_complet}</div>
-              <div className="text-[13.5px] text-gris">{user.poste ?? "—"}</div>
-            </div>
-          </div>
+          <PhotoProfil />
           <div className="mt-6 flex flex-col gap-3.5">
             <LigneInfo icone={Mail} label="E-mail" valeur={user.email} />
             <LigneInfo icone={Shield} label="Rôle" valeur={user.role === "ADMIN" ? "Administrateur" : "IT"} />
@@ -65,6 +72,156 @@ export default function Profile() {
 /* ------------------------------------------------------------------ */
 /* Téléchargement de mon rapport d'activité                            */
 /* ------------------------------------------------------------------ */
+/** Côté le plus long de la photo enregistrée. Au-delà, on ne gagne rien. */
+const COTE_MAX = 512;
+
+/**
+ * Réduit l'image choisie AVANT l'envoi : un appareil photo produit des
+ * fichiers de plusieurs méga-octets pour une vignette de 64 pixels. On obtient
+ * un carré centré de 512 px en JPEG, soit quelques dizaines de kilo-octets.
+ */
+function reduireImage(fichier: File): Promise<Blob> {
+  return new Promise((resoudre, rejeter) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => rejeter(new Error("Image illisible."));
+    lecteur.onload = () => {
+      const img = new Image();
+      img.onerror = () => rejeter(new Error("Ce fichier n'est pas une image valide."));
+      img.onload = () => {
+        // Carré centré : l'avatar est rond, autant recadrer proprement ici
+        // plutôt que de laisser le navigateur rogner à l'affichage.
+        const cote = Math.min(img.width, img.height);
+        const x = (img.width - cote) / 2;
+        const y = (img.height - cote) / 2;
+        const sortie = Math.min(cote, COTE_MAX);
+
+        const toile = document.createElement("canvas");
+        toile.width = sortie;
+        toile.height = sortie;
+        const ctx = toile.getContext("2d");
+        if (!ctx) return rejeter(new Error("Traitement de l'image impossible."));
+        ctx.drawImage(img, x, y, cote, cote, 0, 0, sortie, sortie);
+
+        toile.toBlob(
+          (blob) => (blob ? resoudre(blob) : rejeter(new Error("Conversion impossible."))),
+          "image/jpeg",
+          0.85,
+        );
+      };
+      img.src = String(lecteur.result);
+    };
+    lecteur.readAsDataURL(fichier);
+  });
+}
+
+/** Photo de profil : aperçu, envoi d'une image, retrait. */
+function PhotoProfil() {
+  const { user, majUser } = useAuth();
+  const champ = useRef<HTMLInputElement>(null);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  if (!user) return null;
+  // Capturé après la garde : les fonctions ci-dessous sont créées à chaque
+  // rendu, et TypeScript n'y propage pas le rétrécissement de type.
+  const compte = user;
+
+  async function choisir(fichier: File | undefined) {
+    if (!fichier) return;
+    setErreur(null);
+    setEnCours(true);
+    try {
+      const reduite = await reduireImage(fichier);
+      const corps = new FormData();
+      corps.append("photo", reduite, "photo.jpg");
+      const { data } = await api.post<User>("/photos", corps);
+      // L'ancienne image reste en cache sous son ancienne URL : on l'oublie,
+      // sinon l'onglet garderait la précédente jusqu'au rechargement.
+      oublierPhoto(compte.photo_url);
+      majUser(data);
+    } catch (e) {
+      setErreur(messageErreur(e, "Enregistrement de la photo impossible."));
+    } finally {
+      setEnCours(false);
+      if (champ.current) champ.current.value = ""; // rechoisir le même fichier
+    }
+  }
+
+  async function retirer() {
+    setErreur(null);
+    setEnCours(true);
+    try {
+      const { data } = await api.delete<User>("/photos");
+      oublierPhoto(compte.photo_url);
+      majUser(data);
+    } catch (e) {
+      setErreur(messageErreur(e, "Retrait de la photo impossible."));
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-4">
+        <div className="relative flex-none">
+          <Avatar nom={user.nom_complet} id={user.id} photo={user.photo_url} taille={64} />
+          {enCours && (
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-encre/55">
+              <Loader2 size={20} className="animate-spin text-white" />
+            </span>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="truncate text-lg font-semibold text-encre">{user.nom_complet}</div>
+          <div className="truncate text-[13.5px] text-gris">{user.poste ?? "—"}</div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => champ.current?.click()}
+              disabled={enCours}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-bordure bg-white px-2.5 py-1 text-[12px] font-medium text-ardoise transition hover:bg-surface disabled:opacity-50"
+            >
+              <Camera size={14} />
+              {user.photo_url ? "Changer la photo" : "Ajouter une photo"}
+            </button>
+
+            {user.photo_url && (
+              <button
+                type="button"
+                onClick={retirer}
+                disabled={enCours}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[12px] font-medium text-gris transition hover:text-danger disabled:opacity-50"
+              >
+                <Trash2 size={14} />
+                Retirer
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <input
+        ref={champ}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => choisir(e.target.files?.[0])}
+      />
+
+      {erreur ? (
+        <p className="mt-3 text-[12.5px] text-danger">{erreur}</p>
+      ) : (
+        <p className="mt-3 text-[12px] text-grisdoux">
+          JPEG, PNG ou WebP. L'image est recadrée en carré et réduite automatiquement.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function TelechargerRapport() {
   const [debut, setDebut] = useState(isoDate(startOfMonth(subMonths(new Date(), 1))));
   const [fin, setFin] = useState(isoDate(new Date()));

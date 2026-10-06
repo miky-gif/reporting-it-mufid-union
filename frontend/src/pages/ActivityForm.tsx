@@ -600,7 +600,7 @@ export default function ActivityForm() {
                 <UserCheck size={15} className="text-petrole-600" /> Affectée par
               </div>
               <div className="flex items-center gap-3">
-                <Avatar nom={affecteur.nom_complet} id={affecteur.id} taille={34} />
+                <Avatar nom={affecteur.nom_complet} id={affecteur.id} photo={affecteur.photo_url} taille={34} />
                 <div className="min-w-0">
                   <div className="truncate text-[13.5px] font-semibold text-encre">{affecteur.nom_complet}</div>
                   <div className="truncate text-[11.5px] text-grisdoux">

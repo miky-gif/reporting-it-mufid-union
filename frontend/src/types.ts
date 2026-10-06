@@ -84,6 +84,8 @@ export interface User {
   nom_complet: string;
   email: string;
   poste: string | null;
+  /** URL de la photo de profil, ou null si le compte n'en a pas. */
+  photo_url: string | null;
   role: Role;
   actif: boolean;
   departement_id: number | null;
@@ -133,7 +135,13 @@ export interface Activite {
   cloture_par: number | null;
   // Auteur de l'affectation (admin/superviseur/super admin), ou null si créée par l'agent.
   affecte_par: number | null;
-  affecteur: { id: number; nom_complet: string; poste: string | null; role: Role } | null;
+  affecteur: {
+    id: number;
+    nom_complet: string;
+    poste: string | null;
+    role: Role;
+    photo_url?: string | null;
+  } | null;
   reaffectee: boolean;
   reaffectee_de: number | null;
   date_reaffectation: string | null;
@@ -145,7 +153,7 @@ export interface Activite {
   recurrence_parent_id: number | null;
   date_creation: string;
   date_modification: string;
-  user?: { id: number; nom_complet: string; poste: string | null } | null;
+  user?: { id: number; nom_complet: string; poste: string | null; photo_url?: string | null } | null;
   pieces?: PieceJointe[];
 }
 

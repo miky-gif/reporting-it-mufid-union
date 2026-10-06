@@ -105,7 +105,13 @@ export default function UsersPage() {
                   <tr key={u.id} className="border-b border-[#F4F6F7] last:border-0">
                     <td className="px-[18px] py-3">
                       <div className="flex items-center gap-3">
-                        <Avatar nom={u.nom_complet} id={u.id} couleur={u.role === "ADMIN" ? "#0E5E7C" : undefined} taille={38} />
+                        <Avatar
+                          nom={u.nom_complet}
+                          id={u.id}
+                          photo={u.photo_url}
+                          couleur={u.role === "ADMIN" ? "#0E5E7C" : undefined}
+                          taille={38}
+                        />
                         <div>
                           <div className="text-[13.5px] font-semibold text-encre">{u.nom_complet}</div>
                           <div className="text-[12px] text-grisdoux">{u.poste ?? "—"} · {u.email}</div>

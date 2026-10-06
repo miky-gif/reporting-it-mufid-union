@@ -276,7 +276,15 @@ export function serialiserActivite(a) {
     // Auteur de l'affectation (pour afficher « affectée par … »).
     affecte_par: plain.affecte_par ?? null,
     affecteur: plain.affecteur
-      ? { id: plain.affecteur.id, nom_complet: plain.affecteur.nom_complet, poste: plain.affecteur.poste ?? null, role: plain.affecteur.role }
+      ? {
+          id: plain.affecteur.id,
+          nom_complet: plain.affecteur.nom_complet,
+          poste: plain.affecteur.poste ?? null,
+          role: plain.affecteur.role,
+          photo_url: plain.affecteur.photo
+            ? `/api/photos/${plain.affecteur.id}?v=${empreinte(plain.affecteur.photo)}`
+            : null,
+        }
       : null,
     reaffectee: !!plain.reaffectee_de,
     reaffectee_de: plain.reaffectee_de ?? null,
@@ -290,7 +298,13 @@ export function serialiserActivite(a) {
     date_creation: plain.date_creation,
     date_modification: plain.date_modification,
     user: plain.user
-      ? { id: plain.user.id, nom_complet: plain.user.nom_complet, poste: plain.user.poste ?? null }
+      ? {
+          id: plain.user.id,
+          nom_complet: plain.user.nom_complet,
+          poste: plain.user.poste ?? null,
+          // Pour que l'avatar d'une carte montre la photo, comme ailleurs.
+          photo_url: plain.user.photo ? `/api/photos/${plain.user.id}?v=${empreinte(plain.user.photo)}` : null,
+        }
       : null,
     pieces: Array.isArray(plain.pieces)
       ? plain.pieces.map((p) => ({
@@ -318,6 +332,17 @@ export function parsePermissions(valeur) {
 }
 
 // Formate un objet User pour les réponses (sans le mot de passe).
+/**
+ * Empreinte courte d'un nom de fichier, pour horodater l'URL d'une photo.
+ * Le nom change à chaque envoi : l'URL change donc aussi, et le navigateur
+ * recharge l'image au lieu de servir celle qu'il garde en cache.
+ */
+function empreinte(texte) {
+  let h = 5381;
+  for (let i = 0; i < texte.length; i++) h = ((h * 33) ^ texte.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 export function serialiserUser(u) {
   const p = u.get ? u.get({ plain: true }) : u;
   return {
@@ -325,6 +350,7 @@ export function serialiserUser(u) {
     nom_complet: p.nom_complet,
     email: p.email,
     poste: p.poste ?? null,
+    photo_url: p.photo ? `/api/photos/${p.id}?v=${empreinte(p.photo)}` : null,
     role: p.role,
     actif: !!p.actif,
     departement_id: p.departement_id ?? null,

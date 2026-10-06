@@ -117,6 +117,8 @@ export const User = sequelize.define(
     mot_de_passe: { type: DataTypes.STRING(255), allowNull: false },
     role: { type: DataTypes.ENUM(...ROLES), allowNull: false, defaultValue: "EMPLOYE" },
     poste: { type: DataTypes.STRING(120), allowNull: true },
+    // Nom du fichier image dans backend/uploads/photos (null = initiales).
+    photo: { type: DataTypes.STRING(255), allowNull: true },
     actif: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     // Rattachement au département (null pour le SUPER_ADMIN : il les voit tous).
     // Pour un SUPERVISEUR : son département « principal » (le premier de sa liste).

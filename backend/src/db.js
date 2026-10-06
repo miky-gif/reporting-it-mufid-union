@@ -156,7 +156,8 @@ export async function ensureColonnes() {
     "ALTER TABLE `users` " +
       "ADD COLUMN IF NOT EXISTS `departement_id` INT NULL, " +
       "ADD COLUMN IF NOT EXISTS `departements_geres` JSON NULL, " +
-      "ADD COLUMN IF NOT EXISTS `permissions` JSON NULL",
+      "ADD COLUMN IF NOT EXISTS `permissions` JSON NULL, " +
+      "ADD COLUMN IF NOT EXISTS `photo` VARCHAR(255) NULL",
   );
   await sequelize.query("ALTER TABLE `categories` ADD COLUMN IF NOT EXISTS `departement_id` INT NULL");
   await sequelize.query("ALTER TABLE `activites` ADD COLUMN IF NOT EXISTS `departement_id` INT NULL");

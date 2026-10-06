@@ -127,7 +127,7 @@ export function ReassignModal({
                         }
                       >
                         <input type="radio" name="cible" checked={cible === a.id} onChange={() => setCible(a.id)} />
-                        <Avatar nom={a.nom_complet} id={a.id} taille={26} />
+                        <Avatar nom={a.nom_complet} id={a.id} photo={a.photo_url} taille={26} />
                         <span className="text-[13px] font-medium text-encre">{a.nom_complet}</span>
                         <span className="ml-auto text-[11.5px] text-grisdoux">{a.poste ?? "—"}</span>
                       </label>

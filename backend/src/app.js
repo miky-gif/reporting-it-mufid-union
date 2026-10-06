@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.js";
 import { activitesRouter } from "./routes/activites.js";
 import { statsRouter } from "./routes/stats.js";
 import { usersRouter } from "./routes/users.js";
+import { photosRouter } from "./routes/photos.js";
 import { rapportsRouter } from "./routes/rapports.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { categoriesRouter } from "./routes/categories.js";
@@ -40,6 +41,7 @@ export function creerApp() {
   app.use("/api/activites", activitesRouter);
   app.use("/api/stats", statsRouter);
   app.use("/api/users", usersRouter);
+  app.use("/api/photos", photosRouter);
   app.use("/api/rapports", rapportsRouter);
   app.use("/api/notifications", notificationsRouter);
   app.use("/api/categories", categoriesRouter);

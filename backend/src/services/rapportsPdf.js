@@ -219,28 +219,52 @@ function mesurerLigne(doc, cells, widths, header) {
   return { infos, rowH };
 }
 
-// Dessine une ligne mesurée à la position y ; renvoie le y suivant.
+/**
+ * Dessine une ligne mesurée à la position y ; renvoie le y suivant.
+ *
+ * Les bordures sont tracées CELLULE PAR CELLULE, et le trait supérieur n'est
+ * posé que si la cellule le demande (`topBorder`). C'est ainsi qu'on obtient
+ * l'effet « cellule fusionnée » des colonnes Agent, Rubriques et Activités
+ * programmées : sur une ligne de continuation, le texte est vide ET aucun
+ * trait ne vient couper la cellule. Un rectangle tracé autour de chaque ligne
+ * annulerait la fusion, le texte vide ne suffisant pas.
+ *
+ * Une ligne d'en-tête est toujours entièrement bordée.
+ */
 function dessinerLigne(doc, infos, rowH, colX, widths, y, header) {
-  const totalW = widths.reduce((a, b) => a + b, 0);
+  infos.forEach((info, idx) => {
+    const fill = header ? PETROLE_HDR : info.fill;
+    if (fill) doc.rect(colX[idx], y, widths[idx], rowH).fill(fill);
+  });
   infos.forEach((info, idx) => {
     const x = colX[idx];
     const w = widths[idx];
-    const fill = header ? PETROLE_HDR : info.fill;
-    if (fill) doc.rect(x, y, w, rowH).fill(fill);
-    const color = header ? "#FFFFFF" : info.color || "#33454F";
     doc
       .font(header || info.bold ? "Helvetica-Bold" : "Helvetica")
       .fontSize(8.5)
-      .fillColor(color)
+      .fillColor(header ? "#FFFFFF" : info.color || "#33454F")
       .text(info.t || "", x + PAD, y + PAD, { width: w - 2 * PAD, align: info.align || "left" });
   });
-  // Bordures : contour + séparateurs verticaux.
   doc.strokeColor(BORDURE).lineWidth(0.5);
-  doc.rect(colX[0], y, totalW, rowH).stroke();
-  for (let i = 1; i < colX.length; i++) {
-    doc.moveTo(colX[i], y).lineTo(colX[i], y + rowH).stroke();
-  }
+  infos.forEach((info, idx) => {
+    const x = colX[idx];
+    const w = widths[idx];
+    doc.moveTo(x, y).lineTo(x, y + rowH).stroke(); // gauche
+    doc.moveTo(x + w, y).lineTo(x + w, y + rowH).stroke(); // droite
+    // AUCUNE bordure basse ici : elle se superposerait au trait supérieur de la
+    // ligne suivante et rétablirait la coupure que `topBorder` cherche
+    // justement à éviter. Le bas du tableau est fermé par `fermerTableau`.
+    if (header || info.topBorder) doc.moveTo(x, y).lineTo(x + w, y).stroke(); // haut
+  });
+  if (header) fermerTableau(doc, colX, widths, y + rowH);
   return y + rowH;
+}
+
+/** Trait de fermeture sur toute la largeur : fin de tableau ou bas de page. */
+function fermerTableau(doc, colX, widths, y) {
+  const totalW = widths.reduce((a, b) => a + b, 0);
+  doc.strokeColor(BORDURE).lineWidth(0.5);
+  doc.moveTo(colX[0], y).lineTo(colX[0] + totalW, y).stroke();
 }
 
 // Intitulé au-dessus d'un tableau (paysage).
@@ -261,19 +285,31 @@ function dessinerTableauInd(doc, groupes, colX, widths, faireEntete, bas) {
   }
   for (const groupe of groupes) {
     groupe.lignes.forEach((l, i) => {
+      // topBorder = false sur une continuation : c'est ce qui soude la cellule
+      // à celle du dessus, comme la fusion verticale de Word et d'Excel.
       const cells = [
-        { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center" },
-        { text: l.pg_span > 0 ? l.programmee : "" }, // fusion de la rubrique (répétée -> vide)
-        { text: l.etat },
-        { text: l.livrable },
-        { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut) },
-        { text: l.pourcentage, align: "center", bold: true },
+        { text: i === 0 ? groupe.rubrique : "", fill: PETROLE_CLAIR, bold: true, color: BLEU, align: "center", topBorder: i === 0 },
+        { text: l.pg_span > 0 ? l.programmee : "", topBorder: l.pg_span > 0 },
+        { text: l.etat, topBorder: true },
+        { text: l.livrable, topBorder: true },
+        { text: l.statut, align: "center", bold: true, color: couleurStatut(l.statut), topBorder: true },
+        { text: l.pourcentage, align: "center", bold: true, topBorder: true },
       ];
-      const { infos, rowH } = mesurerLigne(doc, cells, widths, false);
-      if (y + rowH > bas) { doc.addPage(); y = faireEntete(ML); }
-      y = dessinerLigne(doc, infos, rowH, colX, widths, y, false);
+      let mesure = mesurerLigne(doc, cells, widths, false);
+      if (y + mesure.rowH > bas) {
+        fermerTableau(doc, colX, widths, y); // on referme la page en cours
+        doc.addPage();
+        y = faireEntete(ML);
+        // En haut d'une nouvelle page, on réaffiche les cellules fusionnées :
+        // sinon la colonne resterait muette jusqu'au groupe suivant.
+        cells[0].text = groupe.rubrique; cells[0].topBorder = true;
+        cells[1].text = l.programmee; cells[1].topBorder = true;
+        mesure = mesurerLigne(doc, cells, widths, false);
+      }
+      y = dessinerLigne(doc, mesure.infos, mesure.rowH, colX, widths, y, false);
     });
   }
+  fermerTableau(doc, colX, widths, y);
   return y;
 }
 
@@ -348,33 +384,6 @@ function mesurerLigneCons(doc, cells, widths) {
   return { infos, rowH };
 }
 
-// Dessine une ligne consolidée ; bordures par cellule (topBorder = false ->
-// pas de trait haut, effet « cellule fusionnée » sur Agent / Rubriques).
-function dessinerLigneCons(doc, infos, rowH, colX, widths, y) {
-  infos.forEach((info, idx) => {
-    if (info.fill) doc.rect(colX[idx], y, widths[idx], rowH).fill(info.fill);
-  });
-  infos.forEach((info, idx) => {
-    const x = colX[idx];
-    const w = widths[idx];
-    doc
-      .font(info.bold ? "Helvetica-Bold" : "Helvetica")
-      .fontSize(8.5)
-      .fillColor(info.color || "#33454F")
-      .text(info.t || "", x + PAD, y + PAD, { width: w - 2 * PAD, align: info.align || "left" });
-  });
-  doc.strokeColor(BORDURE).lineWidth(0.5);
-  infos.forEach((info, idx) => {
-    const x = colX[idx];
-    const w = widths[idx];
-    doc.moveTo(x, y).lineTo(x, y + rowH).stroke(); // gauche
-    doc.moveTo(x + w, y).lineTo(x + w, y + rowH).stroke(); // droite
-    doc.moveTo(x, y + rowH).lineTo(x + w, y + rowH).stroke(); // bas
-    if (info.topBorder) doc.moveTo(x, y).lineTo(x + w, y).stroke(); // haut si non-continuation
-  });
-  return y + rowH;
-}
-
 // Dessine un tableau consolidé (7 colonnes) et renvoie le y final.
 function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
   let y = faireEntete(doc.y);
@@ -400,6 +409,7 @@ function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
         ];
         let mesure = mesurerLigneCons(doc, cells, widths);
         if (y + mesure.rowH > bas) {
+          fermerTableau(doc, colX, widths, y); // on referme la page en cours
           doc.addPage();
           y = faireEntete(ML);
           // En haut d'une nouvelle page, on réaffiche les cellules fusionnées.
@@ -408,11 +418,12 @@ function dessinerTableauCons(doc, employes, colX, widths, faireEntete, bas) {
           cells[2].text = l.programmee; cells[2].topBorder = true;
           mesure = mesurerLigneCons(doc, cells, widths);
         }
-        y = dessinerLigneCons(doc, mesure.infos, mesure.rowH, colX, widths, y);
+        y = dessinerLigne(doc, mesure.infos, mesure.rowH, colX, widths, y, false);
         premiereEmp = false;
       });
     }
   }
+  fermerTableau(doc, colX, widths, y);
   return y;
 }
 

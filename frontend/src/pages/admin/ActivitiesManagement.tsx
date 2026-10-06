@@ -10,6 +10,7 @@ import { CategorieTag, PrioriteBadge, StatutBadge } from "@/components/ui/Badges
 import { Avatar } from "@/components/ui/Avatar";
 import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
 import { BasculeVue, VueTableau } from "@/components/ui/VueTableau";
+import { usePreferenceVue } from "@/hooks/usePreferenceVue";
 import { Pagination } from "@/components/ui/Pagination";
 import { ReassignModal } from "./ReassignModal";
 import { SearchX } from "lucide-react";
@@ -42,7 +43,9 @@ export default function ActivitiesManagement() {
   const priorite = (params.get("priorite") ?? "") as Priorite | "";
   const ordre: "asc" | "desc" = params.get("ordre") === "asc" ? "asc" : "desc";
   const page = Math.max(1, Number(params.get("page")) || 1);
-  const vue: "liste" | "tableau" = params.get("vue") === "tableau" ? "tableau" : "liste";
+  // Le tableau est l'affichage par défaut ; le choix de l'utilisateur est
+  // retenu hors de la session, donc conservé après une déconnexion.
+  const [vue, setVue] = usePreferenceVue();
 
   /** Met à jour un filtre dans l'URL (et revient page 1, sauf pagination). */
   function majParam(cle: string, valeur: string, retourPage1 = true) {
@@ -59,7 +62,6 @@ export default function ActivitiesManagement() {
   const setStatut = (v: FiltreStatut) => majParam("statut", v);
   const setPriorite = (v: Priorite | "") => majParam("priorite", v);
   const setPage = (p: number) => majParam("page", p > 1 ? String(p) : "", false);
-  const setVue = (v: "liste" | "tableau") => majParam("vue", v === "tableau" ? "tableau" : "");
   const basculerOrdre = () => majParam("ordre", ordre === "desc" ? "asc" : "desc");
 
   useEffect(() => {
@@ -275,7 +277,7 @@ function LigneActivite({
       </td>
       <td className="py-3">
         <div className="flex items-center gap-2">
-          <Avatar nom={a.user?.nom_complet ?? "?"} id={a.user_id} taille={26} />
+          <Avatar nom={a.user?.nom_complet ?? "?"} id={a.user_id} photo={a.user?.photo_url} taille={26} />
           <span className="truncate text-[12.5px] text-ardoise">{abreger(a.user?.nom_complet)}</span>
           {a.reaffectee && (
             <span

@@ -12,6 +12,7 @@ import { EnteteSection, EtatVide, Spinner } from "@/components/ui/Divers";
 import { Pagination } from "@/components/ui/Pagination";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { BasculeVue, VueTableau } from "@/components/ui/VueTableau";
+import { usePreferenceVue } from "@/hooks/usePreferenceVue";
 
 const TAILLE = 8;
 // La vue tableau affiche toutes les colonnes d'un coup : on charge le maximum
@@ -41,7 +42,9 @@ export default function MyActivities() {
     : "date_activite";
   const ordre: "asc" | "desc" = params.get("ordre") === "asc" ? "asc" : "desc";
   const page = Math.max(1, Number(params.get("page")) || 1);
-  const vue: "liste" | "tableau" = params.get("vue") === "tableau" ? "tableau" : "liste";
+  // Le tableau est l'affichage par défaut ; le choix de l'utilisateur est
+  // retenu hors de la session, donc conservé après une déconnexion.
+  const [vue, setVue] = usePreferenceVue();
 
   /** Met à jour un filtre dans l'URL (et revient page 1, sauf pagination). */
   function majParams(modifs: Record<string, string>, retourPage1 = true) {
@@ -59,7 +62,6 @@ export default function MyActivities() {
   const setStatut = (v: Statut | "") => majParams({ statut: v });
   const setPriorite = (v: Priorite | "") => majParams({ priorite: v });
   const setPage = (p: number) => majParams({ page: p > 1 ? String(p) : "" }, false);
-  const setVue = (v: "liste" | "tableau") => majParams({ vue: v === "tableau" ? "tableau" : "" });
 
   const charger = useCallback(() => {
     setChargement(true);

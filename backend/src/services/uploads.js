@@ -161,6 +161,71 @@ export const upload = multer({
 });
 
 /* ------------------------------------------------------------------ */
+/* Photos de profil                                                    */
+/*                                                                     */
+/* Elles restent sur le disque LOCAL, jamais sur le NAS : elles sont   */
+/* minuscules, demandées à chaque affichage de liste, et doivent rester*/
+/* lisibles même si le partage réseau est tombé.                       */
+/* ------------------------------------------------------------------ */
+
+export const DOSSIER_PHOTOS = path.join(DOSSIER_LOCAL, "photos");
+
+try {
+  if (!existsSync(DOSSIER_PHOTOS)) mkdirSync(DOSSIER_PHOTOS, { recursive: true });
+} catch (e) {
+  console.error(`✖ Dossier des photos de profil inaccessible : ${e.message}`);
+}
+
+const EXTENSION_PHOTO = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+};
+
+export const uploadPhoto = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      try {
+        mkdirSync(DOSSIER_PHOTOS, { recursive: true });
+        cb(null, DOSSIER_PHOTOS);
+      } catch (e) {
+        cb(e);
+      }
+    },
+    // Nom tiré au sort : deux envois ne se marchent jamais dessus, et l'URL
+    // publiée change à chaque fois (cache du navigateur invalidé).
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${EXTENSION_PHOTO[file.mimetype] || ".jpg"}`),
+  }),
+  // L'interface réduit déjà l'image avant l'envoi ; cette limite n'est qu'un
+  // garde-fou contre un appel direct à l'API.
+  limits: { fileSize: 4 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (EXTENSION_PHOTO[file.mimetype]) return cb(null, true);
+    cb(new Error("Format d'image non accepté (JPEG, PNG ou WebP)."));
+  },
+});
+
+/** Chemin absolu d'une photo, ou null si le nom sort du dossier prévu. */
+export function cheminPhoto(nom) {
+  const base = path.basename(String(nom || ""));
+  if (!base || base !== nom) return null; // aucun chemin, seulement un nom
+  const absolu = path.resolve(DOSSIER_PHOTOS, base);
+  if (!absolu.startsWith(DOSSIER_PHOTOS + path.sep)) return null;
+  return existsSync(absolu) ? absolu : null;
+}
+
+/** Supprime une photo devenue inutile ; l'échec ne doit rien interrompre. */
+export function supprimerPhoto(nom) {
+  const chemin = cheminPhoto(nom);
+  if (!chemin) return;
+  try {
+    unlinkSync(chemin);
+  } catch (e) {
+    console.warn(`⚠ Photo non supprimée (${nom}) : ${e.message}`);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Rangement par rubrique                                              */
 /* Chaque rubrique d'une catégorie peut viser un dossier du NAS.       */
 /* Tout reste contenu dans DOSSIER_UPLOADS : aucune écriture au-dessus.*/

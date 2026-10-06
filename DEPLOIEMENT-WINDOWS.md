@@ -8,6 +8,38 @@ faire fonctionner **en continu, sans intervention quotidienne**.
 
 ---
 
+## Raccourci — « le matin, il faut relancer la plateforme »
+
+Si la plateforme est **déjà installée** sur le PC serveur et que le seul
+problème est qu'elle ne répond plus le lendemain matin, trois scripts font
+tout le travail décrit dans ce guide. À lancer dans une fenêtre **PowerShell
+administrateur**, depuis `C:\MUFID\app\exploitation` :
+
+```powershell
+# 1. Comprendre ce qui s'est passé cette nuit — ne modifie rien
+.\diagnostic-disponibilite.ps1
+
+# 2. Installer la plateforme en services Windows (la vraie correction)
+.\installer-services.ps1
+
+# 3. Régler la machine : veille, Windows Update, sauvegardes automatiques
+.\configurer-serveur.ps1
+```
+
+**Pourquoi cela suffit** : un programme lancé à la main vit dans votre session
+Windows. Dès que la session se ferme — déconnexion, redémarrage, mise à jour —
+Windows tue **tous** ses processus. Le PC reste allumé, le Bureau à distance
+répond, mais l'application a disparu. Un **service** Windows, lui, démarre
+avant toute ouverture de session, survit à la fermeture de session et se
+relance seul s'il tombe.
+
+Le détail de chaque réglage est expliqué aux sections [2.2](#22-empêcher-la-machine-de-sendormir),
+[2.4](#24-maîtriser-les-redémarrages-windows-update), [8](#8-faire-tourner-lapplication-en-permanence)
+et [10](#10-sauvegardes-automatiques). Les scripts sont **rejouables** : on peut
+les relancer après chaque mise à jour du code.
+
+---
+
 ## 1. Les choix retenus, et pourquoi
 
 Avant les commandes, voici les décisions prises pour votre contexte, afin que

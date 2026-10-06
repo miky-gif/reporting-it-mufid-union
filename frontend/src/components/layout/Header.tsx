@@ -50,7 +50,12 @@ export function Header({
             onClick={() => setMenuOuvert((v) => !v)}
             className="flex items-center gap-2.5"
           >
-            <Avatar nom={user.nom_complet} id={user.id} couleur={estAdmin ? "#0E5E7C" : undefined} />
+            <Avatar
+              nom={user.nom_complet}
+              id={user.id}
+              photo={user.photo_url}
+              couleur={estAdmin ? "#0E5E7C" : undefined}
+            />
             <div className="hidden text-left leading-tight sm:block">
               <div className="text-[13px] font-semibold text-encre">{user.nom_complet}</div>
               <div className="text-[11px] text-grisdoux">{user.poste ?? "—"}</div>

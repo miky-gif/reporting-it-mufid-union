@@ -392,7 +392,7 @@ export default function AdminTaskForm() {
                       }
                     >
                       <input type="checkbox" checked={selection.includes(e.id)} onChange={() => basculer(e.id)} />
-                      <Avatar nom={e.nom_complet} id={e.id} taille={26} />
+                      <Avatar nom={e.nom_complet} id={e.id} photo={e.photo_url} taille={26} />
                       <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-encre">{e.nom_complet}</span>
                       {e.role !== "EMPLOYE" ? (
                         <span
